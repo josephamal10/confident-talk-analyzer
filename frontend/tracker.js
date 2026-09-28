@@ -173,7 +173,7 @@ function renderHistory(entries) {
       item.className = "history-item";
 
       const title = document.createElement("p");
-      title.textContent = `${formatDateLabel(entry.timestamp)} - Score ${entry.score}/10 - ${entry.emotion}`;
+      title.textContent = `${formatDateLabel(entry.timestamp)} - Score ${entry.score}/10 - ${entry.delivery}`;
 
       const meta = document.createElement("p");
       meta.className = "meta";

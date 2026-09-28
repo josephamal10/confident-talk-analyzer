@@ -102,15 +102,26 @@
         <button id="analyzeBtn" class="btn-primary" disabled>Analyze Speech</button>
         <button id="trackerBtn" class="btn-outline tracker-toggle" type="button">My Speech Tracker</button>
 
-        <div class="result">
-          <h3>Results</h3>
-          <p><b>Transcription:</b> <span id="transcription"></span></p>
-          <p><b>Duration:</b> <span id="durationResult"></span></p>
-          <p><b>Confidence Score:</b> <span id="score"></span>/10</p>
-          <p><b>Pace (WPM):</b> <span id="wpm"></span></p>
-          <p><b>Detected Emotion:</b> <span id="emotion"></span></p>
-          <p><b>Topic Related:</b> <span id="topicRelated"></span></p>
-          <p><b>Feedback:</b></p>
+        <div class="result hidden" id="resultPanel">
+          <div class="result-head">
+            <div class="score-badge"><span id="score">-</span><small>/10</small></div>
+            <div>
+              <p class="kicker">Delivery</p>
+              <h3 id="delivery">-</h3>
+              <p class="result-meta" id="resultMeta"></p>
+            </div>
+          </div>
+
+          <div class="breakdown" id="breakdown"></div>
+
+          <p class="result-line"><b>Vocal tone:</b> <span id="vocalTone"></span></p>
+          <p class="result-line"><b>Topic related:</b> <span id="topicRelated"></span></p>
+
+          <h4>Transcript</h4>
+          <p class="transcript" id="transcription"></p>
+          <p class="legend"><span class="filler">filler</span> <span class="pause-chip">0.8s</span> hesitation pause</p>
+
+          <h4>Feedback</h4>
           <p id="feedback"></p>
         </div>
 

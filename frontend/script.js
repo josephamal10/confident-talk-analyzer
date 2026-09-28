@@ -36,6 +36,13 @@ const secondsInput = document.getElementById("seconds");
 const themeToggle = document.getElementById("themeToggle");
 
 const THEME_STORAGE_KEY = "cta_theme";
+const SUB_SCORE_LABELS = {
+  pace: "Pace",
+  fluency: "Fluency",
+  pauses: "Pausing",
+  expressiveness: "Expressiveness",
+  vocal_confidence: "Vocal confidence",
+};
 
 function getThemeValue(name, fallback) {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -184,6 +191,97 @@ function getSelectedDurationSeconds() {
   return totalSeconds;
 }
 
+function describeLevel(value) {
+  if (value >= 0.55) return "high";
+  if (value >= 0.4) return "medium";
+  return "low";
+}
+
+function renderBreakdown(subScores) {
+  const container = document.getElementById("breakdown");
+  container.textContent = "";
+  Object.entries(SUB_SCORE_LABELS).forEach(([key, label]) => {
+    const value = subScores?.[key];
+    const row = document.createElement("div");
+    row.className = "breakdown-row";
+
+    const name = document.createElement("span");
+    name.textContent = label;
+
+    const track = document.createElement("div");
+    track.className = "breakdown-track";
+    const bar = document.createElement("div");
+    bar.className = "breakdown-bar";
+    bar.style.width = value == null ? "0%" : `${value * 10}%`;
+    track.appendChild(bar);
+
+    const number = document.createElement("span");
+    number.className = "breakdown-value";
+    number.textContent = value == null ? "n/a" : value.toFixed(1);
+
+    row.append(name, track, number);
+    container.appendChild(row);
+  });
+}
+
+function renderTranscript(result) {
+  const container = document.getElementById("transcription");
+  container.textContent = "";
+  if (!Array.isArray(result.words) || !result.words.length) {
+    container.textContent = result.transcription || "-";
+    return;
+  }
+
+  const pausesBefore = new Map(
+    (result.pauses || []).filter((pause) => pause.kind === "hesitation").map((pause) => [pause.before_word, pause])
+  );
+  result.words.forEach((word, index) => {
+    const pause = pausesBefore.get(index);
+    if (pause) {
+      const chip = document.createElement("span");
+      chip.className = "pause-chip";
+      chip.title = "Hesitation pause";
+      chip.textContent = `${pause.duration.toFixed(1)}s`;
+      container.append(chip, " ");
+    }
+    const span = document.createElement("span");
+    span.textContent = word.text;
+    if (word.filler) span.className = "filler";
+    container.append(span, " ");
+  });
+}
+
+function renderResult(result) {
+  const metrics = result.metrics || {};
+  document.getElementById("score").textContent = result.score ?? "-";
+  document.getElementById("delivery").textContent = result.delivery || "-";
+  document.getElementById("resultMeta").textContent = [
+    `${formatDuration(result.minutes, result.seconds)} (${Math.round(metrics.speaking_span || 0)}s speaking)`,
+    `${metrics.wpm ?? "-"} WPM`,
+    `${metrics.filler_count ?? 0} fillers`,
+    `${metrics.hesitation_pause_count ?? 0} hesitation pauses`,
+  ].join(" · ");
+
+  renderBreakdown(result.sub_scores);
+
+  const tone = result.vocal_tone;
+  document.getElementById("vocalTone").textContent = tone
+    ? `Energy ${describeLevel(tone.arousal)} · Assertiveness ${describeLevel(tone.dominance)} · Positivity ${describeLevel(tone.valence)}`
+    : "Not available (emotion model not installed)";
+
+  const topicProvided = document.getElementById("topic").value.trim().length > 0;
+  if (!topicProvided) {
+    document.getElementById("topicRelated").textContent = "No topic provided";
+  } else {
+    const ratio = Math.round((Number(result.topic_match_ratio) || 0) * 100);
+    document.getElementById("topicRelated").textContent = result.topic_related ? `Yes (${ratio}% match)` : `No (${ratio}% match)`;
+  }
+
+  renderTranscript(result);
+  document.getElementById("feedback").textContent = result.feedback || "-";
+  document.getElementById("resultPanel").classList.remove("hidden");
+}
+
 function drawProgressChart(entries) {
   const canvas = progressChart;
   if (!canvas) return;
@@ -290,7 +388,7 @@ function renderHistory(entries) {
       item.className = "history-item";
 
       const title = document.createElement("p");
-      title.textContent = `${formatDateLabel(entry.timestamp)} - Score ${entry.score}/10 - ${entry.emotion}`;
+      title.textContent = `${formatDateLabel(entry.timestamp)} - Score ${entry.score}/10 - ${entry.delivery}`;
 
       const meta = document.createElement("p");
       meta.className = "meta";
@@ -490,23 +588,7 @@ analyzeBtn.addEventListener("click", async () => {
       body: formData,
     });
 
-    document.getElementById("transcription").textContent = result.transcription || "-";
-    const speakingSeconds = Math.round(Number(result.speaking_seconds) || 0);
-    document.getElementById("durationResult").textContent =
-      `${formatDuration(result.minutes, result.seconds)} (${speakingSeconds}s of speech)`;
-    document.getElementById("score").textContent = result.score ?? result.confidence_score ?? 0;
-    document.getElementById("wpm").textContent = result.wpm ?? "-";
-    document.getElementById("emotion").textContent = result.emotion ?? "-";
-    const topicProvided = document.getElementById("topic").value.trim().length > 0;
-    if (!topicProvided) {
-      document.getElementById("topicRelated").textContent = "No topic provided";
-    } else {
-      const related = Boolean(result.topic_related);
-      const ratio = Math.round((Number(result.topic_match_ratio) || 0) * 100);
-      document.getElementById("topicRelated").textContent = related ? `Yes (${ratio}% match)` : `No (${ratio}% match)`;
-    }
-    document.getElementById("feedback").textContent = result.feedback || "-";
-
+    renderResult(result);
     await loadUserHistory();
     statusText.textContent = "Analysis complete.";
   } catch (error) {

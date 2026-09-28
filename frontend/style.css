@@ -384,6 +384,109 @@ button {
   border-top: 1px solid var(--line);
 }
 
+.result h4 {
+  margin: 18px 0 6px;
+}
+
+.result-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.result-head h3 {
+  margin: 4px 0;
+}
+
+.score-badge {
+  flex: none;
+  display: grid;
+  place-content: center;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  border: 3px solid var(--accent-2);
+  background: var(--soft-bg);
+  text-align: center;
+}
+
+.score-badge span {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-badge small {
+  color: var(--text-1);
+}
+
+.result-meta,
+.legend {
+  margin: 0;
+  color: var(--text-1);
+  font-size: 0.88rem;
+}
+
+.breakdown {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.breakdown-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 40px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.breakdown-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--muted-bg);
+  overflow: hidden;
+}
+
+.breakdown-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 400ms ease;
+}
+
+.breakdown-value {
+  text-align: right;
+  font-weight: 600;
+}
+
+.result-line {
+  margin: 6px 0;
+}
+
+.transcript {
+  line-height: 1.9;
+  margin: 0 0 6px;
+}
+
+.filler {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--status-error);
+  font-weight: 600;
+}
+
+.pause-chip {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px dashed var(--accent-2);
+  color: var(--accent-2);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
 #feedback {
   white-space: pre-line;
   line-height: 1.5;
@@ -457,6 +560,10 @@ button {
 @media (max-width: 900px) {
   .auth-shell {
     grid-template-columns: 1fr;
+  }
+
+  .breakdown-row {
+    grid-template-columns: 116px 1fr 36px;
   }
 
   .page {
