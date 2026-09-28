@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Speech Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-grid"></div>
+  <button id="themeToggle" class="theme-toggle" type="button">Light Theme</button>
+
+  <main class="page tracker-page">
+    <section class="analyzer-card tracker-card">
+      <div class="app-header">
+        <div>
+          <p class="kicker">My Speech Tracker</p>
+          <h2 id="trackerUser">Progress Overview</h2>
+        </div>
+        <div class="tracker-actions">
+          <button id="backBtn" class="btn-outline" type="button">Back to Analyzer</button>
+          <button id="logoutBtn" class="btn-outline" type="button">Logout</button>
+        </div>
+      </div>
+
+      <p id="historySummary">Loading your speech history...</p>
+      <canvas id="progressChart"></canvas>
+      <div id="historyList" class="history-list"></div>
+    </section>
+  </main>
+
+  <script src="tracker.js"></script>
+</body>
+</html>

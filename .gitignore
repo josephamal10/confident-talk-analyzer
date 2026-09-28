@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+.pytest_cache/
+
+# Local data and secrets: never commit these
+backend/app_data.db
+backend/app_data.db-*
+backend/.secret_key
+backend/uploads/
+backend/models/
+
+# Editor / tooling
+.freebuff/
+.vscode/
+.idea/

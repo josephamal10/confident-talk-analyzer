@@ -1,0 +1,9 @@
+flask
+SpeechRecognition
+pydub
+audioop-lts; python_version >= "3.13"
+librosa
+numpy
+scipy
+openai-whisper
+torch

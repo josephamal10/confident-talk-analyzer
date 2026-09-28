@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confident Talk Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-grid"></div>
+  <button id="themeToggle" class="theme-toggle" type="button">Light Theme</button>
+
+  <main class="page">
+    <section class="auth-shell" id="authShell">
+      <div class="brand">
+        <p class="kicker">Speech Intelligence Suite</p>
+        <h1>Confident Talk Analyzer</h1>
+        <p class="subtext">Practice with instant analytics. Track confidence, pace, and verbal clarity.</p>
+      </div>
+
+      <div class="auth-card">
+        <div class="tab-row">
+          <button class="tab-btn active" data-tab="login">Login</button>
+          <button class="tab-btn" data-tab="register">New User</button>
+          <span class="tab-glider" id="tabGlider"></span>
+        </div>
+
+        <form id="loginForm" class="auth-form active">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="you@company.com" required>
+
+          <label for="loginPassword">Password</label>
+          <div class="password-wrap">
+            <input type="password" id="loginPassword" placeholder="Enter password" required>
+            <button type="button" class="ghost-icon" data-toggle="loginPassword">Show</button>
+          </div>
+
+          <button type="submit" class="btn-primary" id="loginSubmit">Sign In</button>
+        </form>
+
+        <form id="registerForm" class="auth-form">
+          <label for="registerName">Full Name</label>
+          <input type="text" id="registerName" placeholder="Alex Rivera" required>
+
+          <label for="registerEmail">Email</label>
+          <input type="email" id="registerEmail" placeholder="you@company.com" required>
+
+          <label for="registerPassword">Password</label>
+          <div class="password-wrap">
+            <input type="password" id="registerPassword" placeholder="At least 8 characters" required>
+            <button type="button" class="ghost-icon" data-toggle="registerPassword">Show</button>
+          </div>
+
+          <div class="strength">
+            <div class="strength-bar" id="strengthBar"></div>
+          </div>
+          <p class="strength-label" id="strengthLabel">Password strength: weak</p>
+
+          <button type="submit" class="btn-primary" id="registerSubmit">Create Account</button>
+        </form>
+
+        <p class="status-line" id="authStatus"></p>
+      </div>
+    </section>
+
+    <section class="app-shell hidden" id="appShell">
+      <div class="app-header">
+        <div>
+          <p class="kicker">Welcome Back</p>
+          <h2 id="welcomeUser">Speaker</h2>
+        </div>
+        <button id="logoutBtn" class="btn-outline">Logout</button>
+      </div>
+
+      <div class="analyzer-card">
+        <label for="topic">Topic</label>
+        <input type="text" id="topic" placeholder="Enter your topic">
+
+        <label>Recording Duration</label>
+        <div class="duration-row">
+          <div>
+            <label for="minutes">Minutes</label>
+            <input type="number" id="minutes" value="1" min="0">
+          </div>
+          <div>
+            <label for="seconds">Seconds</label>
+            <input type="number" id="seconds" value="0" min="0" max="59">
+          </div>
+        </div>
+
+        <div class="record-box">
+          <button id="startBtn" class="btn-primary">Start Recording</button>
+          <button id="stopBtn" class="btn-muted" disabled>Stop Recording</button>
+        </div>
+
+        <p id="status">Click start to record</p>
+        <button id="analyzeBtn" class="btn-primary" disabled>Analyze Speech</button>
+        <button id="trackerBtn" class="btn-outline tracker-toggle" type="button">My Speech Tracker</button>
+
+        <div class="result">
+          <h3>Results</h3>
+          <p><b>Transcription:</b> <span id="transcription"></span></p>
+          <p><b>Duration:</b> <span id="durationResult"></span></p>
+          <p><b>Confidence Score:</b> <span id="score"></span>/10</p>
+          <p><b>Pace (WPM):</b> <span id="wpm"></span></p>
+          <p><b>Detected Emotion:</b> <span id="emotion"></span></p>
+          <p><b>Topic Related:</b> <span id="topicRelated"></span></p>
+          <p><b>Feedback:</b></p>
+          <p id="feedback"></p>
+        </div>
+
+        <div class="history-panel hidden" id="historyPanel">
+          <div class="history-head">
+            <h3>Progress Tracker</h3>
+            <p id="historySummary">No history yet. Complete your first analysis.</p>
+          </div>
+          <canvas id="progressChart"></canvas>
+          <div id="historyList" class="history-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

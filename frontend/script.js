@@ -1,0 +1,538 @@
+const API_BASE = "";
+
+let mediaRecorder;
+let audioChunks = [];
+let audioBlob;
+let currentUser = null;
+let historyCache = [];
+let recordingTimeoutId = null;
+
+const authShell = document.getElementById("authShell");
+const appShell = document.getElementById("appShell");
+const authStatus = document.getElementById("authStatus");
+const welcomeUser = document.getElementById("welcomeUser");
+
+const tabButtons = document.querySelectorAll(".tab-btn");
+const tabGlider = document.getElementById("tabGlider");
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
+
+const registerPassword = document.getElementById("registerPassword");
+const strengthBar = document.getElementById("strengthBar");
+const strengthLabel = document.getElementById("strengthLabel");
+
+const startBtn = document.getElementById("startBtn");
+const stopBtn = document.getElementById("stopBtn");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const statusText = document.getElementById("status");
+const logoutBtn = document.getElementById("logoutBtn");
+const trackerBtn = document.getElementById("trackerBtn");
+const historyPanel = document.getElementById("historyPanel");
+const historySummary = document.getElementById("historySummary");
+const historyList = document.getElementById("historyList");
+const progressChart = document.getElementById("progressChart");
+const minutesInput = document.getElementById("minutes");
+const secondsInput = document.getElementById("seconds");
+const themeToggle = document.getElementById("themeToggle");
+
+const THEME_STORAGE_KEY = "cta_theme";
+
+function getThemeValue(name, fallback) {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+function applyTheme(theme) {
+  const resolved = theme === "light" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", resolved);
+  if (themeToggle) {
+    themeToggle.textContent = resolved === "light" ? "Dark Theme" : "Light Theme";
+  }
+}
+
+function initializeTheme() {
+  let saved = localStorage.getItem(THEME_STORAGE_KEY);
+  if (saved !== "light" && saved !== "dark") {
+    saved = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  }
+  applyTheme(saved);
+}
+
+function setAuthStatus(message, type = "") {
+  authStatus.className = "status-line";
+  if (type === "error") authStatus.classList.add("status-error");
+  if (type === "ok") authStatus.classList.add("status-ok");
+  authStatus.textContent = message;
+}
+
+function setActiveTab(tabName) {
+  tabButtons.forEach((btn, index) => {
+    const isActive = btn.dataset.tab === tabName;
+    btn.classList.toggle("active", isActive);
+    if (isActive) {
+      tabGlider.style.transform = `translateX(${index * 100}%)`;
+    }
+  });
+
+  loginForm.classList.toggle("active", tabName === "login");
+  registerForm.classList.toggle("active", tabName === "register");
+  setAuthStatus("");
+}
+
+function scorePassword(password) {
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[A-Z]/.test(password)) score += 1;
+  if (/[0-9]/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+  return score;
+}
+
+function updatePasswordStrength() {
+  const score = scorePassword(registerPassword.value);
+  const widths = ["20%", "35%", "60%", "80%", "100%"];
+  const labels = ["weak", "fair", "good", "strong", "excellent"];
+  const colors = ["#ef4444", "#f97316", "#f59e0b", "#3b82f6", "#1d4ed8"];
+
+  strengthBar.style.width = widths[score];
+  strengthBar.style.backgroundColor = colors[score];
+  strengthLabel.textContent = `Password strength: ${labels[score]}`;
+}
+
+function hideTrackerPanel() {
+  historyPanel.classList.add("hidden");
+  trackerBtn.textContent = "My Speech Tracker";
+}
+
+function showTrackerPanel() {
+  historyPanel.classList.remove("hidden");
+  trackerBtn.textContent = "Hide Speech Tracker";
+  requestAnimationFrame(() => drawProgressChart(historyCache));
+}
+
+function showApp(user) {
+  currentUser = user;
+  welcomeUser.textContent = user?.name || "Speaker";
+  authShell.classList.add("hidden");
+  appShell.classList.remove("hidden");
+  statusText.textContent = "Click start to record";
+  hideTrackerPanel();
+  loadUserHistory();
+}
+
+function showAuth() {
+  currentUser = null;
+  historyCache = [];
+  renderHistory([]);
+  hideTrackerPanel();
+  appShell.classList.add("hidden");
+  authShell.classList.remove("hidden");
+}
+
+async function requestJson(url, options = {}) {
+  const response = await fetch(url, options);
+
+  let data = {};
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
+
+  if (!response.ok) {
+    const error = new Error(data.error || "Request failed.");
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+
+function postJson(url, payload) {
+  return requestJson(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+function handleSessionExpired() {
+  showAuth();
+  setAuthStatus("Your session has expired. Please log in again.", "error");
+}
+
+function formatDateLabel(timestamp) {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "Unknown date";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function formatDuration(minutes, seconds) {
+  const safeMinutes = Math.max(0, Number.parseInt(minutes, 10) || 0);
+  const safeSeconds = Math.max(0, Number.parseInt(seconds, 10) || 0);
+  const totalSeconds = (safeMinutes * 60) + safeSeconds;
+  const normalizedMinutes = Math.floor(totalSeconds / 60);
+  const normalizedSeconds = totalSeconds % 60;
+  return `${normalizedMinutes}m ${String(normalizedSeconds).padStart(2, "0")}s`;
+}
+
+function getSelectedDurationSeconds() {
+  const inputMinutes = Math.max(0, Number.parseInt(minutesInput.value, 10) || 0);
+  const inputSeconds = Math.max(0, Number.parseInt(secondsInput.value, 10) || 0);
+  const totalSeconds = (inputMinutes * 60) + inputSeconds;
+  minutesInput.value = String(Math.floor(totalSeconds / 60));
+  secondsInput.value = String(totalSeconds % 60);
+  return totalSeconds;
+}
+
+function drawProgressChart(entries) {
+  const canvas = progressChart;
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const cssWidth = Math.max(320, Math.floor(canvas.getBoundingClientRect().width || 320));
+  const cssHeight = 240;
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = Math.floor(cssWidth * dpr);
+  canvas.height = Math.floor(cssHeight * dpr);
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  if (!entries.length) {
+    ctx.fillStyle = getThemeValue("--chart-text", "rgba(148, 163, 184, 0.9)");
+    ctx.font = '15px "Space Grotesk", sans-serif';
+    ctx.fillText("No sessions yet. Run analysis to build your progress graph.", 20, 124);
+    return;
+  }
+
+  const padding = { left: 42, right: 20, top: 20, bottom: 34 };
+  const plotW = cssWidth - padding.left - padding.right;
+  const plotH = cssHeight - padding.top - padding.bottom;
+  const scores = entries.map((entry) => Number(entry.score) || 0);
+  const maxScore = 10;
+  const minScore = 0;
+
+  ctx.strokeStyle = getThemeValue("--chart-grid", "rgba(148, 163, 184, 0.22)");
+  ctx.fillStyle = getThemeValue("--chart-text", "rgba(148, 163, 184, 0.9)");
+  ctx.font = '12px "Space Grotesk", sans-serif';
+
+  for (let tick = minScore; tick <= maxScore; tick += 2) {
+    const y = padding.top + ((maxScore - tick) / (maxScore - minScore)) * plotH;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(cssWidth - padding.right, y);
+    ctx.stroke();
+    ctx.fillText(String(tick), 12, y + 4);
+  }
+
+  const xAt = (index) => {
+    if (scores.length === 1) return padding.left + plotW / 2;
+    return padding.left + (index * plotW) / (scores.length - 1);
+  };
+
+  const yAt = (score) => padding.top + ((maxScore - score) / (maxScore - minScore)) * plotH;
+
+  ctx.strokeStyle = getThemeValue("--chart-line", "#3b82f6");
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  scores.forEach((score, index) => {
+    const x = xAt(index);
+    const y = yAt(score);
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = getThemeValue("--chart-point", "#38bdf8");
+  scores.forEach((score, index) => {
+    const x = xAt(index);
+    const y = yAt(score);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.fillStyle = getThemeValue("--chart-text", "rgba(148, 163, 184, 0.95)");
+  const firstLabel = formatDateLabel(entries[0].timestamp);
+  const lastLabel = formatDateLabel(entries[entries.length - 1].timestamp);
+  ctx.fillText(firstLabel, padding.left, cssHeight - 10);
+  ctx.fillText(lastLabel, cssWidth - padding.right - 62, cssHeight - 10);
+}
+
+function renderHistory(entries) {
+  historyList.textContent = "";
+  historyCache = entries;
+
+  if (!entries.length) {
+    historySummary.textContent = "No history yet. Complete your first analysis.";
+    drawProgressChart([]);
+    return;
+  }
+
+  const firstScore = Number(entries[0].score) || 0;
+  const latest = entries[entries.length - 1];
+  const latestScore = Number(latest.score) || 0;
+  const delta = +(latestScore - firstScore).toFixed(1);
+  const trend = delta > 0 ? `+${delta}` : `${delta}`;
+
+  historySummary.textContent =
+    `Sessions: ${entries.length} | Latest score: ${latestScore}/10 | Overall trend: ${trend}`;
+
+  entries
+    .slice(-5)
+    .reverse()
+    .forEach((entry) => {
+      const item = document.createElement("div");
+      item.className = "history-item";
+
+      const title = document.createElement("p");
+      title.textContent = `${formatDateLabel(entry.timestamp)} - Score ${entry.score}/10 - ${entry.emotion}`;
+
+      const meta = document.createElement("p");
+      meta.className = "meta";
+      meta.textContent = `Duration: ${formatDuration(entry.minutes, entry.seconds)} | WPM: ${entry.wpm} | Fillers: ${entry.filler_count} | Topic: ${entry.topic || "General"}`;
+
+      item.append(title, meta);
+      historyList.appendChild(item);
+    });
+
+  drawProgressChart(entries);
+}
+
+async function loadUserHistory() {
+  if (!currentUser?.email) {
+    renderHistory([]);
+    return;
+  }
+
+  try {
+    const result = await requestJson(`${API_BASE}/history`);
+    const entries = Array.isArray(result.history) ? result.history : [];
+    entries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    renderHistory(entries);
+  } catch (error) {
+    if (error.status === 401) {
+      handleSessionExpired();
+      return;
+    }
+    historySummary.textContent = "Unable to load history right now.";
+    drawProgressChart([]);
+  }
+}
+
+tabButtons.forEach((button) => {
+  button.addEventListener("click", () => setActiveTab(button.dataset.tab));
+});
+
+document.querySelectorAll(".ghost-icon").forEach((button) => {
+  button.addEventListener("click", () => {
+    const targetId = button.dataset.toggle;
+    const input = document.getElementById(targetId);
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    button.textContent = show ? "Hide" : "Show";
+  });
+});
+
+registerPassword.addEventListener("input", updatePasswordStrength);
+
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+
+  const loginSubmit = document.getElementById("loginSubmit");
+  loginSubmit.disabled = true;
+  loginSubmit.textContent = "Signing In...";
+  setAuthStatus("Authenticating...");
+
+  try {
+    const result = await postJson(`${API_BASE}/login`, { email, password });
+    setAuthStatus(result.message, "ok");
+    showApp(result.user);
+  } catch (error) {
+    setAuthStatus(error.message, "error");
+  } finally {
+    loginSubmit.disabled = false;
+    loginSubmit.textContent = "Sign In";
+  }
+});
+
+registerForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const name = document.getElementById("registerName").value.trim();
+  const email = document.getElementById("registerEmail").value.trim();
+  const password = document.getElementById("registerPassword").value;
+
+  const registerSubmit = document.getElementById("registerSubmit");
+  registerSubmit.disabled = true;
+  registerSubmit.textContent = "Creating...";
+  setAuthStatus("Creating your account...");
+
+  try {
+    const result = await postJson(`${API_BASE}/register`, { name, email, password });
+    setAuthStatus(`${result.message} Please log in.`, "ok");
+    registerForm.reset();
+    updatePasswordStrength();
+    setActiveTab("login");
+    document.getElementById("loginEmail").value = email;
+  } catch (error) {
+    setAuthStatus(error.message, "error");
+  } finally {
+    registerSubmit.disabled = false;
+    registerSubmit.textContent = "Create Account";
+  }
+});
+
+logoutBtn.addEventListener("click", async () => {
+  try {
+    await postJson(`${API_BASE}/logout`, {});
+  } catch {
+    // The server session is gone either way; still return to the login screen.
+  }
+  showAuth();
+});
+
+trackerBtn.addEventListener("click", () => {
+  window.location.href = "/tracker";
+});
+
+if (themeToggle) {
+  themeToggle.addEventListener("click", () => {
+    const currentTheme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+    const nextTheme = currentTheme === "light" ? "dark" : "light";
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    applyTheme(nextTheme);
+    drawProgressChart(historyCache);
+  });
+}
+
+startBtn.addEventListener("click", async () => {
+  const selectedDurationSeconds = getSelectedDurationSeconds();
+  if (selectedDurationSeconds <= 0) {
+    statusText.textContent = "Set duration above 0 seconds.";
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.start();
+
+    audioChunks = [];
+    audioBlob = null;
+    analyzeBtn.disabled = true;
+    statusText.textContent = "Recording in progress...";
+    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+      mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+      analyzeBtn.disabled = false;
+      if (recordingTimeoutId) {
+        clearTimeout(recordingTimeoutId);
+        recordingTimeoutId = null;
+      }
+    };
+    if (recordingTimeoutId) clearTimeout(recordingTimeoutId);
+    recordingTimeoutId = setTimeout(() => {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        statusText.textContent = "Recording stopped at selected duration.";
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+      }
+    }, selectedDurationSeconds * 1000);
+
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+  } catch (error) {
+    if (recordingTimeoutId) {
+      clearTimeout(recordingTimeoutId);
+      recordingTimeoutId = null;
+    }
+    statusText.textContent = "Microphone access denied.";
+  }
+});
+
+stopBtn.addEventListener("click", () => {
+  if (!mediaRecorder || mediaRecorder.state !== "recording") {
+    return;
+  }
+  if (recordingTimeoutId) {
+    clearTimeout(recordingTimeoutId);
+    recordingTimeoutId = null;
+  }
+
+  mediaRecorder.stop();
+  statusText.textContent = "Recording stopped.";
+
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+});
+
+analyzeBtn.addEventListener("click", async () => {
+  if (!audioBlob) return;
+
+  statusText.textContent = "Analyzing speech...";
+  analyzeBtn.disabled = true;
+
+  try {
+    const formData = new FormData();
+    formData.append("audio", audioBlob, "recording.webm");
+    formData.append("topic", document.getElementById("topic").value.trim());
+
+    const result = await requestJson(`${API_BASE}/analyze`, {
+      method: "POST",
+      body: formData,
+    });
+
+    document.getElementById("transcription").textContent = result.transcription || "-";
+    const speakingSeconds = Math.round(Number(result.speaking_seconds) || 0);
+    document.getElementById("durationResult").textContent =
+      `${formatDuration(result.minutes, result.seconds)} (${speakingSeconds}s of speech)`;
+    document.getElementById("score").textContent = result.score ?? result.confidence_score ?? 0;
+    document.getElementById("wpm").textContent = result.wpm ?? "-";
+    document.getElementById("emotion").textContent = result.emotion ?? "-";
+    const topicProvided = document.getElementById("topic").value.trim().length > 0;
+    if (!topicProvided) {
+      document.getElementById("topicRelated").textContent = "No topic provided";
+    } else {
+      const related = Boolean(result.topic_related);
+      const ratio = Math.round((Number(result.topic_match_ratio) || 0) * 100);
+      document.getElementById("topicRelated").textContent = related ? `Yes (${ratio}% match)` : `No (${ratio}% match)`;
+    }
+    document.getElementById("feedback").textContent = result.feedback || "-";
+
+    await loadUserHistory();
+    statusText.textContent = "Analysis complete.";
+  } catch (error) {
+    if (error.status === 401) {
+      handleSessionExpired();
+      return;
+    }
+    statusText.textContent = error.message;
+  } finally {
+    analyzeBtn.disabled = false;
+  }
+});
+
+async function restoreSession() {
+  try {
+    const result = await requestJson(`${API_BASE}/me`);
+    showApp(result.user);
+  } catch {
+    // Not logged in; the login form is already showing.
+  }
+}
+
+restoreSession();
+
+window.addEventListener("resize", () => drawProgressChart(historyCache));
+
+initializeTheme();
+updatePasswordStrength();
+renderHistory([]);
