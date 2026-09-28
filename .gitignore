@@ -9,6 +9,7 @@ venv/
 backend/app_data.db
 backend/app_data.db-*
 backend/.secret_key
+backend/.env
 backend/uploads/
 backend/models/
 

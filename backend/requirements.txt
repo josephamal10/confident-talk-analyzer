@@ -3,3 +3,8 @@ numpy
 faster-whisper
 onnxruntime
 praat-parselmouth
+tokenizers
+huggingface-hub
+httpx
+jsonschema
+python-dotenv

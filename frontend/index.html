@@ -78,8 +78,29 @@
       </div>
 
       <div class="analyzer-card">
-        <label for="topic">Topic</label>
-        <input type="text" id="topic" placeholder="Enter your topic">
+        <div class="mode-row" role="tablist" aria-label="Practice mode">
+          <button type="button" class="mode-btn active" data-mode="topic" role="tab" aria-selected="true">Free topic</button>
+          <button type="button" class="mode-btn" data-mode="interview" role="tab" aria-selected="false">Interview practice</button>
+        </div>
+
+        <div id="topicPanel">
+          <label for="topic">Topic</label>
+          <div class="input-with-action">
+            <input type="text" id="topic" placeholder="Enter your topic">
+            <button type="button" class="btn-outline" id="suggestTopicBtn">Suggest</button>
+          </div>
+        </div>
+
+        <div id="interviewPanel" class="hidden">
+          <label for="questionCategory">Question type</label>
+          <select id="questionCategory"></select>
+          <div class="question-card">
+            <p class="kicker" id="questionFramework">Framework</p>
+            <p class="question-text" id="questionText">Loading questions...</p>
+            <p class="question-hint" id="questionHint"></p>
+            <button type="button" class="btn-outline" id="nextQuestionBtn">Next question</button>
+          </div>
+        </div>
 
         <label>Recording Duration</label>
         <div class="duration-row">
@@ -121,8 +142,46 @@
           <p class="transcript" id="transcription"></p>
           <p class="legend"><span class="filler">filler</span> <span class="pause-chip">0.8s</span> hesitation pause</p>
 
-          <h4>Feedback</h4>
+          <h4>Delivery feedback</h4>
           <p id="feedback"></p>
+        </div>
+
+        <div class="coach-panel hidden" id="coachPanel">
+          <div class="result-head">
+            <div class="score-badge coach-badge"><span id="contentScore">-</span><small>/10</small></div>
+            <div>
+              <p class="kicker">AI Coach · Content</p>
+              <h3 id="coachTitle">Reviewing your answer...</h3>
+              <p class="result-meta" id="coachMeta"></p>
+            </div>
+          </div>
+          <div id="coachBody" class="hidden">
+            <p id="coachSummary"></p>
+            <div class="breakdown" id="contentBreakdown"></div>
+
+            <h4 id="frameworkTitle">Framework check</h4>
+            <div class="chips" id="frameworkChips"></div>
+
+            <div class="coach-columns">
+              <div>
+                <h4>What worked</h4>
+                <ul class="coach-list" id="coachStrengths"></ul>
+              </div>
+              <div>
+                <h4>What to improve</h4>
+                <ul class="coach-list" id="coachImprovements"></ul>
+              </div>
+            </div>
+
+            <p class="result-line" id="coachTopic"></p>
+
+            <div class="improved-head">
+              <h4>A stronger version of your answer</h4>
+              <button type="button" class="btn-outline" id="copyImprovedBtn">Copy</button>
+            </div>
+            <blockquote class="improved-answer" id="improvedAnswer"></blockquote>
+          </div>
+          <button type="button" class="btn-outline hidden" id="retryCoachBtn">Try again</button>
         </div>
 
         <div class="history-panel hidden" id="historyPanel">

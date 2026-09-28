@@ -113,3 +113,95 @@ def test_oversized_upload_returns_json(client, make_user):
         app_module.app.config["MAX_CONTENT_LENGTH"] = limit
     assert response.status_code == 413
     assert "error" in response.get_json()
+
+
+COACHING = {
+    "summary": "Clear answer.",
+    "content_scores": {"structure": 8, "clarity": 8, "relevance": 9, "depth": 6},
+    "content_score": 7.8,
+    "strengths": ["Direct"],
+    "improvements": [{"issue": "Thin result", "suggestion": "Quantify the outcome."}],
+    "framework": {"name": "STAR", "parts": ["Situation", "Task", "Action", "Result"], "present": ["Situation"], "missing": []},
+    "on_topic": True,
+    "topic_feedback": "Answers the question.",
+    "improved_answer": "In my final year...",
+    "meta": {"provider": "test", "model": "test-model", "latency_ms": 5},
+}
+
+
+def analyze_interview(client, monkeypatch, question_id="behavioral-1"):
+    monkeypatch.setattr(app_module, "analyze_recording", lambda path: FAKE_RESULT)
+    data = {"audio": (io.BytesIO(b"fake audio"), "recording.webm"), "mode": "interview", "question_id": question_id}
+    return client.post("/analyze", data=data).get_json()
+
+
+def test_question_bank_endpoint(client):
+    body = client.get("/questions").get_json()
+    assert {c["id"] for c in body["categories"]} == {"behavioral", "personal", "technical"}
+    assert body["coach_available"] is False
+    assert body["topics"]
+
+
+def test_interview_mode_records_the_question(client, make_user, monkeypatch):
+    make_user()
+    body = analyze_interview(client, monkeypatch)
+    assert body["id"] > 0 and body["coach_available"] is False
+    assert body["context"]["mode"] == "interview"
+    assert body["context"]["framework"]["name"] == "STAR"
+    history = client.get("/history").get_json()["history"]
+    assert history[-1]["topic"].startswith("Tell me about a time you faced a conflict")
+
+
+def test_unknown_question_falls_back_to_free_topic(client, make_user, monkeypatch):
+    make_user()
+    body = analyze_interview(client, monkeypatch, question_id="nope")
+    assert body["context"]["mode"] == "topic"
+
+
+def test_coach_disabled_returns_503(client, make_user, monkeypatch):
+    make_user()
+    record_id = analyze_interview(client, monkeypatch)["id"]
+    response = client.post(f"/analyses/{record_id}/coach")
+    assert response.status_code == 503
+    assert response.get_json()["code"] == "coach_disabled"
+
+
+def test_coach_generates_once_then_serves_cached(client, make_user, monkeypatch):
+    make_user()
+    record_id = analyze_interview(client, monkeypatch)["id"]
+    calls = []
+
+    def fake_coach(transcript, context, analysis, config):
+        calls.append((transcript, context["prompt"], analysis["score"]))
+        return COACHING
+
+    monkeypatch.setattr(app_module.llm, "get_config", lambda: object())
+    monkeypatch.setattr(app_module.coach, "coach_answer", fake_coach)
+
+    first = client.post(f"/analyses/{record_id}/coach").get_json()
+    second = client.post(f"/analyses/{record_id}/coach").get_json()
+    assert first["coach"]["content_score"] == 7.8 and first["cached"] is False
+    assert second["cached"] is True and len(calls) == 1
+    assert calls[0][1].startswith("Tell me about a time you faced a conflict") and calls[0][2] == 9.2
+
+
+def test_coach_errors_pass_through_status(client, make_user, monkeypatch):
+    make_user()
+    record_id = analyze_interview(client, monkeypatch)["id"]
+
+    def rate_limited(*args):
+        raise app_module.llm.LLMError("Rate limited.", retryable=True, status_code=429)
+
+    monkeypatch.setattr(app_module.llm, "get_config", lambda: object())
+    monkeypatch.setattr(app_module.coach, "coach_answer", rate_limited)
+    response = client.post(f"/analyses/{record_id}/coach")
+    assert response.status_code == 429
+    assert response.get_json() == {"error": "Rate limited.", "retryable": True}
+
+
+def test_coach_is_scoped_to_the_owner(client, make_user, monkeypatch):
+    make_user()
+    record_id = analyze_interview(client, monkeypatch)["id"]
+    other = app_module.app.test_client()
+    make_user(other)
+    assert other.post(f"/analyses/{record_id}/coach").status_code == 404

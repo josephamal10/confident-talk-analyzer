@@ -43,6 +43,17 @@ const SUB_SCORE_LABELS = {
   expressiveness: "Expressiveness",
   vocal_confidence: "Vocal confidence",
 };
+const CONTENT_SCORE_LABELS = {
+  structure: "Structure",
+  clarity: "Clarity",
+  relevance: "Relevance",
+  depth: "Depth",
+};
+
+let practiceMode = "topic";
+let questionBank = null;
+let currentQuestion = null;
+let lastAnalysisId = null;
 
 function getThemeValue(name, fallback) {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -125,6 +136,7 @@ function showApp(user) {
   statusText.textContent = "Click start to record";
   hideTrackerPanel();
   loadUserHistory();
+  loadQuestionBank();
 }
 
 function showAuth() {
@@ -197,11 +209,61 @@ function describeLevel(value) {
   return "low";
 }
 
-function renderBreakdown(subScores) {
-  const container = document.getElementById("breakdown");
+function pickRandom(items, avoid) {
+  const pool = items.length > 1 ? items.filter((item) => item !== avoid) : items;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function selectedCategory() {
+  const categoryId = document.getElementById("questionCategory").value;
+  return questionBank?.categories.find((category) => category.id === categoryId);
+}
+
+function showNextQuestion() {
+  const category = selectedCategory();
+  if (!category) return;
+  currentQuestion = pickRandom(category.questions, currentQuestion);
+  document.getElementById("questionText").textContent = currentQuestion.text;
+  document.getElementById("questionFramework").textContent =
+    `${category.framework.name}: ${category.framework.parts.join(" → ")}`;
+  document.getElementById("questionHint").textContent = category.framework.description;
+}
+
+async function loadQuestionBank() {
+  if (questionBank) return;
+  try {
+    questionBank = await requestJson(`${API_BASE}/questions`);
+  } catch {
+    document.getElementById("questionText").textContent = "Could not load interview questions.";
+    return;
+  }
+  const select = document.getElementById("questionCategory");
+  select.textContent = "";
+  questionBank.categories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category.id;
+    option.textContent = `${category.label} (${category.framework.name})`;
+    select.appendChild(option);
+  });
+  showNextQuestion();
+}
+
+function setPracticeMode(mode) {
+  practiceMode = mode;
+  document.querySelectorAll(".mode-btn").forEach((button) => {
+    const active = button.dataset.mode === mode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+  document.getElementById("topicPanel").classList.toggle("hidden", mode !== "topic");
+  document.getElementById("interviewPanel").classList.toggle("hidden", mode !== "interview");
+}
+
+function renderScoreBars(containerId, labels, scores) {
+  const container = document.getElementById(containerId);
   container.textContent = "";
-  Object.entries(SUB_SCORE_LABELS).forEach(([key, label]) => {
-    const value = subScores?.[key];
+  Object.entries(labels).forEach(([key, label]) => {
+    const value = scores?.[key];
     const row = document.createElement("div");
     row.className = "breakdown-row";
 
@@ -262,24 +324,92 @@ function renderResult(result) {
     `${metrics.hesitation_pause_count ?? 0} hesitation pauses`,
   ].join(" · ");
 
-  renderBreakdown(result.sub_scores);
+  renderScoreBars("breakdown", SUB_SCORE_LABELS, result.sub_scores);
 
   const tone = result.vocal_tone;
   document.getElementById("vocalTone").textContent = tone
     ? `Energy ${describeLevel(tone.arousal)} · Assertiveness ${describeLevel(tone.dominance)} · Positivity ${describeLevel(tone.valence)}`
     : "Not available (emotion model not installed)";
 
-  const topicProvided = document.getElementById("topic").value.trim().length > 0;
-  if (!topicProvided) {
-    document.getElementById("topicRelated").textContent = "No topic provided";
-  } else {
-    const ratio = Math.round((Number(result.topic_match_ratio) || 0) * 100);
-    document.getElementById("topicRelated").textContent = result.topic_related ? `Yes (${ratio}% match)` : `No (${ratio}% match)`;
-  }
+  const match = result.topic_match;
+  document.getElementById("topicRelated").textContent = match
+    ? `${match.related ? "Yes" : "No"} (semantic similarity ${match.similarity.toFixed(2)})`
+    : "No topic provided";
 
   renderTranscript(result);
   document.getElementById("feedback").textContent = result.feedback || "-";
   document.getElementById("resultPanel").classList.remove("hidden");
+}
+
+function fillList(listId, items, renderItem) {
+  const list = document.getElementById(listId);
+  list.textContent = "";
+  items.forEach((item) => {
+    const li = document.createElement("li");
+    renderItem(li, item);
+    list.appendChild(li);
+  });
+}
+
+function renderCoach(coachResult) {
+  document.getElementById("contentScore").textContent = coachResult.content_score;
+  document.getElementById("coachTitle").textContent = coachResult.on_topic ? "Content review" : "Content review: off-topic";
+  const meta = coachResult.meta || {};
+  document.getElementById("coachMeta").textContent =
+    meta.model ? `Generated by ${meta.model} via ${meta.provider}${meta.latency_ms ? ` in ${(meta.latency_ms / 1000).toFixed(1)}s` : ""}` : "";
+  document.getElementById("coachSummary").textContent = coachResult.summary;
+  renderScoreBars("contentBreakdown", CONTENT_SCORE_LABELS, coachResult.content_scores);
+
+  const framework = coachResult.framework;
+  document.getElementById("frameworkTitle").textContent = `${framework.name} check`;
+  const chips = document.getElementById("frameworkChips");
+  chips.textContent = "";
+  framework.parts.forEach((part) => {
+    const chip = document.createElement("span");
+    const present = framework.present.includes(part);
+    chip.className = present ? "chip chip-present" : "chip chip-missing";
+    chip.textContent = `${present ? "✓" : "✗"} ${part}`;
+    chips.appendChild(chip);
+  });
+
+  fillList("coachStrengths", coachResult.strengths, (li, text) => {
+    li.textContent = text;
+  });
+  fillList("coachImprovements", coachResult.improvements, (li, item) => {
+    const issue = document.createElement("b");
+    issue.textContent = item.issue;
+    li.append(issue, document.createElement("br"), item.suggestion);
+  });
+  document.getElementById("coachTopic").textContent = coachResult.topic_feedback;
+  document.getElementById("improvedAnswer").textContent = coachResult.improved_answer;
+  document.getElementById("coachBody").classList.remove("hidden");
+}
+
+function showCoachMessage(title, message, canRetry) {
+  document.getElementById("contentScore").textContent = "-";
+  document.getElementById("coachTitle").textContent = title;
+  document.getElementById("coachMeta").textContent = message;
+  document.getElementById("coachBody").classList.add("hidden");
+  document.getElementById("retryCoachBtn").classList.toggle("hidden", !canRetry);
+}
+
+async function requestCoaching(analysisId) {
+  const panel = document.getElementById("coachPanel");
+  panel.classList.remove("hidden");
+  showCoachMessage("Reviewing your answer...", "The AI coach is reading your transcript.", false);
+  try {
+    const data = await requestJson(`${API_BASE}/analyses/${analysisId}/coach`, { method: "POST" });
+    if (analysisId !== lastAnalysisId) return;
+    renderCoach(data.coach);
+  } catch (error) {
+    if (analysisId !== lastAnalysisId) return;
+    if (error.status === 401) {
+      handleSessionExpired();
+      return;
+    }
+    const retryable = [429, 503, 504].includes(error.status);
+    showCoachMessage("AI coach unavailable", error.message, retryable);
+  }
 }
 
 function drawProgressChart(entries) {
@@ -581,16 +711,27 @@ analyzeBtn.addEventListener("click", async () => {
   try {
     const formData = new FormData();
     formData.append("audio", audioBlob, "recording.webm");
-    formData.append("topic", document.getElementById("topic").value.trim());
+    formData.append("mode", practiceMode);
+    if (practiceMode === "interview" && currentQuestion) {
+      formData.append("question_id", currentQuestion.id);
+    } else {
+      formData.append("topic", document.getElementById("topic").value.trim());
+    }
 
     const result = await requestJson(`${API_BASE}/analyze`, {
       method: "POST",
       body: formData,
     });
 
+    lastAnalysisId = result.id;
     renderResult(result);
-    await loadUserHistory();
     statusText.textContent = "Analysis complete.";
+    if (result.coach_available) {
+      requestCoaching(result.id);
+    } else {
+      document.getElementById("coachPanel").classList.add("hidden");
+    }
+    await loadUserHistory();
   } catch (error) {
     if (error.status === 401) {
       handleSessionExpired();
@@ -600,6 +741,37 @@ analyzeBtn.addEventListener("click", async () => {
   } finally {
     analyzeBtn.disabled = false;
   }
+});
+
+document.querySelectorAll(".mode-btn").forEach((button) => {
+  button.addEventListener("click", () => setPracticeMode(button.dataset.mode));
+});
+
+document.getElementById("questionCategory").addEventListener("change", showNextQuestion);
+document.getElementById("nextQuestionBtn").addEventListener("click", showNextQuestion);
+
+document.getElementById("suggestTopicBtn").addEventListener("click", async () => {
+  await loadQuestionBank();
+  if (!questionBank?.topics?.length) return;
+  const topicInput = document.getElementById("topic");
+  topicInput.value = pickRandom(questionBank.topics, topicInput.value);
+});
+
+document.getElementById("retryCoachBtn").addEventListener("click", () => {
+  if (lastAnalysisId) requestCoaching(lastAnalysisId);
+});
+
+document.getElementById("copyImprovedBtn").addEventListener("click", async () => {
+  const button = document.getElementById("copyImprovedBtn");
+  try {
+    await navigator.clipboard.writeText(document.getElementById("improvedAnswer").textContent);
+    button.textContent = "Copied";
+  } catch {
+    button.textContent = "Copy failed";
+  }
+  setTimeout(() => {
+    button.textContent = "Copy";
+  }, 1500);
 });
 
 async function restoreSession() {

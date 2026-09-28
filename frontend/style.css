@@ -492,6 +492,148 @@ button {
   line-height: 1.5;
 }
 
+.mode-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  margin-bottom: 6px;
+}
+
+.mode-btn {
+  padding: 9px;
+  background: transparent;
+  color: var(--text-1);
+}
+
+.mode-btn.active {
+  background: linear-gradient(95deg, var(--accent), var(--accent-2));
+  color: var(--button-text);
+  font-weight: 700;
+}
+
+.input-with-action {
+  display: flex;
+  gap: 8px;
+}
+
+.input-with-action input {
+  flex: 1;
+}
+
+select {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+  color: var(--text-0);
+  border-radius: 10px;
+  padding: 11px 12px;
+  font: inherit;
+}
+
+.question-card {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft-bg);
+}
+
+.question-text {
+  margin: 8px 0 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.question-hint {
+  margin: 0 0 10px;
+  color: var(--text-1);
+  font-size: 0.88rem;
+}
+
+.coach-panel {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.coach-panel h4 {
+  margin: 18px 0 6px;
+}
+
+.coach-badge {
+  border-color: var(--accent);
+}
+
+#coachSummary {
+  line-height: 1.5;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  border: 1px solid var(--line);
+}
+
+.chip-present {
+  background: rgba(56, 189, 248, 0.16);
+  color: var(--accent-2);
+  font-weight: 600;
+}
+
+.chip-missing {
+  color: var(--text-1);
+  border-style: dashed;
+}
+
+.coach-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.coach-list {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.5;
+}
+
+.coach-list li + li {
+  margin-top: 8px;
+}
+
+.improved-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.improved-answer {
+  margin: 8px 0 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--accent-2);
+  border-radius: 0 10px 10px 0;
+  background: var(--soft-bg);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+#retryCoachBtn {
+  margin-top: 12px;
+}
+
 .history-panel {
   margin-top: 20px;
   border-top: 1px solid var(--line);
@@ -564,6 +706,11 @@ button {
 
   .breakdown-row {
     grid-template-columns: 116px 1fr 36px;
+  }
+
+  .coach-columns {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
 
   .page {

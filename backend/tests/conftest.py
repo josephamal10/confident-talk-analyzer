@@ -11,8 +11,14 @@ os.environ.setdefault("DATABASE_PATH", os.path.join(_TMP, "test.db"))
 os.environ.setdefault("UPLOAD_FOLDER", os.path.join(_TMP, "uploads"))
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ.setdefault("EMOTION_MODEL_PATH", os.path.join(_TMP, "missing-model.onnx"))
+# Never call a real LLM from tests, even if backend/.env has an API key.
+os.environ["LLM_PROVIDER"] = "none"
 
 import app as app_module  # noqa: E402
+from analysis import relevance  # noqa: E402
+
+# Use keyword topic matching unless a test stubs the embedding model (avoids a 90 MB download in CI).
+relevance._load_failed = True
 
 SAMPLE_RATE = 16000
 

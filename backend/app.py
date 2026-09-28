@@ -9,13 +9,16 @@ import threading
 from datetime import datetime, timedelta
 from functools import wraps
 from uuid import uuid4
+from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from analysis import AnalysisError, analyze_recording, warm_up
-from analysis.scoring import build_feedback
-from analysis.topic import is_topic_related
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Load API keys and settings from backend/.env before the analysis modules read them.
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
+from analysis import AnalysisError, analyze_recording, coach, llm, questions, relevance, warm_up  # noqa: E402
+from analysis.scoring import build_feedback  # noqa: E402
+
 UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", os.path.join(BASE_DIR, "uploads"))
 DB_FILE = os.getenv("DATABASE_PATH", os.path.join(BASE_DIR, "app_data.db"))
 SECRET_KEY_FILE = os.path.join(BASE_DIR, ".secret_key")
@@ -238,9 +241,23 @@ def save_analysis_record(user_id, record):
     placeholders = ", ".join("?" for _ in columns)
 
     db = get_db()
-    db.execute(f"INSERT INTO analysis_records ({', '.join(columns)}) VALUES ({placeholders})", values)
+    cursor = db.execute(f"INSERT INTO analysis_records ({', '.join(columns)}) VALUES ({placeholders})", values)
     db.commit()
-    return db.execute("SELECT COUNT(*) FROM analysis_records WHERE user_id = ?", (user_id,)).fetchone()[0]
+    count = db.execute("SELECT COUNT(*) FROM analysis_records WHERE user_id = ?", (user_id,)).fetchone()[0]
+    return cursor.lastrowid, count
+
+
+def get_user_record(user_id, record_id):
+    return get_db().execute(
+        "SELECT id, transcription, score, emotion, details FROM analysis_records WHERE id = ? AND user_id = ?",
+        (record_id, user_id),
+    ).fetchone()
+
+
+def update_record_details(record_id, details):
+    db = get_db()
+    db.execute("UPDATE analysis_records SET details = ? WHERE id = ?", (json.dumps(details), record_id))
+    db.commit()
 
 
 def discard_files(*paths):
@@ -271,11 +288,30 @@ def build_progress_note(user_id, score):
     return "Progress update: your score is stable compared to your previous attempt."
 
 
-def build_topic_note(topic, topic_related):
-    if not topic:
+def build_practice_context(form):
+    """What the speaker was answering: an interview question from the bank, or a free topic."""
+    if form.get("mode") == "interview":
+        question = questions.get_question(form.get("question_id", ""))
+        if question:
+            return {
+                "mode": "interview",
+                "prompt": question["text"],
+                "question_id": question["id"],
+                "category_label": question["category_label"],
+                "framework": question["framework"],
+            }
+    return {"mode": "topic", "prompt": form.get("topic", "").strip(), "framework": questions.FREE_TOPIC_FRAMEWORK}
+
+
+def build_topic_note(context, topic_match):
+    if topic_match is None:
         return "Topic check: no topic was provided for relevance scoring."
-    if topic_related:
-        return "Topic check: your speech appears related to the selected topic."
+    if context["mode"] == "interview":
+        if topic_match["related"]:
+            return "Relevance check: your answer addresses the question."
+        return "Relevance check: your answer doesn't seem to address the question. Answer it directly first."
+    if topic_match["related"]:
+        return "Topic check: your speech stays on the selected topic."
     return "Topic check: your speech seems off-topic. Mention more topic-specific points in your response."
 
 
@@ -373,6 +409,11 @@ def history():
     return jsonify({"history": entries, "count": len(entries)})
 
 
+@app.route("/questions", methods=["GET"])
+def question_bank():
+    return jsonify({**questions.public_bank(), "coach_available": llm.get_config() is not None})
+
+
 @app.route("/analyze", methods=["POST"])
 @login_required
 def analyze():
@@ -394,25 +435,28 @@ def analyze():
 
     metrics = result["metrics"]
     minutes, seconds = split_duration(metrics["duration"])
-    topic = request.form.get("topic", "").strip()
-    topic_related, topic_matches, topic_match_ratio = is_topic_related(topic, result["transcription"])
+    context = build_practice_context(request.form)
+    threshold = relevance.QUESTION_THRESHOLD if context["mode"] == "interview" else relevance.TOPIC_THRESHOLD
+    topic_match = relevance.topic_relevance(context["prompt"], result["transcription"], threshold)
     feedback = build_feedback(
         result["score"],
         result["delivery"],
         result["sub_scores"],
         metrics,
         progress_note=build_progress_note(g.user["id"], result["score"]),
-        topic_note=build_topic_note(topic, topic_related),
+        topic_note=build_topic_note(context, topic_match),
         warnings=result["warnings"],
     )
 
     details = {
         key: result[key] for key in ("sub_scores", "metrics", "vocal_tone", "words", "pauses", "warnings", "timings_ms")
     }
-    history_count = save_analysis_record(
+    details["context"] = context
+    details["topic_match"] = topic_match
+    record_id, history_count = save_analysis_record(
         g.user["id"],
         {
-            "topic": topic,
+            "topic": context["prompt"],
             "transcription": result["transcription"],
             "transcription_engine": result["transcription_model"],
             "duration": metrics["duration"],
@@ -435,25 +479,54 @@ def analyze():
     return jsonify(
         {
             **details,
+            "id": record_id,
             "transcription": result["transcription"],
             "transcription_engine": result["transcription_model"],
             "minutes": minutes,
             "seconds": seconds,
             "score": result["score"],
             "delivery": result["delivery"],
-            "topic_related": topic_related,
-            "topic_match_ratio": topic_match_ratio,
-            "topic_matched_words": topic_matches[:5],
             "feedback": feedback,
             "history_count": history_count,
+            "coach_available": llm.get_config() is not None,
         }
     )
+
+
+@app.route("/analyses/<int:record_id>/coach", methods=["POST"])
+@login_required
+def coach_analysis(record_id):
+    """AI feedback on the content of a saved answer. Generated once, then served from the record."""
+    record = get_user_record(g.user["id"], record_id)
+    if record is None:
+        return jsonify({"error": "Analysis not found."}), 404
+    details = json.loads(record["details"] or "{}")
+    if details.get("coach"):
+        return jsonify({"coach": details["coach"], "cached": True})
+    if "metrics" not in details:
+        return jsonify({"error": "This session was recorded before AI coaching was available."}), 409
+
+    config = llm.get_config()
+    if config is None:
+        return jsonify({"error": "The AI coach is not configured on this server.", "code": "coach_disabled"}), 503
+
+    context = details.get("context") or {"mode": "topic", "prompt": "", "framework": questions.FREE_TOPIC_FRAMEWORK}
+    analysis = {"metrics": details["metrics"], "score": record["score"], "delivery": record["emotion"]}
+    try:
+        coaching = coach.coach_answer(record["transcription"], context, analysis, config)
+    except llm.LLMError as error:
+        return jsonify({"error": error.message, "retryable": error.retryable}), error.status_code
+
+    details["coach"] = coaching
+    update_record_details(record_id, details)
+    return jsonify({"coach": coaching, "cached": False})
 
 
 def start_model_warm_up():
     def run():
         try:
             warm_up()
+            relevance.warm_up()
         except Exception:
             app.logger.exception("Model warm-up failed; models will load on the first analysis instead.")
 
