@@ -3,6 +3,7 @@ import { SKILL_LABELS, el, formatClock, initializeTheme, requestJson } from "./c
 import { getUser, initAuth, loadUser, onAuthChange, requireLogin, sessionExpired, showLogin } from "./auth.js";
 import { createCoachView } from "./coach.js";
 import { initDeckUpload } from "./deck.js";
+import { completeLoader, hideLoader, setStage, showLoader } from "./loader.js";
 import * as practice from "./practice.js";
 import { drawChart as drawProgressChart, showProgress } from "./progress.js";
 import { Recorder, fileNameFor } from "./recorder.js";
@@ -13,12 +14,22 @@ import { leaveSession, showSession } from "./session.js";
 const $ = (id) => document.getElementById(id);
 const VIEWS = ["home", "login", "practice", "progress", "session"];
 const NAV_FOR_VIEW = { home: "home", practice: "home", progress: "progress", session: "progress" };
+// Which practice buttons are visible in each state of the flow.
+const CONTROLS = {
+  idle: ["startBtn"],
+  prep: ["skipPrepBtn", "restartBtn"],
+  recording: ["stopAnalyzeBtn", "restartBtn"],
+  analyzing: [],
+  done: ["againBtn"],
+  failed: ["againBtn", "retryAnalyzeBtn"],
+};
 let catalog = null;
 let practiceResults = null;
 let practiceCoach = null;
 let audioBlob = null;
 let activeLimit = null;
 let activePrep = 0;
+let restartAfterCancel = false;
 
 const onSessionExpired = () => sessionExpired(currentPath());
 
@@ -37,7 +48,7 @@ function showView(name) {
   });
   document.querySelectorAll("[data-nav]").forEach((link) => link.classList.toggle("active", link.dataset.nav === NAV_FOR_VIEW[name]));
   if (name !== "session") leaveSession();
-  if (name !== "practice" && recorder.state !== "idle") recorder.stop();
+  if (name !== "practice" && recorder.state !== "idle") recorder.cancel();
   window.scrollTo({ top: 0 });
 }
 
@@ -66,30 +77,46 @@ function renderModeLinks() {
 
 // ---------- Practice ----------
 
-function setStatus(message) {
+function setStatus(message, isError = false) {
   $("status").textContent = message;
+  $("status").classList.toggle("status-error", isError);
+}
+
+function setControls(state) {
+  Object.values(CONTROLS).flat().forEach((id) => $(id).classList.add("hidden"));
+  CONTROLS[state].forEach((id) => $(id).classList.remove("hidden"));
+  practice.setLocked(state === "prep" || state === "recording" || state === "analyzing");
+}
+
+function setPlayer(blob) {
+  const audio = $("practiceAudio");
+  if (audio.src) URL.revokeObjectURL(audio.src);
+  if (blob) audio.src = URL.createObjectURL(blob);
+  else audio.removeAttribute("src");
+  $("practicePlayer").classList.toggle("hidden", !blob);
 }
 
 function resetAttempt() {
   audioBlob = null;
-  $("analyzeBtn").disabled = true;
-  const preview = $("audioPreview");
-  if (preview.src) URL.revokeObjectURL(preview.src);
-  preview.removeAttribute("src");
-  preview.classList.add("hidden");
+  setPlayer(null);
   $("stage").classList.add("hidden");
   practiceResults.hide();
   practiceCoach.hide();
 }
 
+function idleMessage() {
+  return getUser() ? "Set things up, then press Start recording when you're ready." : "Press Start recording to log in and begin.";
+}
+
 function openPractice(modeId) {
   showView("practice");
   const changed = practice.selectMode(modeId);
-  if (changed) resetAttempt();
-  document.querySelectorAll(".mode-pill").forEach((pill) => pill.classList.toggle("active", pill.dataset.mode === practice.currentMode().id));
-  if (recorder.state === "idle" && !audioBlob) {
-    setStatus(getUser() ? "Set things up, then press Start when you're ready." : "Press Start to log in and begin recording.");
+  if (changed) {
+    resetAttempt();
+    setControls("idle");
+    setStatus(idleMessage());
   }
+  document.querySelectorAll(".mode-pill").forEach((pill) => pill.classList.toggle("active", pill.dataset.mode === practice.currentMode().id));
 }
 
 function showStage() {
@@ -121,7 +148,8 @@ const recorder = new Recorder({
   onStart() {
     $("stageKicker").textContent = "Recording";
     $("stage").classList.add("recording");
-    setStatus("Recording... press Stop when you're done.");
+    setControls("recording");
+    setStatus("Recording... press Stop & analyze when you're done.");
   },
   onTick(elapsed) {
     if (activeLimit) updateTimer("Time left", Math.ceil(activeLimit - elapsed), elapsed / activeLimit);
@@ -131,20 +159,21 @@ const recorder = new Recorder({
     $("stage").classList.remove("recording");
     $("timerBlock").classList.add("hidden");
     $("stageKicker").textContent = "Your prompt";
-    $("startBtn").disabled = false;
-    $("stopBtn").disabled = true;
-    practice.setLocked(false);
     if (!blob) {
-      setStatus("Cancelled before recording started.");
+      setControls("idle");
+      $("stage").classList.add("hidden");
+      if (restartAfterCancel) {
+        restartAfterCancel = false;
+        startPractice();
+      } else {
+        setStatus("That take was discarded. Press Start recording when you're ready.");
+      }
       return;
     }
     audioBlob = blob;
-    const preview = $("audioPreview");
-    preview.src = URL.createObjectURL(blob);
-    preview.classList.remove("hidden");
-    $("analyzeBtn").disabled = false;
+    setPlayer(blob);
     const reachedLimit = activeLimit && elapsed >= activeLimit - 0.2;
-    setStatus(`${reachedLimit ? "Time's up" : "Recording stopped"} (${formatClock(elapsed)}). Listen back or press Analyze.`);
+    analyzeRecording(reachedLimit ? "Time's up! " : "");
   },
 });
 
@@ -152,7 +181,7 @@ async function startPractice() {
   if (!requireLogin(currentPath())) return;
   const problem = practice.validate();
   if (problem) {
-    setStatus(problem);
+    setStatus(problem, true);
     return;
   }
   practice.prepareAttempt();
@@ -160,42 +189,82 @@ async function startPractice() {
   activeLimit = limitSeconds;
   activePrep = prepSeconds;
   resetAttempt();
-  $("startBtn").disabled = true;
-  $("stopBtn").disabled = false;
-  practice.setLocked(true);
+  setControls(prepSeconds ? "prep" : "recording");
   showStage();
   updateTimer(prepSeconds ? "Thinking time" : "Time left", prepSeconds || limitSeconds || 0, 0);
   setStatus(prepSeconds ? "Think about your answer. Recording starts automatically." : "Starting...");
   try {
     await recorder.start({ prepSeconds, limitSeconds });
   } catch {
-    $("startBtn").disabled = false;
-    $("stopBtn").disabled = true;
-    practice.setLocked(false);
+    setControls("idle");
     $("stage").classList.add("hidden");
-    setStatus("Microphone access was denied. Allow it in your browser and try again.");
+    setStatus("Microphone access was denied. Allow it in your browser and try again.", true);
   }
 }
 
-async function analyzeRecording() {
+// Reads the newline-delimited JSON progress stream from /analyze?stream=1.
+async function streamAnalysis(formData) {
+  const response = await fetch("/analyze?stream=1", { method: "POST", body: formData });
+  if (!response.ok) {
+    let message = "Analysis failed. Please try again.";
+    try {
+      message = (await response.json()).error || message;
+    } catch {
+      // Not JSON (e.g. a proxy error page).
+    }
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (value) buffer += decoder.decode(value, { stream: true });
+    let newline;
+    while ((newline = buffer.indexOf("\n")) >= 0) {
+      const line = buffer.slice(0, newline).trim();
+      buffer = buffer.slice(newline + 1);
+      if (!line) continue;
+      const event = JSON.parse(line);
+      if (event.stage) setStage(event.stage);
+      if (event.result) return event.result;
+      if (event.error) {
+        const error = new Error(event.error);
+        error.status = event.status;
+        throw error;
+      }
+    }
+    if (done) throw new Error("The analysis ended unexpectedly. Please try again.");
+  }
+}
+
+async function analyzeRecording(prefix = "") {
   if (!audioBlob) return;
-  setStatus("Analyzing your speech...");
-  $("analyzeBtn").disabled = true;
+  setControls("analyzing");
+  setStatus(`${prefix}Analyzing your speech...`);
+  showLoader(audioBlob);
   try {
     const formData = new FormData();
     formData.append("audio", audioBlob, fileNameFor(audioBlob));
     Object.entries(practice.formFields()).forEach(([key, value]) => formData.append(key, value));
-    const result = await requestJson("/analyze", { method: "POST", body: formData });
+    const result = await streamAnalysis(formData);
+    await completeLoader();
     practiceResults.render(result, practice.currentMode());
-    setStatus("Analysis complete. It's saved to My progress, where you can replay it any time.");
+    setControls("done");
+    setStatus("Done! This session is saved to My progress, where you can replay it any time.");
     if (result.coach_available) practiceCoach.request(result.id);
     else practiceCoach.hide();
-    practiceResults.root.scrollIntoView({ behavior: "smooth", block: "start" });
+    $("practicePlayer").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
+    hideLoader();
     if (error.status === 401) return onSessionExpired();
-    setStatus(error.message);
-  } finally {
-    $("analyzeBtn").disabled = !audioBlob;
+    // A recording with no usable speech can't be fixed by retrying; anything else might be temporary.
+    const retryable = ![400, 422].includes(error.status);
+    setControls("failed");
+    $("retryAnalyzeBtn").classList.toggle("hidden", !retryable);
+    setStatus(error.message, true);
   }
 }
 
@@ -222,9 +291,7 @@ fallback(() => navigate("/"));
 
 onAuthChange((user) => {
   if (!user && ["/progress", "/session"].some((prefix) => currentPath().startsWith(prefix))) navigate("/");
-  if (!$("view-practice").classList.contains("hidden") && recorder.state === "idle" && !audioBlob) {
-    setStatus(user ? "Set things up, then press Start when you're ready." : "Press Start to log in and begin recording.");
-  }
+  if (!$("view-practice").classList.contains("hidden") && recorder.state === "idle" && !audioBlob) setStatus(idleMessage());
 });
 
 // ---------- Start-up ----------
@@ -236,8 +303,14 @@ document.querySelectorAll("[data-scroll]").forEach((link) => {
   });
 });
 $("startBtn").addEventListener("click", startPractice);
-$("stopBtn").addEventListener("click", () => recorder.stop());
-$("analyzeBtn").addEventListener("click", analyzeRecording);
+$("skipPrepBtn").addEventListener("click", () => recorder.skipPrep());
+$("stopAnalyzeBtn").addEventListener("click", () => recorder.stop());
+$("restartBtn").addEventListener("click", () => {
+  restartAfterCancel = true;
+  recorder.cancel();
+});
+$("againBtn").addEventListener("click", startPractice);
+$("retryAnalyzeBtn").addEventListener("click", () => analyzeRecording());
 window.addEventListener("resize", () => {
   redrawCharts();
   drawProgressChart();
@@ -259,7 +332,7 @@ Promise.all([loadUser(), practice.loadCatalog()])
   .then(([, loaded]) => {
     catalog = loaded;
     renderModeLinks();
-    practice.initPractice();
+    practice.initPractice({ requireLogin: () => requireLogin(currentPath()), onSessionExpired });
     initDeckUpload({
       getTopicAndTarget: practice.presentationContext,
       requireLogin: () => requireLogin(currentPath()),
@@ -267,6 +340,7 @@ Promise.all([loadUser(), practice.loadCatalog()])
     });
     practiceResults = createResultView($("practiceResults"));
     practiceCoach = createCoachView($("practiceCoach"), onSessionExpired);
+    setControls("idle");
     startRouter();
   })
   .catch(() => {

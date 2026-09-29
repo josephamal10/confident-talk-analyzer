@@ -51,10 +51,18 @@ export class Recorder {
     return this.startedAt ? (performance.now() - this.startedAt) / 1000 : 0;
   }
 
+  // Ends the thinking-time countdown early and starts recording now.
+  skipPrep() {
+    if (this.state !== "prep") return;
+    clearInterval(this.timer);
+    this.beginRecording();
+  }
+
   // Stopping during the countdown cancels without recording anything.
   stop() {
     clearInterval(this.timer);
     if (this.state === "prep") {
+      this.discard = false;
       this.releaseMicrophone();
       this.state = "idle";
       this.handlers.onStop?.(null, 0);
@@ -65,9 +73,16 @@ export class Recorder {
     }
   }
 
+  // Stops and throws the recording away (onStop receives no blob).
+  cancel() {
+    this.discard = true;
+    this.stop();
+  }
+
   finish() {
     const type = this.mediaRecorder.mimeType || "audio/webm";
-    const blob = new Blob(this.chunks, { type });
+    const blob = this.discard ? null : new Blob(this.chunks, { type });
+    this.discard = false;
     this.releaseMicrophone();
     this.state = "idle";
     this.startedAt = null;

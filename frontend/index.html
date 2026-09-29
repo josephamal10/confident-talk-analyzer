@@ -164,6 +164,16 @@
             </div>
           </div>
 
+          <div id="roleBlock" class="hidden">
+            <label for="roleInput">Role you're preparing for (optional)</label>
+            <div class="input-with-action">
+              <input type="text" id="roleInput" list="roleOptions" maxlength="80" placeholder="Type or pick a role, e.g. Data analyst">
+              <button type="button" class="btn-outline" id="roleQuestionsBtn">Get questions for this role</button>
+            </div>
+            <datalist id="roleOptions"></datalist>
+            <p class="result-meta" id="roleStatus">The AI coach will judge your answers as an interviewer for this role.</p>
+          </div>
+
           <div id="questionBlock" class="hidden">
             <label for="questionCategory">Question type</label>
             <select id="questionCategory"></select>
@@ -279,14 +289,20 @@
           </div>
         </div>
 
-        <div class="record-box">
-          <button id="startBtn" class="btn-primary" type="button">Start</button>
-          <button id="stopBtn" class="btn-muted" type="button" disabled>Stop</button>
+        <div class="controls" id="controls">
+          <button id="startBtn" class="btn-primary btn-record" type="button"><span class="rec-dot"></span>Start recording</button>
+          <button id="skipPrepBtn" class="btn-primary hidden" type="button">I'm ready, start now</button>
+          <button id="stopAnalyzeBtn" class="btn-primary btn-stop hidden" type="button"><span class="stop-square"></span>Stop &amp; analyze</button>
+          <button id="restartBtn" class="btn-muted hidden" type="button">↺ Start over</button>
+          <button id="againBtn" class="btn-primary hidden" type="button">↺ Do it again</button>
+          <button id="retryAnalyzeBtn" class="btn-muted hidden" type="button">Retry analysis</button>
         </div>
         <p id="status"></p>
-        <audio id="audioPreview" class="hidden" controls></audio>
-        <button id="analyzeBtn" class="btn-primary" type="button" disabled>Analyze</button>
 
+        <div class="recording-player hidden" id="practicePlayer">
+          <p class="kicker">Your recording</p>
+          <audio id="practiceAudio" controls></audio>
+        </div>
         <div id="practiceResults"></div>
         <div id="practiceCoach"></div>
       </div>
@@ -351,6 +367,19 @@
       </div>
     </section>
   </main>
+
+  <!-- Shown while a recording is analyzed -->
+  <div class="loader-overlay hidden" id="loader" role="status" aria-live="polite">
+    <div class="loader-card">
+      <div class="loader-head">
+        <p class="kicker">Analyzing your speech</p>
+        <span class="loader-clock" id="loaderClock">0s</span>
+      </div>
+      <div class="wave" id="loaderWave" aria-hidden="true"></div>
+      <ol class="loader-stages" id="loaderStages"></ol>
+      <p class="loader-tip tip-in" id="loaderTip"></p>
+    </div>
+  </div>
 
   <!-- Results and coach panels, reused by the practice and session views -->
   <template id="resultTemplate">

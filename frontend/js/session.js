@@ -39,7 +39,8 @@ export async function showSession(id, catalog, onSessionExpired) {
   if (id !== currentId) return;
 
   const mode = catalog.modes.find((item) => item.id === session.mode) || catalog.modes[0];
-  $("sessionKicker").textContent = `${mode.label} · ${formatDateLabel(session.timestamp, true)}`;
+  const role = session.context?.role ? ` · ${session.context.role}` : "";
+  $("sessionKicker").textContent = `${mode.label}${role} · ${formatDateLabel(session.timestamp, true)}`;
   $("sessionTitle").textContent = session.topic || "Free speaking";
 
   if (session.audio_url) {
