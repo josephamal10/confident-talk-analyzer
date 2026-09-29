@@ -32,11 +32,13 @@ def warm_up():
     emotion.get_session()
 
 
-def analyze_recording(path):
+def analyze_recording(path, on_stage=None):
     """Returns the transcript with a per-word timeline plus timing, pitch and vocal-tone measurements.
 
-    Raises AnalysisError when the file can't be decoded or contains no usable speech.
+    `on_stage(name)` is called as each stage starts (decode, transcribe, prosody, tone), so callers can
+    report progress. Raises AnalysisError when the file can't be decoded or contains no usable speech.
     """
+    report = on_stage or (lambda _stage: None)
     timings = {}
     started = time.perf_counter()
 
@@ -46,6 +48,7 @@ def analyze_recording(path):
         timings[stage] = round((now - started) * 1000)
         started = now
 
+    report("decode")
     try:
         audio = load_audio(path)
     except Exception as error:
@@ -56,11 +59,13 @@ def analyze_recording(path):
     if sum(end - start for start, end in speech_regions) < MIN_SPEECH_SECONDS:
         raise AnalysisError("No speech was detected. Check your microphone and try again.", 422)
 
+    report("transcribe")
     text, words = transcription.transcribe(audio)
     lap("transcription")
     if not words:
         raise AnalysisError("Your speech could not be transcribed. Please speak clearly and try again.", 422)
 
+    report("prosody")
     filler_spans = find_filler_spans([word["text"] for word in words])
     filler_indexes = {index for span in filler_spans for index in span}
     for index, word in enumerate(words):
@@ -76,6 +81,7 @@ def analyze_recording(path):
     track = pitch_track(speech_audio)
     uptalk = detect_uptalk(words, track, offset)
     lap("pitch")
+    report("tone")
     vocal_tone = emotion.predict_vocal_tone(speech_audio)
     lap("emotion")
     timeline = build_timeline(

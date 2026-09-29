@@ -3,6 +3,8 @@ draws its content from prompts.json, so adding a situation is a config change ra
 import json
 import os
 
+from . import interview
+
 _DIR = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -89,8 +91,15 @@ def build_context(form):
 
     if prompt_config["kind"] == "question":
         question = INTERVIEW_QUESTIONS.get(prompt_id)
+        question_type = form.get("question_type")
+        role = interview.clean_role(form.get("role"))
+        if role:
+            context["role"] = role
         if custom_prompt:
-            context.update(prompt=custom_prompt, framework=FRAMEWORKS["PREP"])
+            # A typed question, or one generated for the user's role (which sends its type along).
+            context.update(prompt=custom_prompt, framework=FRAMEWORKS[interview.framework_key(question_type)])
+            if question_type in interview.TYPE_LABELS:
+                context["category_label"] = interview.TYPE_LABELS[question_type]
         elif question:
             context.update(
                 prompt=question["text"],
@@ -153,6 +162,7 @@ def public_catalog():
             }
             for category in _PROMPTS["interview"]
         ],
+        "roles": interview.COMMON_ROLES,
         "banks": {
             bank: [{"id": item_id, "text": text} for item_id, text in BANK_ITEMS[bank].items()] for bank in TOPIC_BANKS
         },

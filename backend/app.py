@@ -2,6 +2,7 @@ from flask import Flask, g, jsonify, redirect, request, send_from_directory, ses
 import json
 import logging
 import os
+import queue
 import re
 import secrets
 import sqlite3
@@ -17,7 +18,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Load API keys and settings from backend/.env before the analysis modules read them.
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-from analysis import AnalysisError, analyze_recording, coach, evaluation, llm, modes, relevance, slides, warm_up  # noqa: E402
+from analysis import AnalysisError, analyze_recording, coach, evaluation, interview, llm, modes, relevance, slides, warm_up  # noqa: E402
 from analysis.scoring import build_feedback  # noqa: E402
 import progress  # noqa: E402
 
@@ -66,6 +67,13 @@ CREATE TABLE IF NOT EXISTS analysis_records (
 );
 
 CREATE INDEX IF NOT EXISTS idx_analysis_records_user ON analysis_records (user_id, created_at);
+
+CREATE TABLE IF NOT EXISTS role_questions (
+    role_key TEXT PRIMARY KEY,
+    role TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    questions TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS decks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -482,31 +490,25 @@ def mode_catalog():
     return jsonify({**modes.public_catalog(), "coach_available": llm.get_config() is not None})
 
 
-@app.route("/analyze", methods=["POST"])
-@login_required
-def analyze():
-    file = request.files.get("audio")
-    if not file:
-        return jsonify({"error": "Audio file is required."}), 400
+def run_analysis(user_id, form, audio_path, audio_filename, report=lambda _stage: None):
+    """Analyzes a saved upload, stores the session and returns the /analyze payload.
 
-    original_ext = os.path.splitext(file.filename or "")[1].lower() or ".webm"
-    unique_id = f"{datetime.utcnow().strftime('%Y%m%dT%H%M%S')}_{uuid4().hex[:8]}"
-    audio_filename = f"{unique_id}{original_ext}"
-    audio_path = os.path.join(UPLOAD_FOLDER, audio_filename)
-    file.save(audio_path)
-
+    `report(stage)` receives progress (decode, transcribe, prosody, tone, score). Raises AnalysisError
+    after discarding the upload when the recording is unusable.
+    """
     try:
-        base = analyze_recording(audio_path)
-    except AnalysisError as error:
+        base = analyze_recording(audio_path, report)
+    except AnalysisError:
         discard_files(audio_path)
-        return jsonify({"error": error.message}), error.status_code
+        raise
 
-    context = modes.build_context(request.form)
+    report("score")
+    context = modes.build_context(form)
     mode = modes.get_mode(context["mode"])
     deck = None
-    deck_id = parse_int(request.form.get("deck_id"))
+    deck_id = parse_int(form.get("deck_id"))
     if mode["prompt"].get("slides") and deck_id:
-        deck_row = get_user_deck(g.user["id"], deck_id)
+        deck_row = get_user_deck(user_id, deck_id)
         if deck_row:
             deck = json.loads(deck_row["content"])
             context["deck"] = {
@@ -523,7 +525,7 @@ def analyze():
         result["delivery"],
         result["sub_scores"],
         metrics,
-        progress_note=build_progress_note(g.user["id"], result["score"]),
+        progress_note=build_progress_note(user_id, result["score"]),
         topic_note=build_topic_note(context, result["topic_match"]),
         warnings=result["warnings"],
     )
@@ -537,7 +539,7 @@ def analyze():
         "context": context,
     }
     record_id, history_count = save_analysis_record(
-        g.user["id"],
+        user_id,
         {
             "topic": context["prompt"],
             "transcription": base["transcription"],
@@ -559,7 +561,91 @@ def analyze():
             "mode": context["mode"],
         },
     )
-    return jsonify({**session_payload(get_user_record(g.user["id"], record_id)), "history_count": history_count})
+    return {**session_payload(get_user_record(user_id, record_id)), "history_count": history_count}
+
+
+def stream_analysis(user_id, form, audio_path, audio_filename):
+    """Streams newline-delimited JSON: {"stage": ...} as each analysis stage starts, then a final
+    {"result": ...} or {"error": ..., "status": ...}. The analysis runs in a worker thread so progress
+    can be sent while it works."""
+    events = queue.Queue()
+
+    def work():
+        with app.app_context():
+            try:
+                result = run_analysis(user_id, form, audio_path, audio_filename, lambda stage: events.put({"stage": stage}))
+                events.put({"result": result})
+            except AnalysisError as error:
+                events.put({"error": error.message, "status": error.status_code})
+            except Exception:
+                app.logger.exception("Analysis failed.")
+                events.put({"error": "Something went wrong while analyzing. Please try again.", "status": 500})
+            finally:
+                events.put(None)
+
+    threading.Thread(target=work, name="analysis", daemon=True).start()
+
+    def generate():
+        while (event := events.get()) is not None:
+            yield json.dumps(event) + "\n"
+
+    return app.response_class(
+        generate(), mimetype="application/x-ndjson", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    )
+
+
+@app.route("/analyze", methods=["POST"])
+@login_required
+def analyze():
+    """Analyzes a recording. Add ?stream=1 to receive live progress as newline-delimited JSON."""
+    file = request.files.get("audio")
+    if not file:
+        return jsonify({"error": "Audio file is required."}), 400
+
+    original_ext = os.path.splitext(file.filename or "")[1].lower() or ".webm"
+    unique_id = f"{datetime.utcnow().strftime('%Y%m%dT%H%M%S')}_{uuid4().hex[:8]}"
+    audio_filename = f"{unique_id}{original_ext}"
+    audio_path = os.path.join(UPLOAD_FOLDER, audio_filename)
+    file.save(audio_path)
+    form = request.form.to_dict()
+
+    if request.args.get("stream") == "1":
+        return stream_analysis(g.user["id"], form, audio_path, audio_filename)
+    try:
+        return jsonify(run_analysis(g.user["id"], form, audio_path, audio_filename))
+    except AnalysisError as error:
+        return jsonify({"error": error.message}), error.status_code
+
+
+@app.route("/interview/questions", methods=["POST"])
+@login_required
+def interview_questions():
+    """Questions for the role the user is preparing for: AI-generated and cached per role, or a
+    built-in set when no LLM is available."""
+    role = interview.clean_role((request.get_json(silent=True) or {}).get("role"))
+    if not role:
+        return jsonify({"error": "Type the role you're preparing for, e.g. Data analyst."}), 400
+
+    db = get_db()
+    cached = db.execute("SELECT questions FROM role_questions WHERE role_key = ?", (role.lower(),)).fetchone()
+    if cached:
+        return jsonify({"role": role, "questions": json.loads(cached["questions"]), "source": "ai", "cached": True})
+
+    questions, config = None, llm.get_config()
+    if config:
+        try:
+            questions = interview.generate_questions(role, config)
+        except llm.LLMError as error:
+            app.logger.warning("Role questions for %r fell back to the built-in set: %s", role, error.message)
+    if not questions:
+        return jsonify({"role": role, "questions": interview.fallback_questions(role), "source": "built-in", "cached": False})
+
+    db.execute(
+        "INSERT OR REPLACE INTO role_questions (role_key, role, created_at, questions) VALUES (?, ?, ?, ?)",
+        (role.lower(), role, current_timestamp(), json.dumps(questions)),
+    )
+    db.commit()
+    return jsonify({"role": role, "questions": questions, "source": "ai", "cached": False})
 
 
 @app.route("/analyses/<int:record_id>", methods=["GET"])

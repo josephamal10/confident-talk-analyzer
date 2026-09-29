@@ -68,7 +68,7 @@ def upload(data=b"fake audio", **fields):
 
 
 def analyze(client, monkeypatch, **fields):
-    monkeypatch.setattr(app_module, "analyze_recording", lambda path: FAKE_BASE)
+    monkeypatch.setattr(app_module, "analyze_recording", lambda path, report=None: FAKE_BASE)
     return client.post("/analyze", data=upload(**fields)).get_json()
 
 
@@ -144,7 +144,7 @@ def test_jam_mode_returns_referee(client, make_user, monkeypatch):
 
 
 def test_analysis_errors_are_returned_and_upload_discarded(client, make_user, monkeypatch):
-    def reject(path):
+    def reject(path, report=None):
         raise AnalysisError("No speech was detected.", 422)
 
     monkeypatch.setattr(app_module, "analyze_recording", reject)

@@ -120,6 +120,11 @@ def build_messages(transcript, context, analysis, coach_config=None, dimensions=
         lines.append(f"{context.get('prompt_label', 'Topic')}{category}: {context['prompt']}")
     else:
         lines.append("No set topic or question (set on_topic to true).")
+    if context.get("role"):
+        lines.append(
+            f"The speaker is preparing for a job interview as: {context['role']}. "
+            "Judge the answer the way an interviewer hiring for that role would."
+        )
     if context.get("side"):
         lines.append(f"The speaker argues {context['side'].upper()} the motion.")
     if context.get("target_seconds"):
