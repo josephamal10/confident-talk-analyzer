@@ -1,11 +1,12 @@
-// Progress page: stats, focus areas, skill trends and session history, filterable by mode.
-import { el, formatDateLabel, formatDuration, initializeTheme, postJson, requestJson } from "./common.js";
+// Progress view: stats, focus areas, skill trends and a clickable session history, filterable by mode.
+import { el, formatDateLabel, formatDuration, requestJson } from "./common.js";
 import { drawLineChart } from "./charts.js";
 
 const $ = (id) => document.getElementById(id);
 let history = [];
 let modeLabels = {};
 let activeMode = null;
+let onSessionExpired = () => {};
 
 function filtered() {
   return activeMode ? history.filter((entry) => (entry.mode || "free") === activeMode) : history;
@@ -20,7 +21,7 @@ function renderFilter(summary) {
     button.type = "button";
     button.addEventListener("click", () => {
       activeMode = option.id;
-      loadProgress();
+      loadSummary();
     });
     container.appendChild(button);
   });
@@ -30,7 +31,7 @@ function renderSkills(skills) {
   const container = $("skillList");
   container.textContent = "";
   if (!skills.length) {
-    container.appendChild(el("p", "result-meta", "Skill scores appear after your first analysis with the new modes."));
+    container.appendChild(el("p", "result-meta", "Skill scores appear after your first analysed session."));
     return;
   }
   skills.forEach((skill) => {
@@ -60,7 +61,7 @@ function renderFocus(summary) {
     list.appendChild(li);
   });
   $("suggestionText").textContent = `Next: ${summary.suggestion.label}. ${summary.suggestion.reason}`;
-  $("suggestionLink").href = `/?mode=${encodeURIComponent(summary.suggestion.mode)}`;
+  $("suggestionLink").href = `#/practice/${encodeURIComponent(summary.suggestion.mode)}`;
   $("suggestionLink").textContent = `Practise ${summary.suggestion.label}`;
 }
 
@@ -69,34 +70,32 @@ function renderHistory() {
   const list = $("historyList");
   list.textContent = "";
   if (!entries.length) {
-    $("historySummary").textContent = "No sessions yet. Go back and record your first one.";
+    $("historySummary").textContent = "No sessions yet. Pick a practice mode and record your first one.";
   } else {
-    const first = Number(entries[0].score) || 0;
-    const latest = Number(entries[entries.length - 1].score) || 0;
-    const delta = +(latest - first).toFixed(1);
+    const delta = +((Number(entries[entries.length - 1].score) || 0) - (Number(entries[0].score) || 0)).toFixed(1);
     $("historySummary").textContent = `Trend since your first session: ${delta > 0 ? "+" : ""}${delta}`;
   }
   entries
-    .slice(-10)
+    .slice()
     .reverse()
     .forEach((entry) => {
-      const item = el("div", "history-item");
+      const item = el("a", "history-item history-link");
+      item.href = `#/session/${entry.id}`;
       const mode = modeLabels[entry.mode || "free"] || "Free practice";
+      const title = el("p", "", `${formatDateLabel(entry.timestamp, true)} · ${mode} · ${entry.score}/10 · ${entry.delivery}`);
+      if (entry.has_audio) title.appendChild(el("span", "audio-badge", "▶ recording"));
+      const fillers = `${entry.filler_count} filler${entry.filler_count === 1 ? "" : "s"}`;
       item.append(
-        el("p", "", `${formatDateLabel(entry.timestamp, true)} · ${mode} · ${entry.score}/10 · ${entry.delivery}`),
-        el(
-          "p",
-          "meta",
-          `${entry.topic ? `${entry.topic} · ` : ""}${formatDuration(entry.minutes, entry.seconds)} · ${entry.wpm} WPM · ` +
-            `${entry.filler_count} filler${entry.filler_count === 1 ? "" : "s"}`
-        )
+        title,
+        el("p", "meta", `${entry.topic ? `${entry.topic} · ` : ""}${formatDuration(entry.minutes, entry.seconds)} · ${entry.wpm} WPM · ${fillers}`)
       );
       list.appendChild(item);
     });
   drawChart();
 }
 
-function drawChart() {
+export function drawChart() {
+  if (document.getElementById("view-progress").classList.contains("hidden")) return;
   const entries = filtered();
   drawLineChart($("progressChart"), {
     values: entries.map((entry) => Number(entry.score) || 0),
@@ -109,7 +108,7 @@ function drawChart() {
   });
 }
 
-async function loadProgress() {
+async function loadSummary() {
   try {
     const query = activeMode ? `?mode=${encodeURIComponent(activeMode)}` : "";
     const summary = await requestJson(`/progress${query}`);
@@ -123,37 +122,22 @@ async function loadProgress() {
     renderSkills(summary.skills);
     renderHistory();
   } catch (error) {
-    if (error.status === 401) window.location.href = "/";
+    if (error.status === 401) onSessionExpired();
     else $("historySummary").textContent = error.message || "Unable to load your progress right now.";
   }
 }
 
-async function bootstrap() {
-  let user;
+export async function showProgress(user, sessionExpiredHandler) {
+  onSessionExpired = sessionExpiredHandler;
+  $("progressTitle").textContent = `${user.name || "Speaker"}'s progress`;
+  $("historySummary").textContent = "Loading your sessions...";
   try {
-    user = (await requestJson("/me")).user;
-  } catch {
-    window.location.href = "/";
+    history = (await requestJson("/history")).history;
+  } catch (error) {
+    if (error.status === 401) return onSessionExpired();
+    $("historySummary").textContent = error.message;
     return;
   }
-  $("trackerUser").textContent = `${user.name || "Speaker"}'s progress`;
-  history = (await requestJson("/history")).history;
   history.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-  loadProgress();
+  loadSummary();
 }
-
-$("backBtn").addEventListener("click", () => {
-  window.location.href = "/";
-});
-$("logoutBtn").addEventListener("click", async () => {
-  try {
-    await postJson("/logout", {});
-  } catch {
-    // Return to the login screen even if the request failed.
-  }
-  window.location.href = "/";
-});
-window.addEventListener("resize", drawChart);
-
-initializeTheme($("themeToggle"), drawChart);
-bootstrap();

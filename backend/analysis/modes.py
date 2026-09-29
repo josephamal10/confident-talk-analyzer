@@ -136,7 +136,7 @@ def public_catalog():
                 "prompt": mode["prompt"],
                 "timer": mode["timer"],
                 "framework": FRAMEWORKS.get(mode["framework"]) if mode["framework"] not in (None, "category") else None,
-                "skills": list(mode["weights"]),
+                "skills": sorted(mode["weights"], key=lambda skill: -mode["weights"][skill]),
                 "coached": mode.get("coach") is not None,
             }
             for mode in _CONFIG["modes"]

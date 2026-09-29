@@ -1,97 +1,95 @@
-// Analyzer page: sign-in, practice setup, recording, analysis and coaching.
-import { formatClock, initializeTheme, postJson, requestJson } from "./common.js";
-import { hideCoach, initCoach, requestCoaching } from "./coach.js";
+// Single-page app: views, routes, and the practice flow (setup -> record -> analyze -> coach).
+import { SKILL_LABELS, el, formatClock, initializeTheme, requestJson } from "./common.js";
+import { getUser, initAuth, loadUser, onAuthChange, requireLogin, sessionExpired, showLogin } from "./auth.js";
+import { createCoachView } from "./coach.js";
+import { initDeckUpload } from "./deck.js";
 import * as practice from "./practice.js";
+import { drawChart as drawProgressChart, showProgress } from "./progress.js";
 import { Recorder, fileNameFor } from "./recorder.js";
-import { drawTimeline, renderResults } from "./results.js";
+import { createResultView, redrawCharts } from "./results.js";
+import { currentPath, fallback, navigate, route, startRouter } from "./router.js";
+import { leaveSession, showSession } from "./session.js";
 
 const $ = (id) => document.getElementById(id);
+const VIEWS = ["home", "login", "practice", "progress", "session"];
+const NAV_FOR_VIEW = { home: "home", practice: "home", progress: "progress", session: "progress" };
+let catalog = null;
+let practiceResults = null;
+let practiceCoach = null;
 let audioBlob = null;
-let practiceReady = false;
+let activeLimit = null;
+let activePrep = 0;
 
-// ---------- Sign-in ----------
+const onSessionExpired = () => sessionExpired(currentPath());
 
-function setAuthStatus(message, type = "") {
-  const status = $("authStatus");
-  status.className = "status-line";
-  if (type === "error") status.classList.add("status-error");
-  if (type === "ok") status.classList.add("status-ok");
-  status.textContent = message;
-}
+// ---------- Views ----------
 
-function setActiveTab(tabName) {
-  document.querySelectorAll(".tab-btn").forEach((button, index) => {
-    const active = button.dataset.tab === tabName;
-    button.classList.toggle("active", active);
-    if (active) $("tabGlider").style.transform = `translateX(${index * 100}%)`;
+function showView(name) {
+  VIEWS.forEach((view) => {
+    const section = $(`view-${view}`);
+    const active = view === name;
+    section.classList.toggle("hidden", !active);
+    if (active) {
+      section.classList.remove("view-enter");
+      void section.offsetWidth; // restart the enter animation
+      section.classList.add("view-enter");
+    }
   });
-  $("loginForm").classList.toggle("active", tabName === "login");
-  $("registerForm").classList.toggle("active", tabName === "register");
-  setAuthStatus("");
+  document.querySelectorAll("[data-nav]").forEach((link) => link.classList.toggle("active", link.dataset.nav === NAV_FOR_VIEW[name]));
+  if (name !== "session") leaveSession();
+  if (name !== "practice" && recorder.state !== "idle") recorder.stop();
+  window.scrollTo({ top: 0 });
 }
 
-function updatePasswordStrength() {
-  const password = $("registerPassword").value;
-  const score = [password.length >= 8, /[A-Z]/.test(password), /[0-9]/.test(password), /[^A-Za-z0-9]/.test(password)].filter(Boolean).length;
-  const bar = $("strengthBar");
-  bar.style.width = ["20%", "35%", "60%", "80%", "100%"][score];
-  bar.style.backgroundColor = ["#ef4444", "#f97316", "#f59e0b", "#3b82f6", "#1d4ed8"][score];
-  $("strengthLabel").textContent = `Password strength: ${["weak", "fair", "good", "strong", "excellent"][score]}`;
+function renderModeLinks() {
+  const grid = $("modeGrid");
+  const switcher = $("modeSwitcher");
+  grid.textContent = "";
+  switcher.textContent = "";
+  catalog.modes.forEach((mode, index) => {
+    const card = el("a", "mode-card");
+    card.href = `#/practice/${mode.id}`;
+    card.style.setProperty("--i", index);
+    card.append(
+      el("span", "mode-card-title", mode.label),
+      el("span", "mode-card-tagline", mode.tagline),
+      el("span", "mode-card-skills", mode.skills.slice(0, 3).map((skill) => SKILL_LABELS[skill]).join(" · "))
+    );
+    grid.appendChild(card);
+
+    const pill = el("a", "mode-pill", mode.label);
+    pill.href = `#/practice/${mode.id}`;
+    pill.dataset.mode = mode.id;
+    switcher.appendChild(pill);
+  });
 }
 
-async function showApp(user) {
-  $("welcomeUser").textContent = user?.name || "Speaker";
-  $("authShell").classList.add("hidden");
-  $("appShell").classList.remove("hidden");
-  if (!practiceReady) {
-    try {
-      await practice.loadCatalog();
-      practice.initPractice(onModeChange);
-      practiceReady = true;
-    } catch {
-      setStatus("Could not load practice modes. Refresh the page to try again.");
-      return;
-    }
-    // The progress page links here with ?mode=... to suggest what to practise next.
-    const requested = new URLSearchParams(window.location.search).get("mode");
-    if (requested) {
-      practice.selectMode(requested);
-      window.history.replaceState(null, "", window.location.pathname);
-    }
-  }
-  setStatus("Pick a mode, then press Start.");
-}
-
-function showAuth() {
-  $("appShell").classList.add("hidden");
-  $("authShell").classList.remove("hidden");
-}
-
-function handleSessionExpired() {
-  showAuth();
-  setAuthStatus("Your session has expired. Please log in again.", "error");
-}
-
-// ---------- Recording ----------
+// ---------- Practice ----------
 
 function setStatus(message) {
   $("status").textContent = message;
 }
 
-function onModeChange() {
-  $("stage").classList.add("hidden");
-  $("resultPanel").classList.add("hidden");
-  hideCoach();
-  resetRecording();
-}
-
-function resetRecording() {
+function resetAttempt() {
   audioBlob = null;
   $("analyzeBtn").disabled = true;
   const preview = $("audioPreview");
   if (preview.src) URL.revokeObjectURL(preview.src);
   preview.removeAttribute("src");
   preview.classList.add("hidden");
+  $("stage").classList.add("hidden");
+  practiceResults.hide();
+  practiceCoach.hide();
+}
+
+function openPractice(modeId) {
+  showView("practice");
+  const changed = practice.selectMode(modeId);
+  if (changed) resetAttempt();
+  document.querySelectorAll(".mode-pill").forEach((pill) => pill.classList.toggle("active", pill.dataset.mode === practice.currentMode().id));
+  if (recorder.state === "idle" && !audioBlob) {
+    setStatus(getUser() ? "Set things up, then press Start when you're ready." : "Press Start to log in and begin recording.");
+  }
 }
 
 function showStage() {
@@ -102,6 +100,10 @@ function showStage() {
   $("stagePrompt").classList.toggle("hidden", !content.text);
   $("teleprompter").textContent = content.script || "";
   $("teleprompter").classList.toggle("hidden", !content.script);
+  const slides = $("stageSlides");
+  slides.textContent = "";
+  (content.slides || []).forEach((title) => slides.appendChild(el("li", "", title)));
+  slides.classList.toggle("hidden", !content.slides);
   $("timerBlock").classList.remove("hidden");
 }
 
@@ -110,9 +112,6 @@ function updateTimer(label, seconds, fraction) {
   $("timerDisplay").textContent = formatClock(seconds);
   $("timerBar").style.width = `${Math.min(100, Math.max(0, fraction * 100))}%`;
 }
-
-let activeLimit = null;
-let activePrep = 0;
 
 const recorder = new Recorder({
   onPrep(remaining) {
@@ -150,6 +149,7 @@ const recorder = new Recorder({
 });
 
 async function startPractice() {
+  if (!requireLogin(currentPath())) return;
   const problem = practice.validate();
   if (problem) {
     setStatus(problem);
@@ -159,9 +159,7 @@ async function startPractice() {
   const { prepSeconds, limitSeconds } = practice.timerSettings();
   activeLimit = limitSeconds;
   activePrep = prepSeconds;
-  resetRecording();
-  $("resultPanel").classList.add("hidden");
-  hideCoach();
+  resetAttempt();
   $("startBtn").disabled = true;
   $("stopBtn").disabled = false;
   practice.setLocked(true);
@@ -188,98 +186,89 @@ async function analyzeRecording() {
     formData.append("audio", audioBlob, fileNameFor(audioBlob));
     Object.entries(practice.formFields()).forEach(([key, value]) => formData.append(key, value));
     const result = await requestJson("/analyze", { method: "POST", body: formData });
-    renderResults(result, practice.currentMode());
-    setStatus("Analysis complete.");
-    if (result.coach_available) requestCoaching(result.id, handleSessionExpired);
-    else hideCoach();
-    $("resultPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    practiceResults.render(result, practice.currentMode());
+    setStatus("Analysis complete. It's saved to My progress, where you can replay it any time.");
+    if (result.coach_available) practiceCoach.request(result.id);
+    else practiceCoach.hide();
+    practiceResults.root.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
-    if (error.status === 401) {
-      handleSessionExpired();
-      return;
-    }
+    if (error.status === 401) return onSessionExpired();
     setStatus(error.message);
   } finally {
     $("analyzeBtn").disabled = !audioBlob;
   }
 }
 
-// ---------- Wiring ----------
+// ---------- Routes ----------
 
-document.querySelectorAll(".tab-btn").forEach((button) => button.addEventListener("click", () => setActiveTab(button.dataset.tab)));
-document.querySelectorAll(".ghost-icon").forEach((button) => {
-  button.addEventListener("click", () => {
-    const input = $(button.dataset.toggle);
-    const show = input.type === "password";
-    input.type = show ? "text" : "password";
-    button.textContent = show ? "Hide" : "Show";
+route("/", () => showView("home"));
+route("/login", (_params, query) => {
+  if (getUser()) return navigate(query.get("next") || "/");
+  showLogin(query);
+  showView("login");
+});
+route("/practice/:mode", ({ mode }) => openPractice(mode));
+route("/progress", () => {
+  if (!requireLogin("/progress")) return;
+  showView("progress");
+  showProgress(getUser(), onSessionExpired);
+});
+route("/session/:id", ({ id }) => {
+  if (!requireLogin(`/session/${id}`)) return;
+  showView("session");
+  showSession(Number(id), catalog, onSessionExpired);
+});
+fallback(() => navigate("/"));
+
+onAuthChange((user) => {
+  if (!user && ["/progress", "/session"].some((prefix) => currentPath().startsWith(prefix))) navigate("/");
+  if (!$("view-practice").classList.contains("hidden") && recorder.state === "idle" && !audioBlob) {
+    setStatus(user ? "Set things up, then press Start when you're ready." : "Press Start to log in and begin recording.");
+  }
+});
+
+// ---------- Start-up ----------
+
+document.querySelectorAll("[data-scroll]").forEach((link) => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    $(link.dataset.scroll).scrollIntoView({ behavior: "smooth", block: "start" });
   });
-});
-$("registerPassword").addEventListener("input", updatePasswordStrength);
-
-$("loginForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const button = $("loginSubmit");
-  button.disabled = true;
-  button.textContent = "Signing In...";
-  setAuthStatus("Authenticating...");
-  try {
-    const result = await postJson("/login", { email: $("loginEmail").value.trim(), password: $("loginPassword").value });
-    setAuthStatus(result.message, "ok");
-    showApp(result.user);
-  } catch (error) {
-    setAuthStatus(error.message, "error");
-  } finally {
-    button.disabled = false;
-    button.textContent = "Sign In";
-  }
-});
-
-$("registerForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const button = $("registerSubmit");
-  const email = $("registerEmail").value.trim();
-  button.disabled = true;
-  button.textContent = "Creating...";
-  setAuthStatus("Creating your account...");
-  try {
-    const result = await postJson("/register", { name: $("registerName").value.trim(), email, password: $("registerPassword").value });
-    setAuthStatus(`${result.message} Please log in.`, "ok");
-    $("registerForm").reset();
-    updatePasswordStrength();
-    setActiveTab("login");
-    $("loginEmail").value = email;
-  } catch (error) {
-    setAuthStatus(error.message, "error");
-  } finally {
-    button.disabled = false;
-    button.textContent = "Create Account";
-  }
-});
-
-$("logoutBtn").addEventListener("click", async () => {
-  try {
-    await postJson("/logout", {});
-  } catch {
-    // The server session is gone either way; still return to the login screen.
-  }
-  showAuth();
-});
-
-$("trackerBtn").addEventListener("click", () => {
-  window.location.href = "/tracker";
 });
 $("startBtn").addEventListener("click", startPractice);
 $("stopBtn").addEventListener("click", () => recorder.stop());
 $("analyzeBtn").addEventListener("click", analyzeRecording);
-window.addEventListener("resize", drawTimeline);
+window.addEventListener("resize", () => {
+  redrawCharts();
+  drawProgressChart();
+});
 
-initializeTheme($("themeToggle"), drawTimeline);
-initCoach(handleSessionExpired);
-updatePasswordStrength();
+initializeTheme($("themeToggle"), () => {
+  redrawCharts();
+  drawProgressChart();
+});
+initAuth();
 
-requestJson("/me")
-  .then((result) => showApp(result.user))
+// Old links used /?mode=jam; send them to the practice view instead.
+const legacyMode = new URLSearchParams(window.location.search).get("mode");
+if (legacyMode) {
+  window.history.replaceState(null, "", `${window.location.pathname}#/practice/${encodeURIComponent(legacyMode)}`);
+}
+
+Promise.all([loadUser(), practice.loadCatalog()])
+  .then(([, loaded]) => {
+    catalog = loaded;
+    renderModeLinks();
+    practice.initPractice();
+    initDeckUpload({
+      getTopicAndTarget: practice.presentationContext,
+      requireLogin: () => requireLogin(currentPath()),
+      onSessionExpired,
+    });
+    practiceResults = createResultView($("practiceResults"));
+    practiceCoach = createCoachView($("practiceCoach"), onSessionExpired);
+    startRouter();
+  })
   .catch(() => {
-    // Not logged in; the login form is already showing.
+    $("modeGrid").textContent = "Could not load the practice modes. Check that the server is running, then refresh.";
   });

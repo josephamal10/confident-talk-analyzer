@@ -1,5 +1,6 @@
-// Practice modes: the mode picker, each mode's setup panel, and the fields sent to /analyze.
+// Practice modes: each mode's setup panel and the fields sent to /analyze.
 import { el, formatClock, pickRandom, requestJson } from "./common.js";
+import { currentDeck } from "./deck.js";
 
 const $ = (id) => document.getElementById(id);
 const CUSTOM_PASSAGE = "__custom__";
@@ -13,30 +14,19 @@ export async function loadCatalog() {
   return catalog;
 }
 
+export function getCatalog() {
+  return catalog;
+}
+
 export function currentMode() {
   return mode;
 }
 
-export function coachAvailable() {
-  return Boolean(catalog?.coach_available && mode?.coached);
+export function findMode(id) {
+  return catalog.modes.find((item) => item.id === id) || null;
 }
 
-export function initPractice(onModeChange = () => {}) {
-  const grid = $("modeGrid");
-  grid.textContent = "";
-  catalog.modes.forEach((item) => {
-    const card = el("button", "mode-card");
-    card.type = "button";
-    card.dataset.mode = item.id;
-    card.setAttribute("role", "radio");
-    card.append(el("span", "mode-card-title", item.label), el("span", "mode-card-tagline", item.tagline));
-    card.addEventListener("click", () => {
-      selectMode(item.id);
-      onModeChange(mode);
-    });
-    grid.appendChild(card);
-  });
-
+export function initPractice() {
   const categorySelect = $("questionCategory");
   categorySelect.textContent = "";
   catalog.interview.forEach((category) => {
@@ -79,8 +69,6 @@ export function initPractice(onModeChange = () => {}) {
       renderSetup();
     });
   });
-
-  selectMode(catalog.modes[0].id);
 }
 
 function selection() {
@@ -117,17 +105,17 @@ function currentFramework() {
 }
 
 export function selectMode(id) {
-  mode = catalog.modes.find((item) => item.id === id) || catalog.modes[0];
+  const next = findMode(id) || catalog.modes[0];
+  const changed = next !== mode;
+  mode = next;
   const chosen = selection();
   if (mode.prompt.style === "card" && !chosen.promptId) chosen.promptId = pickRandom(bankItems()).id;
-  document.querySelectorAll(".mode-card").forEach((card) => {
-    const active = card.dataset.mode === mode.id;
-    card.classList.toggle("active", active);
-    card.setAttribute("aria-checked", String(active));
-  });
-  $("promptInput").value = "";
-  $("customPromptInput").value = "";
+  if (changed) {
+    $("promptInput").value = "";
+    $("customPromptInput").value = "";
+  }
   renderSetup();
+  return changed;
 }
 
 function renderChoices(containerId, choices, selected, format, onPick) {
@@ -159,6 +147,7 @@ function renderSetup() {
   $("sideBlock").classList.toggle("hidden", !prompt.sides);
   $("passageBlock").classList.toggle("hidden", !isPassage);
   $("notesBlock").classList.toggle("hidden", !prompt.notes);
+  $("slidesBlock").classList.toggle("hidden", !prompt.slides);
 
   if (isCard) {
     const framework = currentFramework();
@@ -247,6 +236,11 @@ function customPrompt() {
   return field.value.trim();
 }
 
+// Topic and target used for the slide checks in presentation mode.
+export function presentationContext() {
+  return { topic: customPrompt(), targetSeconds: timerSettings().targetSeconds };
+}
+
 // What to show on the stage while preparing and recording.
 export function stageContent() {
   if (mode.prompt.kind === "passage") {
@@ -258,7 +252,12 @@ export function stageContent() {
   }
   const text = customPrompt() || (mode.prompt.style === "card" ? currentPrompt()?.text : "") || "";
   const side = mode.prompt.sides ? ` (you're arguing ${selection().side.toUpperCase()})` : "";
-  return { title: mode.prompt.label, text: text ? `${text}${side}` : "Speak about anything you like." };
+  const deck = mode.prompt.slides ? currentDeck() : null;
+  return {
+    title: mode.prompt.label,
+    text: text ? `${text}${side}` : "Speak about anything you like.",
+    slides: deck ? deck.slides.map((slide) => slide.title || `Slide ${slide.number}`) : null,
+  };
 }
 
 // Surprise-topic modes (snap talk) draw a fresh hidden topic for every attempt.
@@ -270,9 +269,10 @@ export function prepareAttempt() {
 }
 
 export function setLocked(locked) {
-  document.querySelectorAll(".mode-card, #setupPanel input, #setupPanel select, #setupPanel textarea, #setupPanel button").forEach(
+  document.querySelectorAll("#modeSwitcher a, #setupPanel input, #setupPanel select, #setupPanel textarea, #setupPanel button").forEach(
     (element) => {
-      element.disabled = locked;
+      element.classList.toggle("locked", locked);
+      if (element.tagName !== "A") element.disabled = locked;
     }
   );
 }
@@ -296,5 +296,6 @@ export function formFields() {
   if (mode.prompt.sides) fields.side = chosen.side;
   if (mode.prompt.notes) fields.notes = $("notesInput").value.trim();
   if (mode.timer.target_choices) fields.target_seconds = String(chosen.target);
+  if (mode.prompt.slides && currentDeck()) fields.deck_id = String(currentDeck().id);
   return fields;
 }

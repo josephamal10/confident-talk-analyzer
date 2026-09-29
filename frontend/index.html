@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Confident Talk Analyzer</title>
+  <meta name="description" content="Practise interviews, JAM, presentations, news reading, pitches and debates with speech AI and an AI coach.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,77 +14,144 @@
   <div class="bg-orb orb-1"></div>
   <div class="bg-orb orb-2"></div>
   <div class="bg-grid"></div>
-  <button id="themeToggle" class="theme-toggle" type="button">Light Theme</button>
+
+  <header class="topbar">
+    <a class="brand-link" href="#/">Confident Talk <span>Analyzer</span></a>
+    <nav class="topnav" aria-label="Main">
+      <a href="#/" data-nav="home">Practice</a>
+      <a href="#/progress" data-nav="progress" class="auth-only hidden">My progress</a>
+    </nav>
+    <div class="topbar-actions">
+      <button id="themeToggle" class="btn-outline btn-small" type="button">Light Theme</button>
+      <span id="userChip" class="user-chip auth-only hidden"></span>
+      <a id="loginLink" class="btn-primary btn-small guest-only" href="#/login">Log in</a>
+      <button id="logoutBtn" class="btn-outline btn-small auth-only hidden" type="button">Logout</button>
+    </div>
+  </header>
 
   <main class="page">
-    <section class="auth-shell" id="authShell">
-      <div class="brand">
+    <!-- Home: what the site is, how it works, and the practice modes -->
+    <section class="view" id="view-home">
+      <div class="hero">
         <p class="kicker">Speech Intelligence Suite</p>
-        <h1>Confident Talk Analyzer</h1>
-        <p class="subtext">Practise interviews, JAM, presentations, news reading, pitches and debates, with instant AI feedback on how you speak and what you say.</p>
+        <h1>Speak with confidence,<br><span class="gradient-text">in any situation.</span></h1>
+        <p class="subtext">
+          Practise interviews, JAM rounds, presentations, news reading, pitches and debates. Speech AI measures how you
+          sound, an AI coach reviews what you say, and your progress is tracked session by session.
+        </p>
+        <div class="hero-actions">
+          <a class="btn-primary btn-inline" href="#/" data-scroll="modes">Choose a practice mode</a>
+          <a class="btn-outline btn-inline" href="#/" data-scroll="how">How it works</a>
+        </div>
+        <div class="hero-stats">
+          <div><b>8</b><span>practice modes</span></div>
+          <div><b>10</b><span>delivery skills measured</span></div>
+          <div><b>5</b><span>AI models working together</span></div>
+        </div>
       </div>
 
-      <div class="auth-card">
-        <div class="tab-row">
-          <button class="tab-btn active" data-tab="login">Login</button>
-          <button class="tab-btn" data-tab="register">New User</button>
-          <span class="tab-glider" id="tabGlider"></span>
+      <div class="home-section" id="how">
+        <h2>How it works</h2>
+        <ol class="steps">
+          <li><b>Pick a situation</b><span>Interview, JAM, presentation, news reading and more: each has its own rules and timer.</span></li>
+          <li><b>Record yourself</b><span>Speak into your microphone. Topics, questions or a teleprompter appear on screen.</span></li>
+          <li><b>Get analysed</b><span>Speech models measure pace, fillers, pauses, pitch variation and how confident your voice sounds.</span></li>
+          <li><b>Get coached</b><span>An AI coach reviews your content, checks your structure and writes a stronger version.</span></li>
+          <li><b>Track progress</b><span>Replay old sessions, see your weakest skills and get told what to practise next.</span></li>
+        </ol>
+      </div>
+
+      <div class="home-section">
+        <h2>What it measures</h2>
+        <div class="chips measure-chips">
+          <span class="chip">Pace (words per minute)</span>
+          <span class="chip">Filler words</span>
+          <span class="chip">Hesitation pauses</span>
+          <span class="chip">Pitch variation</span>
+          <span class="chip">Vocal confidence</span>
+          <span class="chip">Hedging language</span>
+          <span class="chip">Reading accuracy</span>
+          <span class="chip">Timing</span>
+          <span class="chip">Structure (STAR, PREP...)</span>
+          <span class="chip">Topic relevance</span>
+          <span class="chip">Slide coverage</span>
+        </div>
+      </div>
+
+      <div class="home-section" id="modes">
+        <h2>Practice modes</h2>
+        <div class="mode-grid" id="modeGrid"></div>
+      </div>
+
+      <footer class="site-footer">
+        Built with faster-whisper, Silero VAD, Praat, a wav2vec2 emotion model (audeering, CC BY-NC-SA), MiniLM
+        embeddings and an LLM coach.
+      </footer>
+    </section>
+
+    <!-- Log in / sign up -->
+    <section class="view hidden" id="view-login">
+      <div class="auth-shell">
+        <div class="brand">
+          <p class="kicker">Welcome</p>
+          <h1>Log in to start practising</h1>
+          <p class="subtext">Your recordings, feedback and progress are saved to your account, so you can replay any session later.</p>
         </div>
 
-        <form id="loginForm" class="auth-form active">
-          <label for="loginEmail">Email</label>
-          <input type="email" id="loginEmail" placeholder="you@company.com" required>
-
-          <label for="loginPassword">Password</label>
-          <div class="password-wrap">
-            <input type="password" id="loginPassword" placeholder="Enter password" required>
-            <button type="button" class="ghost-icon" data-toggle="loginPassword">Show</button>
+        <div class="auth-card">
+          <div class="tab-row">
+            <button class="tab-btn active" data-tab="login" type="button">Login</button>
+            <button class="tab-btn" data-tab="register" type="button">New User</button>
+            <span class="tab-glider" id="tabGlider"></span>
           </div>
 
-          <button type="submit" class="btn-primary" id="loginSubmit">Sign In</button>
-        </form>
+          <form id="loginForm" class="auth-form active">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" placeholder="you@company.com" required>
 
-        <form id="registerForm" class="auth-form">
-          <label for="registerName">Full Name</label>
-          <input type="text" id="registerName" placeholder="Alex Rivera" required>
+            <label for="loginPassword">Password</label>
+            <div class="password-wrap">
+              <input type="password" id="loginPassword" placeholder="Enter password" required>
+              <button type="button" class="ghost-icon" data-toggle="loginPassword">Show</button>
+            </div>
 
-          <label for="registerEmail">Email</label>
-          <input type="email" id="registerEmail" placeholder="you@company.com" required>
+            <button type="submit" class="btn-primary" id="loginSubmit">Sign In</button>
+          </form>
 
-          <label for="registerPassword">Password</label>
-          <div class="password-wrap">
-            <input type="password" id="registerPassword" placeholder="At least 8 characters" required>
-            <button type="button" class="ghost-icon" data-toggle="registerPassword">Show</button>
-          </div>
+          <form id="registerForm" class="auth-form">
+            <label for="registerName">Full Name</label>
+            <input type="text" id="registerName" placeholder="Alex Rivera" required>
 
-          <div class="strength">
-            <div class="strength-bar" id="strengthBar"></div>
-          </div>
-          <p class="strength-label" id="strengthLabel">Password strength: weak</p>
+            <label for="registerEmail">Email</label>
+            <input type="email" id="registerEmail" placeholder="you@company.com" required>
 
-          <button type="submit" class="btn-primary" id="registerSubmit">Create Account</button>
-        </form>
+            <label for="registerPassword">Password</label>
+            <div class="password-wrap">
+              <input type="password" id="registerPassword" placeholder="At least 8 characters" required>
+              <button type="button" class="ghost-icon" data-toggle="registerPassword">Show</button>
+            </div>
 
-        <p class="status-line" id="authStatus"></p>
+            <div class="strength">
+              <div class="strength-bar" id="strengthBar"></div>
+            </div>
+            <p class="strength-label" id="strengthLabel">Password strength: weak</p>
+
+            <button type="submit" class="btn-primary" id="registerSubmit">Create Account</button>
+          </form>
+
+          <p class="status-line" id="authStatus"></p>
+        </div>
       </div>
     </section>
 
-    <section class="app-shell hidden" id="appShell">
-      <div class="app-header">
-        <div>
-          <p class="kicker">Welcome back</p>
-          <h2 id="welcomeUser">Speaker</h2>
-        </div>
-        <div class="header-actions">
-          <button id="trackerBtn" class="btn-outline" type="button">My progress</button>
-          <button id="logoutBtn" class="btn-outline" type="button">Logout</button>
-        </div>
+    <!-- Practice: one mode's setup, recorder and results -->
+    <section class="view hidden" id="view-practice">
+      <div class="view-header">
+        <a href="#/" class="back-link">← All modes</a>
+        <div class="mode-switcher" id="modeSwitcher"></div>
       </div>
 
       <div class="analyzer-card">
-        <p class="kicker">Choose what to practise</p>
-        <div class="mode-grid" id="modeGrid" role="radiogroup" aria-label="Practice mode"></div>
-
         <div class="setup" id="setupPanel">
           <h3 id="setupTitle"></h3>
           <p class="setup-tagline" id="setupTagline"></p>
@@ -133,6 +201,45 @@
             <textarea id="notesInput" rows="3" maxlength="1500" placeholder="Key points you plan to cover, one per line. The AI coach checks which ones you covered."></textarea>
           </div>
 
+          <div id="slidesBlock" class="hidden">
+            <label for="deckInput">Your slides (optional, .pptx or .pdf)</label>
+            <div class="upload-row">
+              <input type="file" id="deckInput" accept=".pptx,.pdf">
+              <button type="button" class="btn-outline hidden" id="removeDeckBtn">Remove</button>
+            </div>
+            <p class="result-meta" id="deckStatus">Upload your deck to get instant slide feedback and check that your talk follows it.</p>
+            <div class="deck-panel hidden" id="deckPanel">
+              <p class="deck-summary" id="deckSummary"></p>
+              <ol class="deck-slides" id="deckSlides"></ol>
+              <ul class="deck-issues" id="deckIssues"></ul>
+              <button type="button" class="btn-outline" id="reviewDeckBtn">Review my slides with AI</button>
+              <div class="deck-review hidden" id="deckReview">
+                <div class="result-head">
+                  <div class="score-badge coach-badge"><span id="deckScore">-</span><small>/10</small></div>
+                  <div>
+                    <p class="kicker">AI slide review</p>
+                    <p id="deckReviewSummary"></p>
+                  </div>
+                </div>
+                <div class="breakdown" id="deckBreakdown"></div>
+                <div class="coach-columns">
+                  <div>
+                    <h4>What works</h4>
+                    <ul class="coach-list" id="deckStrengths"></ul>
+                  </div>
+                  <div>
+                    <h4>Slide fixes</h4>
+                    <ul class="coach-list" id="deckFixes"></ul>
+                  </div>
+                </div>
+                <h4 id="deckMissingTitle">Missing for this topic</h4>
+                <ul class="coach-list" id="deckMissing"></ul>
+                <h4>A stronger outline</h4>
+                <ol class="coach-list" id="deckOutline"></ol>
+              </div>
+            </div>
+          </div>
+
           <div id="targetBlock" class="hidden">
             <label>Target length</label>
             <div class="segmented" id="targetButtons"></div>
@@ -164,6 +271,7 @@
           <p class="stage-title" id="stageTitle"></p>
           <p class="stage-prompt" id="stagePrompt"></p>
           <div class="teleprompter hidden" id="teleprompter"></div>
+          <ol class="stage-slides hidden" id="stageSlides"></ol>
           <div class="timer-block" id="timerBlock">
             <span class="timer-label" id="timerLabel">Time left</span>
             <span class="timer-display" id="timerDisplay">0:00</span>
@@ -175,103 +283,175 @@
           <button id="startBtn" class="btn-primary" type="button">Start</button>
           <button id="stopBtn" class="btn-muted" type="button" disabled>Stop</button>
         </div>
-        <p id="status">Loading practice modes...</p>
+        <p id="status"></p>
         <audio id="audioPreview" class="hidden" controls></audio>
         <button id="analyzeBtn" class="btn-primary" type="button" disabled>Analyze</button>
 
-        <div class="result hidden" id="resultPanel">
-          <div class="result-head">
-            <div class="score-badge"><span id="score">-</span><small>/10</small></div>
-            <div>
-              <p class="kicker">Delivery</p>
-              <h3 id="delivery">-</h3>
-              <p class="result-meta" id="resultMeta"></p>
-            </div>
+        <div id="practiceResults"></div>
+        <div id="practiceCoach"></div>
+      </div>
+    </section>
+
+    <!-- Progress: stats, focus areas, skills and session history -->
+    <section class="view hidden" id="view-progress">
+      <div class="analyzer-card tracker-card">
+        <div class="app-header">
+          <div>
+            <p class="kicker">My progress</p>
+            <h2 id="progressTitle">Progress overview</h2>
           </div>
-
-          <div class="breakdown" id="breakdown"></div>
-
-          <p class="result-line"><b>Vocal tone:</b> <span id="vocalTone"></span></p>
-          <p class="result-line" id="topicLine"><b>On topic:</b> <span id="topicRelated"></span></p>
-
-          <div class="mode-panel hidden" id="refereePanel">
-            <h4>JAM referee</h4>
-            <p id="refereeSummary"></p>
-            <ul class="referee-events" id="refereeEvents"></ul>
-          </div>
-
-          <div class="mode-panel hidden" id="readingPanel">
-            <h4>Reading accuracy</h4>
-            <p class="result-meta" id="readingSummary"></p>
-            <p class="reading-script" id="readingScript"></p>
-            <p class="legend">
-              <span class="read-missed">skipped</span> <span class="read-misread">misread</span> (hover to see what you said)
-            </p>
-            <p class="result-meta" id="readingAdded"></p>
-          </div>
-
-          <div class="mode-panel hidden" id="timelinePanel">
-            <h4>Pace over time</h4>
-            <canvas id="timelineChart"></canvas>
-            <p class="result-meta" id="timelineNotes"></p>
-          </div>
-
-          <h4>Transcript</h4>
-          <p class="transcript" id="transcription"></p>
-          <p class="legend hidden" id="legend">
-            <span data-kind="filler"><span class="filler">filler</span></span>
-            <span data-kind="hedge"><span class="hedge">hedge</span></span>
-            <span data-kind="stutter"><span class="stutter">repeated start</span></span>
-            <span data-kind="repeat"><span class="repeat">over-used word</span></span>
-            <span data-kind="unclear"><span class="unclear">unclear</span></span>
-            <span data-kind="pause"><span class="pause-chip">0.8s</span> hesitation pause</span>
-            <span data-kind="rise"><span class="rise-marker">↗</span> rising pitch (experimental)</span>
-          </p>
-
-          <h4>Delivery feedback</h4>
-          <p id="feedback"></p>
         </div>
 
-        <div class="coach-panel hidden" id="coachPanel">
-          <div class="result-head">
-            <div class="score-badge coach-badge"><span id="contentScore">-</span><small>/10</small></div>
-            <div>
-              <p class="kicker">AI Coach · Content</p>
-              <h3 id="coachTitle">Reviewing your answer...</h3>
-              <p class="result-meta" id="coachMeta"></p>
-            </div>
-          </div>
-          <div id="coachBody" class="hidden">
-            <p id="coachSummary"></p>
-            <div class="breakdown" id="contentBreakdown"></div>
-
-            <h4 id="frameworkTitle">Framework check</h4>
-            <div class="chips" id="frameworkChips"></div>
-
-            <div class="coach-columns">
-              <div>
-                <h4>What worked</h4>
-                <ul class="coach-list" id="coachStrengths"></ul>
-              </div>
-              <div>
-                <h4>What to improve</h4>
-                <ul class="coach-list" id="coachImprovements"></ul>
-              </div>
-            </div>
-
-            <p class="result-line" id="coachTopic"></p>
-
-            <div class="improved-head">
-              <h4 id="improvedTitle">A stronger version of your answer</h4>
-              <button type="button" class="btn-outline" id="copyImprovedBtn">Copy</button>
-            </div>
-            <blockquote class="improved-answer" id="improvedAnswer"></blockquote>
-          </div>
-          <button type="button" class="btn-outline hidden" id="retryCoachBtn">Try again</button>
+        <div class="stat-row">
+          <div class="stat"><span class="stat-value" id="statSessions">-</span><span class="stat-label">Sessions</span></div>
+          <div class="stat"><span class="stat-value" id="statLatest">-</span><span class="stat-label">Latest score</span></div>
+          <div class="stat"><span class="stat-value" id="statBest">-</span><span class="stat-label">Best score</span></div>
+          <div class="stat"><span class="stat-value" id="statStreak">-</span><span class="stat-label">Day streak</span></div>
         </div>
+
+        <div class="segmented mode-filter" id="modeFilter" aria-label="Filter by mode"></div>
+
+        <div class="tracker-grid">
+          <div class="mode-panel">
+            <h4>Focus areas</h4>
+            <ul class="coach-list" id="focusList"></ul>
+            <div class="suggestion">
+              <p id="suggestionText"></p>
+              <a class="btn-primary suggestion-link" id="suggestionLink" href="#/">Practise now</a>
+            </div>
+          </div>
+          <div class="mode-panel">
+            <h4>Skills <span class="result-meta">(average of your last 5 sessions)</span></h4>
+            <div class="breakdown" id="skillList"></div>
+          </div>
+        </div>
+
+        <h4>Score over time</h4>
+        <canvas id="progressChart"></canvas>
+        <p id="historySummary"></p>
+
+        <h4>Your sessions <span class="result-meta">(select one to replay it and see its feedback)</span></h4>
+        <div id="historyList" class="history-list"></div>
+      </div>
+    </section>
+
+    <!-- Session: one saved recording with its feedback -->
+    <section class="view hidden" id="view-session">
+      <div class="view-header">
+        <a href="#/progress" class="back-link">← My progress</a>
+      </div>
+      <div class="analyzer-card">
+        <p class="kicker" id="sessionKicker"></p>
+        <h2 class="session-title" id="sessionTitle"></h2>
+        <audio id="sessionAudio" class="hidden" controls preload="metadata"></audio>
+        <p class="result-meta hidden" id="sessionNoAudio">The recording for this session is no longer available.</p>
+        <div id="sessionResults"></div>
+        <button type="button" class="btn-outline hidden" id="sessionCoachBtn">Get AI feedback on this answer</button>
+        <div id="sessionCoach"></div>
       </div>
     </section>
   </main>
+
+  <!-- Results and coach panels, reused by the practice and session views -->
+  <template id="resultTemplate">
+    <div class="result">
+      <div class="result-head">
+        <div class="score-badge"><span data-el="score">-</span><small>/10</small></div>
+        <div>
+          <p class="kicker">Delivery</p>
+          <h3 data-el="delivery">-</h3>
+          <p class="result-meta" data-el="resultMeta"></p>
+        </div>
+      </div>
+
+      <div class="breakdown" data-el="breakdown"></div>
+
+      <p class="result-line"><b>Vocal tone:</b> <span data-el="vocalTone"></span></p>
+      <p class="result-line" data-el="topicLine"><b>On topic:</b> <span data-el="topicRelated"></span></p>
+
+      <div class="mode-panel hidden" data-el="refereePanel">
+        <h4>JAM referee</h4>
+        <p data-el="refereeSummary"></p>
+        <ul class="referee-events" data-el="refereeEvents"></ul>
+      </div>
+
+      <div class="mode-panel hidden" data-el="readingPanel">
+        <h4>Reading accuracy</h4>
+        <p class="result-meta" data-el="readingSummary"></p>
+        <p class="reading-script" data-el="readingScript"></p>
+        <p class="legend"><span class="read-missed">skipped</span> <span class="read-misread">misread</span> (hover to see what you said)</p>
+        <p class="result-meta" data-el="readingAdded"></p>
+      </div>
+
+      <div class="mode-panel hidden" data-el="slidesPanel">
+        <h4>Talk vs slides</h4>
+        <p class="result-meta" data-el="slidesSummary"></p>
+        <ol class="slide-coverage" data-el="slidesList"></ol>
+        <p class="result-meta" data-el="offSlides"></p>
+      </div>
+
+      <div class="mode-panel hidden" data-el="timelinePanel">
+        <h4>Pace over time</h4>
+        <canvas class="timeline-chart" data-el="timelineChart"></canvas>
+        <p class="result-meta" data-el="timelineNotes"></p>
+      </div>
+
+      <h4>Transcript</h4>
+      <p class="transcript" data-el="transcription"></p>
+      <p class="legend hidden" data-el="legend">
+        <span data-kind="filler"><span class="filler">filler</span></span>
+        <span data-kind="hedge"><span class="hedge">hedge</span></span>
+        <span data-kind="stutter"><span class="stutter">repeated start</span></span>
+        <span data-kind="repeat"><span class="repeat">over-used word</span></span>
+        <span data-kind="unclear"><span class="unclear">unclear</span></span>
+        <span data-kind="pause"><span class="pause-chip">0.8s</span> hesitation pause</span>
+        <span data-kind="rise"><span class="rise-marker">↗</span> rising pitch (experimental)</span>
+      </p>
+
+      <h4>Delivery feedback</h4>
+      <p class="feedback-text" data-el="feedback"></p>
+    </div>
+  </template>
+
+  <template id="coachTemplate">
+    <div class="coach-panel">
+      <div class="result-head">
+        <div class="score-badge coach-badge"><span data-el="contentScore">-</span><small>/10</small></div>
+        <div>
+          <p class="kicker">AI Coach · Content</p>
+          <h3 data-el="coachTitle">Reviewing your answer...</h3>
+          <p class="result-meta" data-el="coachMeta"></p>
+        </div>
+      </div>
+      <div class="hidden" data-el="coachBody">
+        <p data-el="coachSummary"></p>
+        <div class="breakdown" data-el="contentBreakdown"></div>
+
+        <h4 data-el="frameworkTitle">Framework check</h4>
+        <div class="chips" data-el="frameworkChips"></div>
+
+        <div class="coach-columns">
+          <div>
+            <h4>What worked</h4>
+            <ul class="coach-list" data-el="coachStrengths"></ul>
+          </div>
+          <div>
+            <h4>What to improve</h4>
+            <ul class="coach-list" data-el="coachImprovements"></ul>
+          </div>
+        </div>
+
+        <p class="result-line" data-el="coachTopic"></p>
+
+        <div class="improved-head">
+          <h4 data-el="improvedTitle">A stronger version of your answer</h4>
+          <button type="button" class="btn-outline" data-el="copyImprovedBtn">Copy</button>
+        </div>
+        <blockquote class="improved-answer" data-el="improvedAnswer"></blockquote>
+      </div>
+      <button type="button" class="btn-outline hidden" data-el="retryCoachBtn">Try again</button>
+    </div>
+  </template>
 
   <script type="module" src="js/app.js"></script>
 </body>

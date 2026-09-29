@@ -105,7 +105,7 @@ ANALYSIS_COLUMNS = (
 )
 
 HISTORY_COLUMNS = (
-    "created_at AS timestamp, topic, transcription, transcription_engine, duration, speaking_duration, "
+    "id, created_at AS timestamp, topic, transcription, transcription_engine, duration, speaking_duration, audio_filename, "
     "minutes, seconds, word_count, wpm, filler_count, filler_ratio, emotion AS delivery, score, feedback, details, mode"
 )
 
@@ -238,7 +238,9 @@ def get_user_history(user_id):
     for row in rows:
         entry = dict(row)
         details = json.loads(entry.pop("details") or "{}")
+        audio = entry.pop("audio_filename")
         entry["sub_scores"] = details.get("sub_scores")
+        entry["has_audio"] = bool(audio) and os.path.isfile(os.path.join(UPLOAD_FOLDER, audio))
         entries.append(entry)
     return entries
 

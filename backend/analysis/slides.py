@@ -17,10 +17,15 @@ MAX_BULLETS = 6
 SECONDS_PER_SLIDE = (30, 90)
 CLOSING_WORDS = ("conclusion", "summary", "thank", "questions", "takeaway", "recap", "next steps", "wrap")
 AGENDA_WORDS = ("agenda", "outline", "overview", "contents", "roadmap", "today")
-# A spoken sentence this similar to a slide counts as talking about it (on-slide sentences scored
-# around 0.4-0.7 in testing, unrelated ones below 0.2).
-SLIDE_MATCH_THRESHOLD = 0.3
+# Each spoken sentence counts towards its best-matching slide if the similarity reaches this value
+# (in testing, sentences about a slide scored 0.5-0.8 against it and greetings below 0.25).
+SLIDE_MATCH_THRESHOLD = 0.35
+# Agenda slides repeat the other slides' titles, so a near-tie goes to the content slide.
+AGENDA_TIE_MARGIN = 0.05
+MIN_OFF_SLIDE_WORDS = 5
 OFF_TOPIC_SLIDE_THRESHOLD = 0.15
+# Title and closing slides take little speaking time, so they don't count towards the slide budget.
+FRAME_SLIDE_MAX_WORDS = 10
 
 
 class DeckError(Exception):
@@ -104,18 +109,22 @@ def check_deck(deck, topic="", target_seconds=None):
     slides = deck["slides"]
     issues = []
     count = len(slides)
+    is_title_slide = count > 1 and slides[0]["word_count"] <= FRAME_SLIDE_MAX_WORDS
+    is_closing_slide = count > 2 and slides[-1]["word_count"] <= FRAME_SLIDE_MAX_WORDS and _has_word(slides[-1]["text"], CLOSING_WORDS)
+    content_count = count - is_title_slide - is_closing_slide
 
     recommended = None
     if target_seconds:
         low = max(1, round(target_seconds / SECONDS_PER_SLIDE[1]))
         high = max(low + 1, round(target_seconds / SECONDS_PER_SLIDE[0]))
         recommended = [low, high]
-        if count > high:
+        minutes = target_seconds // 60 or 1
+        if content_count > high:
             issues.append({"slide": None, "severity": "warn",
-                           "message": f"{count} slides is a lot for {target_seconds // 60 or 1} min; aim for {low}-{high}."})
-        elif count < low:
+                           "message": f"{content_count} content slides is a lot for {minutes} min; aim for {low}-{high}."})
+        elif content_count < low:
             issues.append({"slide": None, "severity": "info",
-                           "message": f"Only {count} slide{'s' if count != 1 else ''} for {target_seconds // 60 or 1} min; {low}-{high} would give more structure."})
+                           "message": f"Only {content_count} content slide{'s' if content_count != 1 else ''} for {minutes} min; {low}-{high} would give more structure."})
 
     for slide in slides:
         if not slide["title"]:
@@ -150,6 +159,7 @@ def check_deck(deck, topic="", target_seconds=None):
     issues.sort(key=lambda issue: (issue["slide"] is not None, issue["slide"] or 0))
     return {
         "slide_count": count,
+        "content_slide_count": content_count,
         "recommended_range": recommended,
         "total_words": sum(slide["word_count"] for slide in slides),
         "topic_similarity": topic_similarity,
@@ -169,21 +179,30 @@ def match_speech_to_slides(sentences, slides):
     sentence_vectors = relevance.embed([text for _time, text in sentences])
     slide_vectors = relevance.embed(texts)
     similarity = sentence_vectors @ slide_vectors.T  # sentences x slides
+    is_agenda = [_has_word(slide["title"], AGENDA_WORDS) for slide in slides]
 
-    results = []
-    for index, slide in enumerate(slides):
-        column = similarity[:, index]
-        matches = [i for i, value in enumerate(column) if value >= SLIDE_MATCH_THRESHOLD]
-        results.append(
-            {
-                "number": slide["number"],
-                "title": slide["title"] or f"Slide {slide['number']}",
-                "covered": bool(matches),
-                "similarity": round(float(column.max()), 3),
-                "first_mentioned": round(sentences[matches[0]][0], 1) if matches else None,
-            }
-        )
-    off_slides = [text for (time, text), row in zip(sentences, similarity) if row.max() < SLIDE_MATCH_THRESHOLD]
+    assigned = [[] for _slide in slides]  # sentence indexes per slide
+    off_slides = []
+    for sentence_index, row in enumerate(similarity):
+        ranked = sorted(range(len(slides)), key=lambda index: -row[index])
+        best = ranked[0]
+        if len(ranked) > 1 and is_agenda[best] and row[best] - row[ranked[1]] < AGENDA_TIE_MARGIN:
+            best = ranked[1]
+        if row[best] >= SLIDE_MATCH_THRESHOLD:
+            assigned[best].append(sentence_index)
+        elif len(sentences[sentence_index][1].split()) >= MIN_OFF_SLIDE_WORDS:
+            off_slides.append(sentences[sentence_index][1])
+
+    results = [
+        {
+            "number": slide["number"],
+            "title": slide["title"] or f"Slide {slide['number']}",
+            "covered": bool(assigned[index]),
+            "similarity": round(float(similarity[:, index].max()), 3),
+            "first_mentioned": round(sentences[assigned[index][0]][0], 1) if assigned[index] else None,
+        }
+        for index, slide in enumerate(slides)
+    ]
     whole = relevance.embed([" ".join(text for _time, text in sentences), " ".join(texts)])
     return {
         "slides": results,
