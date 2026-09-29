@@ -8,3 +8,5 @@ huggingface-hub
 httpx
 jsonschema
 python-dotenv
+python-pptx
+pypdf

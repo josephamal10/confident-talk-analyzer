@@ -6,7 +6,7 @@ against the target for a pitch.
 """
 from collections import Counter
 
-from . import language, reading, relevance, scoring
+from . import language, reading, relevance, scoring, slides
 
 START_DELAY_SECONDS = 3.0
 # A JAM sentence this far from the topic counts as deviation. Calibrated on sample recordings:
@@ -102,8 +102,11 @@ def _timeline_trends(timeline):
     }
 
 
-def evaluate(base, mode, context):
-    """Returns metrics, sub-scores, overall score, label and mode-specific checks for one recording."""
+def evaluate(base, mode, context, deck=None):
+    """Returns metrics, sub-scores, overall score, label and mode-specific checks for one recording.
+
+    `deck` is a parsed slide deck (presentation mode) to check the speech against.
+    """
     words = base["words"]
     tokens = [word["text"] for word in words]
     filler_indexes = {index for index, word in enumerate(words) if word.get("filler")}
@@ -160,6 +163,10 @@ def evaluate(base, mode, context):
         referee = jam_referee(words, base["pauses"], stutters, repeated, context.get("prompt", ""), metrics["start_delay"])
 
     trends = _timeline_trends(base["timeline"]) if "timeline" in checks else None
+    slides_match = None
+    if deck:
+        spoken = [(words[start]["start"], text) for start, text in _sentences(words)]
+        slides_match = slides.match_speech_to_slides(spoken, deck["slides"])
 
     weights = mode["weights"]
     sub_scores = scoring.score_metrics(metrics, weights)
@@ -170,6 +177,9 @@ def evaluate(base, mode, context):
     if trends and trends["energy_change_db"] <= -3:
         warnings.append("Timeline: your energy dropped in the last part. Save a strong point for the end.")
     uptalk = base.get("uptalk")
+    if slides_match and slides_match["coverage"] < 0.6:
+        missed = [slide["title"] for slide in slides_match["slides"] if not slide["covered"]]
+        warnings.append(f"Slides: you didn't talk about {len(missed)} of your slides ({', '.join(missed[:3])}).")
     if uptalk and uptalk["statements"] >= 3 and uptalk["share"] >= 0.4:
         warnings.append(
             "Intonation (experimental): many statements end on a rising pitch, which can sound like a question. "
@@ -187,5 +197,6 @@ def evaluate(base, mode, context):
         "reading": reading_result,
         "referee": referee,
         "trends": trends,
+        "slides_match": slides_match,
     }
 

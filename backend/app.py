@@ -1,10 +1,11 @@
-from flask import Flask, g, jsonify, request, send_from_directory, session
+from flask import Flask, g, jsonify, redirect, request, send_from_directory, session
 import json
 import logging
 import os
 import re
 import secrets
 import sqlite3
+import tempfile
 import threading
 from datetime import datetime, timedelta
 from functools import wraps
@@ -16,7 +17,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Load API keys and settings from backend/.env before the analysis modules read them.
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-from analysis import AnalysisError, analyze_recording, coach, evaluation, llm, modes, relevance, warm_up  # noqa: E402
+from analysis import AnalysisError, analyze_recording, coach, evaluation, llm, modes, relevance, slides, warm_up  # noqa: E402
 from analysis.scoring import build_feedback  # noqa: E402
 import progress  # noqa: E402
 
@@ -65,6 +66,18 @@ CREATE TABLE IF NOT EXISTS analysis_records (
 );
 
 CREATE INDEX IF NOT EXISTS idx_analysis_records_user ON analysis_records (user_id, created_at);
+
+CREATE TABLE IF NOT EXISTS decks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    topic TEXT,
+    target_seconds INTEGER,
+    content TEXT NOT NULL,
+    checks TEXT NOT NULL,
+    review TEXT
+);
 """
 
 # Columns added after the first release; init_db adds them to older databases.
@@ -252,9 +265,65 @@ def save_analysis_record(user_id, record):
 
 def get_user_record(user_id, record_id):
     return get_db().execute(
-        "SELECT id, transcription, score, emotion, details, mode FROM analysis_records WHERE id = ? AND user_id = ?",
-        (record_id, user_id),
+        "SELECT * FROM analysis_records WHERE id = ? AND user_id = ?", (record_id, user_id)
     ).fetchone()
+
+
+AUDIO_TYPES = {".webm": "audio/webm", ".ogg": "audio/ogg", ".mp4": "audio/mp4", ".wav": "audio/wav"}
+
+
+def session_payload(record):
+    """A saved session in the same shape as the /analyze response, so the UI renders both the same way."""
+    details = json.loads(record["details"] or "{}")
+    mode = modes.get_mode((details.get("context") or {}).get("mode") or record["mode"])
+    audio = record["audio_filename"]
+    has_audio = bool(audio) and os.path.isfile(os.path.join(UPLOAD_FOLDER, audio))
+    return {
+        **details,
+        "id": record["id"],
+        "timestamp": record["created_at"],
+        "mode": mode["id"],
+        "topic": record["topic"],
+        "transcription": record["transcription"],
+        "transcription_engine": record["transcription_engine"],
+        "minutes": record["minutes"],
+        "seconds": record["seconds"],
+        "score": record["score"],
+        "delivery": record["emotion"],
+        "feedback": record["feedback"],
+        "metrics": details.get("metrics")
+        or {"wpm": record["wpm"], "filler_count": record["filler_count"], "speaking_span": record["speaking_duration"] or 0},
+        "audio_url": f"/analyses/{record['id']}/audio" if has_audio else None,
+        "coach_available": mode.get("coach") is not None and llm.get_config() is not None and "metrics" in details,
+    }
+
+
+def get_user_deck(user_id, deck_id):
+    return get_db().execute("SELECT * FROM decks WHERE id = ? AND user_id = ?", (deck_id, user_id)).fetchone()
+
+
+def deck_summary(deck_row):
+    deck = json.loads(deck_row["content"])
+    return {
+        "id": deck_row["id"],
+        "filename": deck["filename"],
+        "format": deck["format"],
+        "topic": deck_row["topic"],
+        "target_seconds": deck_row["target_seconds"],
+        "slides": [
+            {key: slide[key] for key in ("number", "title", "word_count", "bullets", "images")} for slide in deck["slides"]
+        ],
+        "checks": json.loads(deck_row["checks"]),
+        "review": json.loads(deck_row["review"]) if deck_row["review"] else None,
+        "review_available": llm.get_config() is not None,
+    }
+
+
+def parse_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def update_record_details(record_id, details):
@@ -320,7 +389,7 @@ def serve_index():
 
 @app.route("/tracker", methods=["GET"])
 def serve_tracker():
-    return send_from_directory(FRONTEND_DIR, "tracker.html")
+    return redirect("/#/progress")
 
 
 @app.route("/<path:filename>", methods=["GET"])
@@ -432,7 +501,19 @@ def analyze():
 
     context = modes.build_context(request.form)
     mode = modes.get_mode(context["mode"])
-    result = evaluation.evaluate(base, mode, context)
+    deck = None
+    deck_id = parse_int(request.form.get("deck_id"))
+    if mode["prompt"].get("slides") and deck_id:
+        deck_row = get_user_deck(g.user["id"], deck_id)
+        if deck_row:
+            deck = json.loads(deck_row["content"])
+            context["deck"] = {
+                "id": deck_row["id"],
+                "filename": deck["filename"],
+                "slide_count": len(deck["slides"]),
+                "outline": slides.outline(deck),
+            }
+    result = evaluation.evaluate(base, mode, context, deck)
     metrics = result["metrics"]
     minutes, seconds = split_duration(metrics["duration"])
     feedback = build_feedback(
@@ -447,7 +528,10 @@ def analyze():
 
     details = {
         **{key: base[key] for key in ("words", "pauses", "unclear_indexes", "uptalk", "timeline", "vocal_tone", "timings_ms")},
-        **{key: result[key] for key in ("sub_scores", "metrics", "warnings", "topic_match", "language", "reading", "referee", "trends")},
+        **{
+            key: result[key]
+            for key in ("sub_scores", "metrics", "warnings", "topic_match", "language", "reading", "referee", "trends", "slides_match")
+        },
         "context": context,
     }
     record_id, history_count = save_analysis_record(
@@ -473,22 +557,27 @@ def analyze():
             "mode": context["mode"],
         },
     )
+    return jsonify({**session_payload(get_user_record(g.user["id"], record_id)), "history_count": history_count})
 
-    return jsonify(
-        {
-            **details,
-            "id": record_id,
-            "transcription": base["transcription"],
-            "transcription_engine": base["transcription_model"],
-            "minutes": minutes,
-            "seconds": seconds,
-            "score": result["score"],
-            "delivery": result["delivery"],
-            "feedback": feedback,
-            "history_count": history_count,
-            "coach_available": mode.get("coach") is not None and llm.get_config() is not None,
-        }
-    )
+
+@app.route("/analyses/<int:record_id>", methods=["GET"])
+@login_required
+def analysis_detail(record_id):
+    record = get_user_record(g.user["id"], record_id)
+    if record is None:
+        return jsonify({"error": "Session not found."}), 404
+    return jsonify(session_payload(record))
+
+
+@app.route("/analyses/<int:record_id>/audio", methods=["GET"])
+@login_required
+def analysis_audio(record_id):
+    record = get_user_record(g.user["id"], record_id)
+    filename = record["audio_filename"] if record else None
+    if not filename or not os.path.isfile(os.path.join(UPLOAD_FOLDER, filename)):
+        return jsonify({"error": "Recording not available."}), 404
+    mimetype = AUDIO_TYPES.get(os.path.splitext(filename)[1].lower(), "application/octet-stream")
+    return send_from_directory(UPLOAD_FOLDER, filename, mimetype=mimetype, conditional=True)
 
 
 @app.route("/analyses/<int:record_id>/coach", methods=["POST"])
@@ -514,17 +603,92 @@ def coach_analysis(record_id):
 
     if not context.get("framework"):
         context["framework"] = modes.FRAMEWORKS.get(mode["framework"], modes.FRAMEWORKS["SPEECH"])
-    analysis ={"metrics": details["metrics"], "score": record["score"], "delivery": record["emotion"]}
+    dimensions = list(modes.coach_dimensions(mode))
+    if context.get("deck"):
+        dimensions.append(("alignment", "Matches your slides"))
+    analysis = {
+        "metrics": details["metrics"],
+        "score": record["score"],
+        "delivery": record["emotion"],
+        "slides_match": details.get("slides_match"),
+    }
     try:
-        coaching = coach.coach_answer(
-            record["transcription"], context, analysis, config, mode["coach"], modes.coach_dimensions(mode)
-        )
+        coaching = coach.coach_answer(record["transcription"], context, analysis, config, mode["coach"], dimensions)
     except llm.LLMError as error:
         return jsonify({"error": error.message, "retryable": error.retryable}), error.status_code
 
     details["coach"] = coaching
     update_record_details(record_id, details)
     return jsonify({"coach": coaching, "cached": False})
+
+
+@app.route("/decks", methods=["POST"])
+@login_required
+def upload_deck():
+    """Parses an uploaded .pptx/.pdf and runs the instant checks. Only the extracted text is kept."""
+    file = request.files.get("deck")
+    if not file or not file.filename:
+        return jsonify({"error": "Choose a .pptx or .pdf file to upload."}), 400
+    extension = os.path.splitext(file.filename)[1].lower()
+    if extension not in slides.SUPPORTED_EXTENSIONS:
+        return jsonify({"error": "Upload a PowerPoint (.pptx) or PDF file."}), 400
+
+    topic = (request.form.get("topic") or "").strip()[: modes.MAX_CUSTOM_PROMPT]
+    target_seconds = parse_int(request.form.get("target_seconds"))
+    handle, temp_path = tempfile.mkstemp(suffix=extension)
+    os.close(handle)
+    try:
+        file.save(temp_path)
+        deck = slides.parse_deck(temp_path, file.filename)
+    except slides.DeckError as error:
+        return jsonify({"error": str(error)}), 400
+    finally:
+        discard_files(temp_path)
+
+    checks = slides.check_deck(deck, topic, target_seconds)
+    db = get_db()
+    cursor = db.execute(
+        "INSERT INTO decks (user_id, created_at, filename, topic, target_seconds, content, checks) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (g.user["id"], current_timestamp(), deck["filename"], topic, target_seconds, json.dumps(deck), json.dumps(checks)),
+    )
+    db.commit()
+    return jsonify(deck_summary(get_user_deck(g.user["id"], cursor.lastrowid))), 201
+
+
+@app.route("/decks/<int:deck_id>/review", methods=["POST"])
+@login_required
+def review_deck(deck_id):
+    """AI review of the slides against the topic; regenerated only when the topic or target changes."""
+    deck_row = get_user_deck(g.user["id"], deck_id)
+    if deck_row is None:
+        return jsonify({"error": "Slides not found."}), 404
+    payload = request.get_json(silent=True) or {}
+    topic = (payload.get("topic") or deck_row["topic"] or "").strip()[: modes.MAX_CUSTOM_PROMPT]
+    target_seconds = parse_int(payload.get("target_seconds")) or deck_row["target_seconds"]
+    deck = json.loads(deck_row["content"])
+
+    db = get_db()
+    if topic != (deck_row["topic"] or "") or target_seconds != deck_row["target_seconds"]:
+        checks = slides.check_deck(deck, topic, target_seconds)
+        db.execute(
+            "UPDATE decks SET topic = ?, target_seconds = ?, checks = ?, review = NULL WHERE id = ?",
+            (topic, target_seconds, json.dumps(checks), deck_id),
+        )
+        db.commit()
+        deck_row = get_user_deck(g.user["id"], deck_id)
+    elif deck_row["review"]:
+        return jsonify(deck_summary(deck_row))
+
+    config = llm.get_config()
+    if config is None:
+        return jsonify({"error": "The AI coach is not configured on this server.", "code": "coach_disabled"}), 503
+    try:
+        review = coach.review_deck(slides.outline(deck, max_chars=3000), topic, target_seconds, json.loads(deck_row["checks"]), config)
+    except llm.LLMError as error:
+        return jsonify({"error": error.message, "retryable": error.retryable}), error.status_code
+    db.execute("UPDATE decks SET review = ? WHERE id = ?", (json.dumps(review), deck_id))
+    db.commit()
+    return jsonify(deck_summary(get_user_deck(g.user["id"], deck_id)))
 
 
 def start_model_warm_up():

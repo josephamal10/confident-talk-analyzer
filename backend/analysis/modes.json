@@ -344,7 +344,8 @@
         "label": "Presentation topic",
         "custom": true,
         "notes": true,
-        "style": "text"
+        "style": "text",
+        "slides": true
       },
       "timer": {
         "target_choices": [
