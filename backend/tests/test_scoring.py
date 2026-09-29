@@ -7,6 +7,7 @@ def metrics(**overrides):
     base = {
         "word_count": 60,
         "wpm": 140,
+        "speaking_span": 60.0,
         "filler_count": 0,
         "fillers_per_100_words": 0.0,
         "top_filler": None,
@@ -25,10 +26,41 @@ def test_pace_score(wpm, expected):
     assert scoring.pace_score(wpm) == expected
 
 
+def test_pace_uses_the_mode_range():
+    assert scoring.pace_score(160, (145, 175)) == 10.0
+    assert scoring.pace_score(120, (145, 175)) < 10.0
+
+
 def test_ramp_clamps_both_ends():
     assert scoring.ramp(-5, 0, 10) == 0.0
     assert scoring.ramp(50, 0, 10) == 10.0
     assert scoring.ramp(5, 10, 0) == 5.0
+
+
+@pytest.mark.parametrize(
+    "spoken, target, expected",
+    [(58, 60, 10.0), (63, 60, 10.0), (30, 60, 0.0), (42, 60, 5.0), (90, 60, 0.0), (76.5, 60, 5.0)],
+)
+def test_timing_score(spoken, target, expected):
+    assert scoring.timing_score(spoken, target) == expected
+
+
+def test_timing_needs_a_target():
+    assert scoring.timing_score(60, None) is None
+
+
+def test_new_sub_scores():
+    assert scoring.language_score(0.0) == 10.0 and scoring.language_score(6.0) == 0.0
+    assert scoring.accuracy_score(0.98) == 10.0 and scoring.accuracy_score(None) is None
+    assert scoring.phrasing_score(0.85) == 10.0 and scoring.phrasing_score(None) is None
+    assert scoring.variety_score(1.0) == 10.0 and scoring.variety_score(8.0) == 0.0
+
+
+def test_mode_weights_select_the_sub_scores():
+    weights = {"accuracy": 0.5, "pace": 0.5}
+    sub_scores = scoring.score_metrics(metrics(reading_accuracy=0.865), weights)
+    assert set(sub_scores) == {"accuracy", "pace"}
+    assert scoring.overall_score(sub_scores, 60, weights) == 7.5
 
 
 def test_overall_uses_only_available_sub_scores():
@@ -41,18 +73,24 @@ def test_short_answers_are_capped():
     assert scoring.overall_score(sub_scores, word_count=5) == 5.0
 
 
-def test_labels():
+def test_labels_follow_the_weakest_area():
     good = metrics()
     assert scoring.delivery_label(9.5, scoring.score_metrics(good), good) == "Confident"
 
     rushed = metrics(wpm=200)
     assert scoring.delivery_label(7.0, scoring.score_metrics(rushed), rushed) == "Rushed"
 
+    slow = metrics(wpm=70)
+    assert scoring.delivery_label(7.0, scoring.score_metrics(slow), slow) == "Cautious"
+
     fillers = metrics(filler_count=6, fillers_per_100_words=10.0)
     assert scoring.delivery_label(6.0, scoring.score_metrics(fillers), fillers) == "Hesitant"
 
     flat = metrics(pitch_variation=1.2)
     assert scoring.delivery_label(7.0, scoring.score_metrics(flat), flat) == "Monotone"
+
+    hedging = metrics(hedges_per_100_words=6.0)
+    assert scoring.delivery_label(7.0, scoring.score_metrics(hedging), hedging) == "Uncertain"
 
     assert scoring.delivery_label(5.0, scoring.score_metrics(good), metrics(word_count=4)) == "Too Short"
 
@@ -66,6 +104,20 @@ def test_feedback_targets_weakest_areas():
     assert lines[1].startswith("Fluency: 5 filler words") and '"um"' in lines[1]
     assert lines[2].startswith("Expressiveness:") and "sounds flat" in lines[2]
     assert lines[-1] == "Topic check: ok."
+
+
+@pytest.mark.parametrize(
+    "name, extra, expected",
+    [
+        ("language", {"hedge_count": 4, "top_hedge": "i think"}, 'such as "i think"'),
+        ("accuracy", {"reading_accuracy": 0.82, "reading_missed": 3, "reading_misread": 2}, "82% of the script"),
+        ("phrasing", {"sentence_pause_rate": 0.4}, "40% of full stops"),
+        ("timing", {"target_seconds": 60, "speaking_span": 80}, "80s against a 60s target"),
+        ("variety", {"top_repeated_word": "basically", "top_repeated_count": 5}, '"basically" 5 times'),
+    ],
+)
+def test_tips_for_new_sub_scores(name, extra, expected):
+    assert expected in scoring.improvement_tip(name, 3.0, metrics(**extra))
 
 
 def test_tips_soften_for_slightly_low_scores():

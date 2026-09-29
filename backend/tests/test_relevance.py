@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from analysis import questions, relevance
+from analysis import relevance
 
 VECTORS = {
     "climate change": [1.0, 0.0, 0.0],
@@ -53,11 +53,10 @@ def test_split_sentences_drops_fragments():
     ]
 
 
-def test_question_bank_is_consistent():
-    bank = questions.public_bank()
-    ids = [q["id"] for category in bank["categories"] for q in category["questions"]]
-    assert len(ids) == len(set(ids)) == len(questions.QUESTIONS)
-    assert all(category["framework"]["parts"] for category in bank["categories"])
-    assert questions.get_question("behavioral-1")["framework"]["name"] == "STAR"
-    assert questions.get_question("missing") is None
-    assert bank["topics"]
+def test_sentence_similarities(fake_embeddings):
+    sims = relevance.sentence_similarities("climate change", ["Global warming is rising fast.", "My favourite food is biryani."])
+    assert sims[0] > 0.9 and sims[1] < 0.1
+
+
+def test_sentence_similarities_unavailable_without_model():
+    assert relevance.sentence_similarities("climate change", ["Anything at all here."]) is None

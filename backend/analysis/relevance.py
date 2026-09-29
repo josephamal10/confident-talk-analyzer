@@ -87,5 +87,13 @@ def topic_relevance(topic, transcript, threshold=TOPIC_THRESHOLD):
     return {"related": similarity >= threshold, "similarity": round(similarity, 3), "method": "embeddings"}
 
 
+def sentence_similarities(topic, sentences):
+    """Cosine similarity of each sentence to the topic, or None if the model is unavailable."""
+    if not sentences or not (topic or "").strip() or _load_model() is None:
+        return None
+    vectors = embed([topic.strip()] + list(sentences))
+    return [round(float(value), 3) for value in vectors[1:] @ vectors[0]]
+
+
 def warm_up():
     _load_model()

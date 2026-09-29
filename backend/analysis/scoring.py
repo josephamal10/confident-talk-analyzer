@@ -1,20 +1,20 @@
 """Turns delivery metrics into 0-10 sub-scores, an overall score, a delivery label and feedback.
 
-Each sub-score is a linear ramp between a "0/10" and a "10/10" value. The anchors are
-heuristics from public-speaking guidance (e.g. 120-160 WPM for presentations) calibrated on
-sample recordings; they are meant to be tuned against labelled evaluation data.
+Each sub-score is a linear ramp between a "0/10" and a "10/10" value. The anchors are heuristics
+from public-speaking guidance (e.g. 120-160 WPM for presentations) calibrated on sample
+recordings; they are meant to be tuned against labelled evaluation data. Each practice mode picks
+the sub-scores that matter for it and how much each counts (modes.json "weights").
 """
-IDEAL_WPM = (115, 165)
-RUSHED_WPM = 185
-SLOW_WPM = 100
+DEFAULT_WPM_RANGE = (115, 165)
 MIN_WORDS = 8
 
-WEIGHTS = {
-    "pace": 0.20,
-    "fluency": 0.25,
-    "pauses": 0.20,
-    "expressiveness": 0.15,
-    "vocal_confidence": 0.20,
+DEFAULT_WEIGHTS = {
+    "pace": 0.18,
+    "fluency": 0.22,
+    "pauses": 0.18,
+    "expressiveness": 0.12,
+    "vocal_confidence": 0.15,
+    "language": 0.15,
 }
 
 LABELS = {
@@ -23,6 +23,24 @@ LABELS = {
     "pauses": "Pausing",
     "expressiveness": "Expressiveness",
     "vocal_confidence": "Vocal confidence",
+    "language": "Confident language",
+    "accuracy": "Reading accuracy",
+    "phrasing": "Phrasing",
+    "timing": "Timing",
+    "variety": "Word variety",
+}
+
+# Delivery label when a sub-score is the weakest area and below 5.
+WEAKNESS_LABELS = {
+    "fluency": "Hesitant",
+    "pauses": "Hesitant",
+    "expressiveness": "Monotone",
+    "vocal_confidence": "Tentative",
+    "language": "Uncertain",
+    "accuracy": "Inaccurate",
+    "phrasing": "Run-on",
+    "timing": "Off-time",
+    "variety": "Repetitive",
 }
 
 
@@ -32,16 +50,17 @@ def ramp(value, zero_at, full_at):
     return round(10 * min(1.0, max(0.0, fraction)), 1)
 
 
-def pace_score(wpm):
-    if wpm < IDEAL_WPM[0]:
-        return ramp(wpm, 60, IDEAL_WPM[0])
-    if wpm > IDEAL_WPM[1]:
-        return ramp(wpm, 230, IDEAL_WPM[1])
+def pace_score(wpm, wpm_range=DEFAULT_WPM_RANGE):
+    low, high = wpm_range
+    if wpm < low:
+        return ramp(wpm, low - 55, low)
+    if wpm > high:
+        return ramp(wpm, high + 65, high)
     return 10.0
 
 
-def fluency_score(fillers_per_100_words):
-    return ramp(fillers_per_100_words, 10, 1)
+def fluency_score(disfluencies_per_100_words):
+    return ramp(disfluencies_per_100_words, 10, 1)
 
 
 def pause_score(hesitation_pauses_per_minute):
@@ -60,21 +79,61 @@ def vocal_confidence_score(dominance):
     return ramp(dominance, 0.25, 0.60)
 
 
-def score_metrics(metrics):
-    return {
-        "pace": pace_score(metrics["wpm"]),
-        "fluency": fluency_score(metrics["fillers_per_100_words"]),
-        "pauses": pause_score(metrics["hesitation_pauses_per_minute"]),
-        "expressiveness": expressiveness_score(metrics["pitch_variation"]),
-        "vocal_confidence": vocal_confidence_score(metrics["dominance"]),
-    }
+def language_score(hedges_per_100_words):
+    return ramp(hedges_per_100_words, 6, 0.5)
 
 
-def overall_score(sub_scores, word_count):
+def accuracy_score(accuracy):
+    if accuracy is None:
+        return None
+    return ramp(accuracy, 0.75, 0.98)
+
+
+def phrasing_score(sentence_pause_rate):
+    if sentence_pause_rate is None:
+        return None
+    return ramp(sentence_pause_rate, 0.3, 0.85)
+
+
+def timing_score(speaking_seconds, target_seconds):
+    """Full marks within -10%..+5% of the target, falling to 0 at half or one and a half times it."""
+    if not target_seconds:
+        return None
+    ratio = speaking_seconds / target_seconds
+    if ratio < 0.9:
+        return ramp(ratio, 0.5, 0.9)
+    if ratio > 1.05:
+        return ramp(ratio, 1.5, 1.05)
+    return 10.0
+
+
+def variety_score(repeats_per_100_words):
+    return ramp(repeats_per_100_words, 8, 1)
+
+
+SCORERS = {
+    "pace": lambda m: pace_score(m["wpm"], m.get("wpm_range") or DEFAULT_WPM_RANGE),
+    "fluency": lambda m: fluency_score(m.get("disfluencies_per_100_words", m["fillers_per_100_words"])),
+    "pauses": lambda m: pause_score(m["hesitation_pauses_per_minute"]),
+    "expressiveness": lambda m: expressiveness_score(m["pitch_variation"]),
+    "vocal_confidence": lambda m: vocal_confidence_score(m["dominance"]),
+    "language": lambda m: language_score(m.get("hedges_per_100_words", 0.0)),
+    "accuracy": lambda m: accuracy_score(m.get("reading_accuracy")),
+    "phrasing": lambda m: phrasing_score(m.get("sentence_pause_rate")),
+    "timing": lambda m: timing_score(m["speaking_span"], m.get("target_seconds")),
+    "variety": lambda m: variety_score(m.get("repeats_per_100_words", 0.0)),
+}
+
+
+def score_metrics(metrics, weights=DEFAULT_WEIGHTS):
+    return {name: SCORERS[name](metrics) for name in weights}
+
+
+def overall_score(sub_scores, word_count, weights=DEFAULT_WEIGHTS):
     """Weighted mean of the available sub-scores; very short answers are capped at 5."""
-    available = {name: value for name, value in sub_scores.items() if value is not None}
-    total_weight = sum(WEIGHTS[name] for name in available)
-    score = sum(WEIGHTS[name] * value for name, value in available.items()) / total_weight
+    available = {name: value for name, value in sub_scores.items() if value is not None and name in weights}
+    total_weight = sum(weights[name] for name in available)
+    score = sum(weights[name] * value for name, value in available.items()) / total_weight
     if word_count < MIN_WORDS:
         score = min(score, 5.0)
     return round(score, 1)
@@ -83,33 +142,31 @@ def overall_score(sub_scores, word_count):
 def delivery_label(overall, sub_scores, metrics):
     if metrics["word_count"] < MIN_WORDS:
         return "Too Short"
-    if metrics["wpm"] > RUSHED_WPM:
-        return "Rushed"
-    if sub_scores["fluency"] < 5 or sub_scores["pauses"] < 5:
-        return "Hesitant"
-    if metrics["wpm"] < SLOW_WPM:
-        return "Cautious"
-    if sub_scores["expressiveness"] is not None and sub_scores["expressiveness"] < 4:
-        return "Monotone"
-    if sub_scores["vocal_confidence"] is not None and sub_scores["vocal_confidence"] < 4:
-        return "Tentative"
-    if overall >= 8:
+    scored = {name: value for name, value in sub_scores.items() if value is not None}
+    if overall >= 8 and min(scored.values()) >= 6:
         return "Confident"
-    return "Steady"
+    weakest = min(scored, key=scored.get)
+    if scored[weakest] >= 5:
+        return "Steady"
+    if weakest == "pace":
+        return "Rushed" if metrics["wpm"] > (metrics.get("wpm_range") or DEFAULT_WPM_RANGE)[1] else "Cautious"
+    return WEAKNESS_LABELS[weakest]
 
 
 def improvement_tip(name, value, metrics):
     """A concrete tip for one sub-score; the wording softens for scores that are only slightly low."""
     minor = value >= 6
     if name == "pace":
-        if metrics["wpm"] > IDEAL_WPM[1]:
+        low, high = metrics.get("wpm_range") or DEFAULT_WPM_RANGE
+        if metrics["wpm"] > high:
             return f"Pace: {metrics['wpm']} WPM is fast. Slow down and pause briefly after key points."
-        return f"Pace: {metrics['wpm']} WPM is slow. Aim for 120-160 WPM by linking your phrases together."
+        return f"Pace: {metrics['wpm']} WPM is slow. Aim for {low}-{high} WPM by linking your phrases together."
     if name == "fluency":
-        top = f', mostly "{metrics["top_filler"]}"' if metrics["top_filler"] else ""
+        top = f', mostly "{metrics["top_filler"]}"' if metrics.get("top_filler") else ""
+        stutters = f" and {metrics['stutter_count']} repeated starts" if metrics.get("stutter_count") else ""
         return (
-            f"Fluency: {metrics['filler_count']} filler words ({metrics['fillers_per_100_words']}% of words){top}. "
-            "Replace them with a short silent pause."
+            f"Fluency: {metrics['filler_count']} filler words ({metrics['fillers_per_100_words']}% of words){top}"
+            f"{stutters}. Replace them with a short silent pause."
         )
     if name == "pauses":
         return (
@@ -122,10 +179,36 @@ def improvement_tip(name, value, metrics):
             f"Expressiveness: your pitch varied by {metrics['pitch_variation']} semitones; {verdict}. "
             "Stress key words and let your tone rise and fall."
         )
-    verdict = "could sound more assertive" if minor else "sounds tentative"
+    if name == "vocal_confidence":
+        verdict = "could sound more assertive" if minor else "sounds tentative"
+        return (
+            f"Vocal confidence: your voice {verdict}. Speak from the chest and finish sentences firmly "
+            "instead of trailing off."
+        )
+    if name == "language":
+        top = f', such as "{metrics["top_hedge"]}"' if metrics.get("top_hedge") else ""
+        return (
+            f"Confident language: {metrics.get('hedge_count', 0)} hedging words{top}. "
+            'Say "I will" rather than "I think I can", and drop "just" and "maybe".'
+        )
+    if name == "accuracy":
+        return (
+            f"Reading accuracy: {round(100 * metrics['reading_accuracy'])}% of the script read correctly "
+            f"({metrics.get('reading_missed', 0)} skipped, {metrics.get('reading_misread', 0)} misread). "
+            "Slow down slightly and let your eyes run one phrase ahead of your voice."
+        )
+    if name == "phrasing":
+        return (
+            f"Phrasing: you paused at only {round(100 * metrics['sentence_pause_rate'])}% of full stops. "
+            "Take a short breath at the end of every sentence."
+        )
+    if name == "timing":
+        target, spoken = metrics["target_seconds"], round(metrics["speaking_span"])
+        direction = "Trim a point or tighten your examples" if spoken > target else "Add an example or expand a point"
+        return f"Timing: you spoke for {spoken}s against a {target}s target. {direction} to land on time."
     return (
-        f"Vocal confidence: your voice {verdict}. Speak from the chest and finish sentences firmly "
-        "instead of trailing off."
+        f'Word variety: you repeated "{metrics.get("top_repeated_word")}" {metrics.get("top_repeated_count")} times. '
+        "Use a synonym or move on to a new idea."
     )
 
 
@@ -136,7 +219,7 @@ def build_feedback(overall, label, sub_scores, metrics, progress_note=None, topi
     if weakest:
         lines.extend(improvement_tip(name, value, metrics) for name, value in weakest)
     else:
-        lines.append("Every area scored 8 or higher. Try a longer or unscripted topic to stretch yourself.")
+        lines.append("Every area scored 8 or higher. Try a longer or harder prompt to stretch yourself.")
     best_value, best_name = ranked[-1]
     if best_value >= 7 and best_name not in dict(weakest):
         lines.append(f"Strength: {LABELS[best_name].lower()} ({best_value}/10).")

@@ -16,7 +16,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Load API keys and settings from backend/.env before the analysis modules read them.
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-from analysis import AnalysisError, analyze_recording, coach, llm, questions, relevance, warm_up  # noqa: E402
+from analysis import AnalysisError, analyze_recording, coach, evaluation, llm, modes, relevance, warm_up  # noqa: E402
 from analysis.scoring import build_feedback  # noqa: E402
 
 UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", os.path.join(BASE_DIR, "uploads"))
@@ -59,14 +59,15 @@ CREATE TABLE IF NOT EXISTS analysis_records (
     feedback TEXT NOT NULL,
     audio_filename TEXT,
     wav_filename TEXT,
-    details TEXT
+    details TEXT,
+    mode TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_analysis_records_user ON analysis_records (user_id, created_at);
 """
 
 # Columns added after the first release; init_db adds them to older databases.
-ADDED_COLUMNS = {"analysis_records": {"details": "TEXT"}}
+ADDED_COLUMNS = {"analysis_records": {"details": "TEXT", "mode": "TEXT"}}
 
 ANALYSIS_COLUMNS = (
     "topic",
@@ -86,11 +87,12 @@ ANALYSIS_COLUMNS = (
     "audio_filename",
     "wav_filename",
     "details",
+    "mode",
 )
 
 HISTORY_COLUMNS = (
     "created_at AS timestamp, topic, transcription, transcription_engine, duration, speaking_duration, "
-    "minutes, seconds, word_count, wpm, filler_count, filler_ratio, emotion AS delivery, score, feedback, details"
+    "minutes, seconds, word_count, wpm, filler_count, filler_ratio, emotion AS delivery, score, feedback, details, mode"
 )
 
 USER_COLUMNS = "id, name, email, password_hash"
@@ -249,7 +251,7 @@ def save_analysis_record(user_id, record):
 
 def get_user_record(user_id, record_id):
     return get_db().execute(
-        "SELECT id, transcription, score, emotion, details FROM analysis_records WHERE id = ? AND user_id = ?",
+        "SELECT id, transcription, score, emotion, details, mode FROM analysis_records WHERE id = ? AND user_id = ?",
         (record_id, user_id),
     ).fetchone()
 
@@ -288,28 +290,15 @@ def build_progress_note(user_id, score):
     return "Progress update: your score is stable compared to your previous attempt."
 
 
-def build_practice_context(form):
-    """What the speaker was answering: an interview question from the bank, or a free topic."""
-    if form.get("mode") == "interview":
-        question = questions.get_question(form.get("question_id", ""))
-        if question:
-            return {
-                "mode": "interview",
-                "prompt": question["text"],
-                "question_id": question["id"],
-                "category_label": question["category_label"],
-                "framework": question["framework"],
-            }
-    return {"mode": "topic", "prompt": form.get("topic", "").strip(), "framework": questions.FREE_TOPIC_FRAMEWORK}
-
-
 def build_topic_note(context, topic_match):
+    if context["mode"] == "read":
+        return None
     if topic_match is None:
         return "Topic check: no topic was provided for relevance scoring."
-    if context["mode"] == "interview":
+    if context["mode"] in ("interview", "pitch", "debate"):
         if topic_match["related"]:
-            return "Relevance check: your answer addresses the question."
-        return "Relevance check: your answer doesn't seem to address the question. Answer it directly first."
+            return "Relevance check: your answer addresses the prompt."
+        return "Relevance check: your answer doesn't seem to address the prompt. Answer it directly first."
     if topic_match["related"]:
         return "Topic check: your speech stays on the selected topic."
     return "Topic check: your speech seems off-topic. Mention more topic-specific points in your response."
@@ -409,9 +398,9 @@ def history():
     return jsonify({"history": entries, "count": len(entries)})
 
 
-@app.route("/questions", methods=["GET"])
-def question_bank():
-    return jsonify({**questions.public_bank(), "coach_available": llm.get_config() is not None})
+@app.route("/modes", methods=["GET"])
+def mode_catalog():
+    return jsonify({**modes.public_catalog(), "coach_available": llm.get_config() is not None})
 
 
 @app.route("/analyze", methods=["POST"])
@@ -428,37 +417,37 @@ def analyze():
     file.save(audio_path)
 
     try:
-        result = analyze_recording(audio_path)
+        base = analyze_recording(audio_path)
     except AnalysisError as error:
         discard_files(audio_path)
         return jsonify({"error": error.message}), error.status_code
 
+    context = modes.build_context(request.form)
+    mode = modes.get_mode(context["mode"])
+    result = evaluation.evaluate(base, mode, context)
     metrics = result["metrics"]
     minutes, seconds = split_duration(metrics["duration"])
-    context = build_practice_context(request.form)
-    threshold = relevance.QUESTION_THRESHOLD if context["mode"] == "interview" else relevance.TOPIC_THRESHOLD
-    topic_match = relevance.topic_relevance(context["prompt"], result["transcription"], threshold)
     feedback = build_feedback(
         result["score"],
         result["delivery"],
         result["sub_scores"],
         metrics,
         progress_note=build_progress_note(g.user["id"], result["score"]),
-        topic_note=build_topic_note(context, topic_match),
+        topic_note=build_topic_note(context, result["topic_match"]),
         warnings=result["warnings"],
     )
 
     details = {
-        key: result[key] for key in ("sub_scores", "metrics", "vocal_tone", "words", "pauses", "warnings", "timings_ms")
+        **{key: base[key] for key in ("words", "pauses", "unclear_indexes", "uptalk", "timeline", "vocal_tone", "timings_ms")},
+        **{key: result[key] for key in ("sub_scores", "metrics", "warnings", "topic_match", "language", "reading", "referee", "trends")},
+        "context": context,
     }
-    details["context"] = context
-    details["topic_match"] = topic_match
     record_id, history_count = save_analysis_record(
         g.user["id"],
         {
             "topic": context["prompt"],
-            "transcription": result["transcription"],
-            "transcription_engine": result["transcription_model"],
+            "transcription": base["transcription"],
+            "transcription_engine": base["transcription_model"],
             "duration": metrics["duration"],
             "speaking_duration": metrics["speaking_span"],
             "minutes": minutes,
@@ -473,6 +462,7 @@ def analyze():
             "audio_filename": audio_filename,
             "wav_filename": None,
             "details": json.dumps(details),
+            "mode": context["mode"],
         },
     )
 
@@ -480,15 +470,15 @@ def analyze():
         {
             **details,
             "id": record_id,
-            "transcription": result["transcription"],
-            "transcription_engine": result["transcription_model"],
+            "transcription": base["transcription"],
+            "transcription_engine": base["transcription_model"],
             "minutes": minutes,
             "seconds": seconds,
             "score": result["score"],
             "delivery": result["delivery"],
             "feedback": feedback,
             "history_count": history_count,
-            "coach_available": llm.get_config() is not None,
+            "coach_available": mode.get("coach") is not None and llm.get_config() is not None,
         }
     )
 
@@ -506,14 +496,21 @@ def coach_analysis(record_id):
     if "metrics" not in details:
         return jsonify({"error": "This session was recorded before AI coaching was available."}), 409
 
+    context = details.get("context") or {"mode": modes.DEFAULT_MODE, "prompt": ""}
+    mode = modes.get_mode(context.get("mode") or record["mode"])
+    if mode.get("coach") is None:
+        return jsonify({"error": f"AI coaching isn't available for {mode['label']} practice."}), 400
     config = llm.get_config()
     if config is None:
         return jsonify({"error": "The AI coach is not configured on this server.", "code": "coach_disabled"}), 503
 
-    context = details.get("context") or {"mode": "topic", "prompt": "", "framework": questions.FREE_TOPIC_FRAMEWORK}
-    analysis = {"metrics": details["metrics"], "score": record["score"], "delivery": record["emotion"]}
+    if not context.get("framework"):
+        context["framework"] = modes.FRAMEWORKS.get(mode["framework"], modes.FRAMEWORKS["SPEECH"])
+    analysis ={"metrics": details["metrics"], "score": record["score"], "delivery": record["emotion"]}
     try:
-        coaching = coach.coach_answer(record["transcription"], context, analysis, config)
+        coaching = coach.coach_answer(
+            record["transcription"], context, analysis, config, mode["coach"], modes.coach_dimensions(mode)
+        )
     except llm.LLMError as error:
         return jsonify({"error": error.message, "retryable": error.retryable}), error.status_code
 

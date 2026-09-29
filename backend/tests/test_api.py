@@ -7,37 +7,69 @@ import app as app_module
 from analysis import AnalysisError
 from conftest import SAMPLE_RATE, write_wav
 
-FAKE_RESULT = {
-    "transcription": "Confidence is the belief in your own abilities.",
+TRANSCRIPT = (
+    "Confidence is the belief in your own abilities and decisions. It helps a person face challenges, "
+    "speak clearly and take action without too much fear or doubt."
+)
+WORDS = [
+    {"text": text, "start": round(0.5 + i * 0.4, 2), "end": round(0.8 + i * 0.4, 2), "probability": 0.9, "filler": False}
+    for i, text in enumerate(TRANSCRIPT.split())
+]
+SPAN = WORDS[-1]["end"] - WORDS[0]["start"]
+FAKE_BASE = {
+    "transcription": TRANSCRIPT,
     "transcription_model": "faster-whisper/test",
-    "words": [{"text": "Confidence", "start": 0.0, "end": 0.5, "filler": False}],
+    "words": WORDS,
     "pauses": [],
+    "unclear_indexes": [],
+    "uptalk": None,
+    "timeline": [],
     "metrics": {
-        "duration": 20.0,
-        "speaking_span": 18.0,
-        "word_count": 45,
-        "wpm": 150,
-        "filler_count": 1,
-        "fillers_per_100_words": 2.2,
-        "top_filler": "um",
-        "pause_count": 2,
+        "duration": SPAN + 1.0,
+        "speaking_span": SPAN,
+        "word_count": len(WORDS),
+        "wpm": round(len(WORDS) / (SPAN / 60)),
+        "filler_count": 0,
+        "fillers_per_100_words": 0.0,
+        "top_filler": None,
+        "pause_count": 0,
         "hesitation_pause_count": 0,
         "hesitation_pauses_per_minute": 0.0,
-        "longest_pause": 0.7,
+        "longest_pause": 0.0,
+        "start_delay": 0.5,
         "pitch_variation": 3.2,
         "dominance": 0.55,
+        "unclear_word_share": 0.0,
+        "uptalk_share": None,
     },
     "vocal_tone": {"arousal": 0.5, "dominance": 0.55, "valence": 0.5},
-    "sub_scores": {"pace": 10.0, "fluency": 8.7, "pauses": 10.0, "expressiveness": 8.8, "vocal_confidence": 8.6},
-    "score": 9.2,
-    "delivery": "Confident",
     "warnings": [],
     "timings_ms": {"transcription": 1},
 }
 
+COACHING = {
+    "summary": "Clear answer.",
+    "dimensions": [["structure", "Structure"], ["clarity", "Clarity"], ["relevance", "Relevance"], ["depth", "Depth"]],
+    "content_scores": {"structure": 8, "clarity": 8, "relevance": 9, "depth": 6},
+    "content_score": 7.8,
+    "strengths": ["Direct"],
+    "improvements": [{"issue": "Thin result", "suggestion": "Quantify the outcome."}],
+    "framework": {"name": "STAR", "parts": ["Situation", "Task", "Action", "Result"], "present": ["Situation"], "missing": []},
+    "on_topic": True,
+    "topic_feedback": "Answers the question.",
+    "improved_answer": "In my final year...",
+    "improved_answer_type": "rewrite",
+    "meta": {"provider": "test", "model": "test-model", "latency_ms": 5},
+}
 
-def upload(data=b"fake audio"):
-    return {"audio": (io.BytesIO(data), "recording.webm"), "topic": "confidence"}
+
+def upload(data=b"fake audio", **fields):
+    return {"audio": (io.BytesIO(data), "recording.webm"), **fields}
+
+
+def analyze(client, monkeypatch, **fields):
+    monkeypatch.setattr(app_module, "analyze_recording", lambda path: FAKE_BASE)
+    return client.post("/analyze", data=upload(**fields)).get_json()
 
 
 def test_protected_routes_require_login(client):
@@ -62,24 +94,53 @@ def test_register_login_logout(client):
     assert client.get("/me").status_code == 401
 
 
-def test_analyze_saves_to_the_logged_in_user_only(client, make_user, monkeypatch):
-    monkeypatch.setattr(app_module, "analyze_recording", lambda path: FAKE_RESULT)
-    make_user()
+def test_mode_catalog(client):
+    body = client.get("/modes").get_json()
+    assert [mode["id"] for mode in body["modes"]][0] == "free"
+    assert body["coach_available"] is False
+    assert body["interview"] and body["passages"] and body["banks"]["jam_topics"]
 
-    body = client.post("/analyze", data=upload()).get_json()
-    assert body["score"] == 9.2
-    assert body["delivery"] == "Confident"
-    assert body["sub_scores"]["fluency"] == 8.7
-    assert body["feedback"].startswith("Overall 9.2/10 (Confident).")
+
+def test_analyze_saves_to_the_logged_in_user_only(client, make_user, monkeypatch):
+    make_user()
+    body = analyze(client, monkeypatch, mode="free", custom_prompt="confidence")
+    assert body["context"]["mode"] == "free" and body["context"]["prompt"] == "confidence"
+    assert set(body["sub_scores"]) == set(app_module.modes.get_mode("free")["weights"])
+    assert body["feedback"].startswith(f"Overall {body['score']}/10 ({body['delivery']}).")
+    assert body["language"]["hedges"] == [] and body["reading"] is None
 
     history = client.get("/history").get_json()
     assert history["count"] == 1
-    assert history["history"][0]["delivery"] == "Confident"
-    assert history["history"][0]["sub_scores"]["pace"] == 10.0
+    entry = history["history"][0]
+    assert entry["mode"] == "free" and entry["delivery"] == body["delivery"] and entry["sub_scores"]
 
     other = app_module.app.test_client()
     make_user(other)
     assert other.get("/history").get_json()["count"] == 0
+
+
+def test_interview_mode_records_the_question(client, make_user, monkeypatch):
+    make_user()
+    body = analyze(client, monkeypatch, mode="interview", prompt_id="behavioral-1")
+    assert body["id"] > 0 and body["coach_available"] is False
+    assert body["context"]["framework"]["name"] == "STAR"
+    history = client.get("/history").get_json()["history"]
+    assert history[-1]["topic"].startswith("Tell me about a time you faced a conflict")
+    assert history[-1]["mode"] == "interview"
+
+
+def test_read_mode_returns_reading_alignment(client, make_user, monkeypatch):
+    make_user()
+    body = analyze(client, monkeypatch, mode="read", custom_script=TRANSCRIPT)
+    assert body["reading"]["accuracy"] == 1.0
+    assert body["sub_scores"]["accuracy"] == 10.0
+    assert body["coach_available"] is False
+
+
+def test_jam_mode_returns_referee(client, make_user, monkeypatch):
+    make_user()
+    body = analyze(client, monkeypatch, mode="jam", prompt_id="jam_topics-1")
+    assert body["context"]["prompt"] == "Umbrellas" and body["referee"]["counts"]["hesitation"] == 0
 
 
 def test_analysis_errors_are_returned_and_upload_discarded(client, make_user, monkeypatch):
@@ -99,7 +160,8 @@ def test_analysis_errors_are_returned_and_upload_discarded(client, make_user, mo
 def test_silent_recording_end_to_end(client, make_user, tmp_path):
     make_user()
     path = write_wav(tmp_path / "silence.wav", np.zeros(SAMPLE_RATE * 2, dtype=np.float32))
-    response = client.post("/analyze", data={"audio": (open(path, "rb"), "recording.wav")})
+    with open(path, "rb") as file:
+        response = client.post("/analyze", data={"audio": (file, "recording.wav")})
     assert response.status_code == 422
 
 
@@ -115,64 +177,28 @@ def test_oversized_upload_returns_json(client, make_user):
     assert "error" in response.get_json()
 
 
-COACHING = {
-    "summary": "Clear answer.",
-    "content_scores": {"structure": 8, "clarity": 8, "relevance": 9, "depth": 6},
-    "content_score": 7.8,
-    "strengths": ["Direct"],
-    "improvements": [{"issue": "Thin result", "suggestion": "Quantify the outcome."}],
-    "framework": {"name": "STAR", "parts": ["Situation", "Task", "Action", "Result"], "present": ["Situation"], "missing": []},
-    "on_topic": True,
-    "topic_feedback": "Answers the question.",
-    "improved_answer": "In my final year...",
-    "meta": {"provider": "test", "model": "test-model", "latency_ms": 5},
-}
-
-
-def analyze_interview(client, monkeypatch, question_id="behavioral-1"):
-    monkeypatch.setattr(app_module, "analyze_recording", lambda path: FAKE_RESULT)
-    data = {"audio": (io.BytesIO(b"fake audio"), "recording.webm"), "mode": "interview", "question_id": question_id}
-    return client.post("/analyze", data=data).get_json()
-
-
-def test_question_bank_endpoint(client):
-    body = client.get("/questions").get_json()
-    assert {c["id"] for c in body["categories"]} == {"behavioral", "personal", "technical"}
-    assert body["coach_available"] is False
-    assert body["topics"]
-
-
-def test_interview_mode_records_the_question(client, make_user, monkeypatch):
-    make_user()
-    body = analyze_interview(client, monkeypatch)
-    assert body["id"] > 0 and body["coach_available"] is False
-    assert body["context"]["mode"] == "interview"
-    assert body["context"]["framework"]["name"] == "STAR"
-    history = client.get("/history").get_json()["history"]
-    assert history[-1]["topic"].startswith("Tell me about a time you faced a conflict")
-
-
-def test_unknown_question_falls_back_to_free_topic(client, make_user, monkeypatch):
-    make_user()
-    body = analyze_interview(client, monkeypatch, question_id="nope")
-    assert body["context"]["mode"] == "topic"
-
-
 def test_coach_disabled_returns_503(client, make_user, monkeypatch):
     make_user()
-    record_id = analyze_interview(client, monkeypatch)["id"]
+    record_id = analyze(client, monkeypatch, mode="interview", prompt_id="behavioral-1")["id"]
     response = client.post(f"/analyses/{record_id}/coach")
     assert response.status_code == 503
     assert response.get_json()["code"] == "coach_disabled"
 
 
+def test_read_mode_is_not_coached(client, make_user, monkeypatch):
+    make_user()
+    record_id = analyze(client, monkeypatch, mode="read", custom_script=TRANSCRIPT)["id"]
+    monkeypatch.setattr(app_module.llm, "get_config", lambda: object())
+    assert client.post(f"/analyses/{record_id}/coach").status_code == 400
+
+
 def test_coach_generates_once_then_serves_cached(client, make_user, monkeypatch):
     make_user()
-    record_id = analyze_interview(client, monkeypatch)["id"]
+    record_id = analyze(client, monkeypatch, mode="pitch", prompt_id="pitch_prompts-1", target_seconds="30")["id"]
     calls = []
 
-    def fake_coach(transcript, context, analysis, config):
-        calls.append((transcript, context["prompt"], analysis["score"]))
+    def fake_coach(transcript, context, analysis, config, coach_config, dimensions):
+        calls.append((context["prompt"], context["target_seconds"], coach_config["dimensions"], dimensions[0]))
         return COACHING
 
     monkeypatch.setattr(app_module.llm, "get_config", lambda: object())
@@ -182,12 +208,12 @@ def test_coach_generates_once_then_serves_cached(client, make_user, monkeypatch)
     second = client.post(f"/analyses/{record_id}/coach").get_json()
     assert first["coach"]["content_score"] == 7.8 and first["cached"] is False
     assert second["cached"] is True and len(calls) == 1
-    assert calls[0][1].startswith("Tell me about a time you faced a conflict") and calls[0][2] == 9.2
+    assert calls[0] == ("Pitch yourself for your dream internship", 30, "pitch", ("hook", "Hook"))
 
 
 def test_coach_errors_pass_through_status(client, make_user, monkeypatch):
     make_user()
-    record_id = analyze_interview(client, monkeypatch)["id"]
+    record_id = analyze(client, monkeypatch, mode="interview", prompt_id="behavioral-1")["id"]
 
     def rate_limited(*args):
         raise app_module.llm.LLMError("Rate limited.", retryable=True, status_code=429)
@@ -201,7 +227,7 @@ def test_coach_errors_pass_through_status(client, make_user, monkeypatch):
 
 def test_coach_is_scoped_to_the_owner(client, make_user, monkeypatch):
     make_user()
-    record_id = analyze_interview(client, monkeypatch)["id"]
+    record_id = analyze(client, monkeypatch, mode="interview", prompt_id="behavioral-1")["id"]
     other = app_module.app.test_client()
     make_user(other)
     assert other.post(f"/analyses/{record_id}/coach").status_code == 404

@@ -50,7 +50,7 @@ def get_session():
     return _session
 
 
-def _window_bounds(sample_count):
+def window_bounds(sample_count):
     window = WINDOW_SECONDS * SAMPLE_RATE
     starts = list(range(0, sample_count, window))
     # Fold a short tail into the previous window instead of scoring a fragment on its own.
@@ -61,7 +61,8 @@ def _window_bounds(sample_count):
 
 
 def predict_vocal_tone(audio):
-    """Returns {"arousal", "dominance", "valence"} (about 0..1) for the clip, or None if unavailable."""
+    """Returns {"arousal", "dominance", "valence"} (about 0..1) for the clip plus the same values per
+    10 s window under "windows", or None if the model is unavailable."""
     if len(audio) < MIN_WINDOW_SECONDS * SAMPLE_RATE:
         return None
     session = get_session()
@@ -69,9 +70,11 @@ def predict_vocal_tone(audio):
         return None
 
     predictions, weights = [], []
-    for start, end in _window_bounds(len(audio)):
+    for start, end in window_bounds(len(audio)):
         window = audio[start:end].astype(np.float32)[np.newaxis, :]
         predictions.append(session.run(["logits"], {"signal": window})[0][0])
         weights.append(end - start)
     averaged = np.average(predictions, axis=0, weights=weights)
-    return {name: round(float(value), 3) for name, value in zip(DIMENSIONS, averaged)}
+    tone = {name: round(float(value), 3) for name, value in zip(DIMENSIONS, averaged)}
+    tone["windows"] = [{name: round(float(value), 3) for name, value in zip(DIMENSIONS, p)} for p in predictions]
+    return tone

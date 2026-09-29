@@ -1,0 +1,205 @@
+{
+  "interview": [
+    {
+      "id": "intro",
+      "label": "Self-introduction",
+      "framework": "INTRO",
+      "questions": [
+        "Tell me about yourself.",
+        "Introduce yourself in one minute.",
+        "Walk me through your resume.",
+        "Introduce yourself to your new team on your first day.",
+        "Introduce yourself at a networking event."
+      ]
+    },
+    {
+      "id": "behavioral",
+      "label": "Behavioral",
+      "framework": "STAR",
+      "questions": [
+        "Tell me about a time you faced a conflict in a team and how you handled it.",
+        "Describe a difficult problem you solved. What was your approach?",
+        "Tell me about a time you failed. What did you learn?",
+        "Give an example of a goal you set and how you achieved it.",
+        "Tell me about a time you showed leadership without being the official leader.",
+        "Describe a situation where you had to learn something new very quickly.",
+        "Tell me about a time you disagreed with a decision. What did you do?",
+        "Describe a time you worked under pressure or a tight deadline.",
+        "Tell me about a project you are proud of and your role in it.",
+        "Describe a time you received critical feedback and how you responded."
+      ]
+    },
+    {
+      "id": "personal",
+      "label": "About you",
+      "framework": "PREP",
+      "questions": [
+        "Why do you want to work in AI engineering?",
+        "What are your greatest strengths?",
+        "What is one weakness you are working on?",
+        "Where do you see yourself in five years?",
+        "Why should we hire you for this role?",
+        "What motivates you to do your best work?",
+        "How do you keep your technical skills up to date?"
+      ]
+    },
+    {
+      "id": "technical",
+      "label": "Explain it simply",
+      "framework": "EXPLAIN",
+      "questions": [
+        "Explain how a machine learning model learns, as if to a non-technical manager.",
+        "What is the difference between supervised and unsupervised learning?",
+        "Explain what an API is to someone who has never programmed.",
+        "How does a large language model generate an answer?",
+        "Explain overfitting and how you would prevent it.",
+        "What is retrieval-augmented generation and why is it useful?",
+        "Walk me through how you would debug a slow web application.",
+        "Explain the trade-offs of running an AI model locally versus calling a cloud API."
+      ]
+    }
+  ],
+  "topics": [
+    "The role of AI in education",
+    "A book or film that changed how you think",
+    "Why everyone should learn to code",
+    "The best advice you have ever received",
+    "How social media affects young people",
+    "A skill you taught yourself",
+    "Should remote work become the norm?",
+    "The importance of mental health",
+    "A technology that will change the next decade",
+    "How AI is changing healthcare",
+    "Tips for managing exam stress",
+    "Why sleep matters more than you think",
+    "How to build a personal brand"
+  ],
+  "jam_topics": [
+    "Umbrellas", "Monday mornings", "Chai versus coffee", "Traffic jams", "If animals could talk",
+    "The colour blue", "Street food", "Rainy days", "Your phone's battery", "Time travel",
+    "Superheroes", "Cricket", "Online classes", "Selfies", "A world without the internet",
+    "Dreams", "Friendship", "Plastic", "Robots", "Books versus movies",
+    "The perfect weekend", "Money", "Space travel", "Music", "Festivals",
+    "Homework", "Silence", "Shoes", "Mirrors", "Clocks"
+  ],
+  "snap_topics": [
+    "If you could master one skill overnight, what would it be?",
+    "Describe the best teacher you have had.",
+    "What would you do with an extra hour every day?",
+    "The most useful app on your phone",
+    "If you ran your college for a day",
+    "A small habit that changed your life",
+    "Your favourite place in your city",
+    "What makes a good leader?",
+    "Should homework be banned?",
+    "The best advice you would give your younger self",
+    "A problem in your neighbourhood and how to fix it",
+    "Describe a perfect Sunday",
+    "What does success mean to you?",
+    "If you could meet any person from history",
+    "The most interesting thing you learned this month",
+    "Why teamwork matters",
+    "Describe your dream job",
+    "A movie everyone should watch",
+    "What would you invent to make life easier?",
+    "How technology has changed your family's life"
+  ],
+  "pitch_prompts": [
+    "Pitch yourself for your dream internship",
+    "Pitch a mobile app that solves a problem on your campus",
+    "Pitch this speech-coaching app to an investor",
+    "Pitch your final-year project to a recruiter",
+    "Pitch a small business idea for your neighbourhood",
+    "Convince your manager to let the team try a new tool",
+    "Pitch a volunteering idea to your college club",
+    "Pitch yourself to a startup founder you meet in a lift"
+  ],
+  "motions": [
+    "Artificial intelligence will create more jobs than it destroys",
+    "Social media does more harm than good",
+    "Working from home is better than working in an office",
+    "Online learning can replace classroom teaching",
+    "College attendance should not be compulsory",
+    "A cashless economy is good for everyone",
+    "Electric vehicles are the future of transport",
+    "Exams are not a true measure of intelligence",
+    "Space exploration is worth the cost",
+    "Every student should learn to code",
+    "Mobile phones should be banned in schools",
+    "Fast fashion should be taxed",
+    "A four-day working week should be the norm",
+    "Reality shows do more harm than good",
+    "Celebrities should stay out of politics"
+  ],
+  "passage_styles": {
+    "news": {"label": "News bulletin", "wpm_range": [145, 175]},
+    "weather": {"label": "Weather report", "wpm_range": [140, 170]},
+    "announcement": {"label": "Announcement", "wpm_range": [120, 150]},
+    "story": {"label": "Story", "wpm_range": [125, 160]},
+    "speech": {"label": "Formal speech", "wpm_range": [115, 150]},
+    "explainer": {"label": "Explainer", "wpm_range": [130, 160]},
+    "custom": {"label": "Your own text", "wpm_range": [120, 165]}
+  },
+  "passages": [
+    {
+      "id": "news-night-buses",
+      "title": "Free night buses",
+      "style": "news",
+      "text": "Good evening, here are tonight's headlines. The city council has announced that free night buses will begin running from next Monday. The new service will operate every 30 minutes on four of the busiest routes, from late evening until early morning. Officials say the plan is meant to help shift workers, nurses and students travel home safely. The scheme will be reviewed after six months, and residents in the outer suburbs have already asked for more routes to be added."
+    },
+    {
+      "id": "news-robotics",
+      "title": "Students win robotics championship",
+      "style": "news",
+      "text": "A team of engineering students has won first place at the national robotics championship. Their robot, designed to sort recyclable waste, correctly identified plastic, glass and paper in under two seconds per item. The team spent eight months building and testing the machine in their college workshop. Speaking after the award, the team captain said the real challenge was not the code, but making the robot reliable enough to work outside the lab. The students now hope to test their design at a local recycling centre."
+    },
+    {
+      "id": "news-heavy-rain",
+      "title": "Heavy rain disrupts travel",
+      "style": "news",
+      "text": "Heavy rain continued across the region today, flooding several low-lying roads and delaying trains during the morning rush. Emergency teams cleared fallen trees on two main highways, and schools in the worst-affected areas will remain closed tomorrow. The weather office has warned that more showers are expected over the next 48 hours. Residents are advised to avoid travel unless necessary, keep their phones charged, and follow updates from local authorities."
+    },
+    {
+      "id": "weather-weekend",
+      "title": "Weekend weather outlook",
+      "style": "weather",
+      "text": "Here is the weekend weather outlook. Saturday will start cloudy, with light showers in the morning clearing by midday. Temperatures will reach a pleasant 26 degrees in the afternoon, with a gentle breeze from the west. Sunday looks brighter and warmer, with plenty of sunshine and highs of around 30 degrees. If you are heading out in the evening, carry a light jacket, as temperatures will drop quickly after sunset. Have a great weekend."
+    },
+    {
+      "id": "announcement-train",
+      "title": "Railway platform announcement",
+      "style": "announcement",
+      "text": "Attention please. The express train to the central station, scheduled to depart from platform three, is running 20 minutes late due to a signal problem. We apologise for the inconvenience. Passengers are requested to keep their luggage with them at all times and to stand behind the yellow line. Refreshments are available at the cafe near the main entrance. Thank you for your patience."
+    },
+    {
+      "id": "announcement-tech-fest",
+      "title": "College festival announcement",
+      "style": "announcement",
+      "text": "Good morning, everyone. This is a reminder that the annual technical festival begins this Friday in the main auditorium. Events include a coding marathon, a robotics showcase and a public speaking contest. Registration closes on Wednesday evening, so please sign up at the student office or on the college website. Volunteers are still needed for the welcome desk. We look forward to seeing all of you there."
+    },
+    {
+      "id": "story-lighthouse",
+      "title": "The lighthouse keeper",
+      "style": "story",
+      "text": "Every night for forty years, the old keeper climbed the narrow steps of the lighthouse. He knew each step by its sound: the creak of the third, the echo of the last. One stormy evening, the great light flickered and went dark. Without thinking, he lit his small lantern and held it at the window for hours, arms shaking, until the storm passed. At dawn, a fishing boat returned safely to the harbour. The captain never learned who had saved them, but the keeper smiled all the same."
+    },
+    {
+      "id": "story-last-train",
+      "title": "The last train home",
+      "style": "story",
+      "text": "Maya reached the station just as the last train was pulling away. She stood on the empty platform, listening to the rain on the roof and wondering how she would get home. Then she noticed an old man sitting on the bench beside her, holding two cups of tea. He offered her one without a word. They talked for an hour about books, trains and the cities they had lived in. When the first morning train arrived, Maya realised she had not worried about being late even once."
+    },
+    {
+      "id": "speech-graduation",
+      "title": "Graduation welcome address",
+      "style": "speech",
+      "text": "Good morning, honoured guests, faculty members, parents and, most importantly, our graduating students. Today we celebrate years of hard work, late nights and quiet determination. Each of you arrived here with a dream, and each of you leaves with the skills and friendships to pursue it. The world you are entering will change quickly, but curiosity, kindness and the courage to keep learning will never go out of date. Congratulations, and welcome to the next chapter of your lives."
+    },
+    {
+      "id": "explainer-solar",
+      "title": "How solar panels work",
+      "style": "explainer",
+      "text": "How do solar panels turn sunlight into electricity? Each panel is made of many small cells, usually built from a material called silicon. When sunlight hits a cell, it knocks tiny particles called electrons loose from their atoms. The cell is designed so that these electrons flow in one direction, creating an electric current. An inverter then converts this current into the type of electricity used in our homes. On a sunny day, a few panels on a roof can power lights, fans and even a refrigerator."
+    }
+  ]
+}

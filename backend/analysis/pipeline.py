@@ -1,4 +1,7 @@
-"""End-to-end analysis of one recording."""
+"""Signal-level analysis of one recording: transcript, timing, pitch and vocal tone.
+
+Mode-specific checks and scoring happen afterwards in evaluation.py.
+"""
 import logging
 import time
 from collections import Counter
@@ -6,13 +9,14 @@ from collections import Counter
 from . import emotion, transcription
 from .audio import SAMPLE_RATE, detect_speech, load_audio
 from .fillers import find_filler_spans, normalize
-from .prosody import find_pauses, pitch_variation, speaking_span
-from .scoring import delivery_label, overall_score, score_metrics
+from .prosody import build_timeline, detect_uptalk, find_pauses, pitch_track, pitch_variation, speaking_span
 
 logger = logging.getLogger(__name__)
 
 MIN_SPEECH_SECONDS = 0.5
 RELIABLE_SPEECH_SECONDS = 10
+# Words the recogniser was unsure about; often mumbled or unclear speech.
+UNCLEAR_WORD_PROBABILITY = 0.45
 
 
 class AnalysisError(Exception):
@@ -29,7 +33,7 @@ def warm_up():
 
 
 def analyze_recording(path):
-    """Returns transcript, per-word timeline, metrics and scores for an audio file.
+    """Returns the transcript with a per-word timeline plus timing, pitch and vocal-tone measurements.
 
     Raises AnalysisError when the file can't be decoded or contains no usable speech.
     """
@@ -67,14 +71,20 @@ def analyze_recording(path):
     pauses = find_pauses(words, speech_regions, filler_indexes)
     hesitation_pauses = [pause for pause in pauses if pause["kind"] == "hesitation"]
 
-    speech_audio = audio[int(words[0]["start"] * SAMPLE_RATE) : int(words[-1]["end"] * SAMPLE_RATE) + 1]
-    pitch = pitch_variation(speech_audio)
+    offset = words[0]["start"]
+    speech_audio = audio[int(offset * SAMPLE_RATE) : int(words[-1]["end"] * SAMPLE_RATE) + 1]
+    track = pitch_track(speech_audio)
+    uptalk = detect_uptalk(words, track, offset)
     lap("pitch")
     vocal_tone = emotion.predict_vocal_tone(speech_audio)
     lap("emotion")
+    timeline = build_timeline(
+        words, speech_audio, offset, emotion.window_bounds(len(speech_audio)), (vocal_tone or {}).get("windows")
+    )
 
     word_count = len(words)
     filler_texts = Counter(" ".join(normalize(words[i]["text"]) for i in filler) for filler in filler_spans)
+    unclear = [i for i, word in enumerate(words) if not word["filler"] and word["probability"] < UNCLEAR_WORD_PROBABILITY]
     metrics = {
         "duration": round(duration, 2),
         "speaking_span": round(span, 2),
@@ -87,27 +97,28 @@ def analyze_recording(path):
         "hesitation_pause_count": len(hesitation_pauses),
         "hesitation_pauses_per_minute": round(len(hesitation_pauses) / minutes_spoken, 1) if minutes_spoken else 0,
         "longest_pause": max((pause["duration"] for pause in pauses), default=0.0),
-        "pitch_variation": pitch,
+        "start_delay": round(offset, 1),
+        "pitch_variation": pitch_variation(track),
         "dominance": vocal_tone["dominance"] if vocal_tone else None,
+        "unclear_word_share": round(len(unclear) / word_count, 2),
+        "uptalk_share": uptalk["share"] if uptalk else None,
     }
-    sub_scores = score_metrics(metrics)
-    overall = overall_score(sub_scores, word_count)
 
     warnings = []
     if span < RELIABLE_SPEECH_SECONDS:
         warnings.append("Tip: speak for at least 15 seconds so the scores are reliable.")
 
-    logger.info("Analyzed %.1fs recording in %s ms: score %s", duration, timings, overall)
+    logger.info("Analyzed %.1fs recording in %s ms", duration, timings)
     return {
         "transcription": text,
         "transcription_model": f"faster-whisper/{transcription.MODEL_NAME}",
         "words": words,
         "pauses": pauses,
+        "unclear_indexes": unclear,
+        "uptalk": uptalk,
+        "timeline": timeline,
         "metrics": metrics,
-        "vocal_tone": vocal_tone,
-        "sub_scores": sub_scores,
-        "score": overall,
-        "delivery": delivery_label(overall, sub_scores, metrics),
+        "vocal_tone": {key: value for key, value in vocal_tone.items() if key != "windows"} if vocal_tone else None,
         "warnings": warnings,
         "timings_ms": timings,
     }

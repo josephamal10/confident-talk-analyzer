@@ -23,8 +23,10 @@ WORDS = [
 @pytest.fixture
 def stub_models(monkeypatch):
     words = [{"text": text, "start": start, "end": end, "probability": 0.9} for text, start, end in WORDS]
+    words[5]["probability"] = 0.2  # "in" was hard to recognise
     monkeypatch.setattr(transcription, "transcribe", lambda audio: (" ".join(w[0] for w in WORDS), [dict(w) for w in words]))
-    monkeypatch.setattr(emotion, "predict_vocal_tone", lambda audio: {"arousal": 0.5, "dominance": 0.55, "valence": 0.5})
+    tone_result = {"arousal": 0.5, "dominance": 0.55, "valence": 0.5, "windows": [{"arousal": 0.5, "dominance": 0.55, "valence": 0.5}]}
+    monkeypatch.setattr(emotion, "predict_vocal_tone", lambda audio: tone_result)
     monkeypatch.setattr(pipeline, "detect_speech", lambda audio: [(0.5, 1.8), (2.8, 5.0)])
 
 
@@ -39,8 +41,11 @@ def test_pipeline_end_to_end(tmp_path, stub_models):
     assert metrics["wpm"] == round(10 / (4.5 / 60))
     assert metrics["hesitation_pause_count"] == 1
     assert metrics["dominance"] == 0.55
-    assert set(result["sub_scores"]) == {"pace", "fluency", "pauses", "expressiveness", "vocal_confidence"}
-    assert 0 <= result["score"] <= 10
+    assert metrics["start_delay"] == 0.5
+    assert result["unclear_indexes"] == [5]
+    assert result["vocal_tone"] == {"arousal": 0.5, "dominance": 0.55, "valence": 0.5}
+    assert len(result["timeline"]) == 1 and result["timeline"][0]["dominance"] == 0.55
+    assert result["uptalk"]["statements"] >= 0
     assert result["warnings"], "a 4.5 s answer should get the 'speak longer' tip"
 
 
@@ -66,8 +71,8 @@ def test_undecodable_file_is_rejected(tmp_path):
 
 def test_emotion_windows_fold_short_tail():
     ten = 10 * SAMPLE_RATE
-    assert emotion._window_bounds(25 * SAMPLE_RATE) == [(0, ten), (ten, 2 * ten), (2 * ten, 25 * SAMPLE_RATE)]
-    assert emotion._window_bounds(21 * SAMPLE_RATE) == [(0, ten), (ten, 21 * SAMPLE_RATE)]
+    assert emotion.window_bounds(25 * SAMPLE_RATE) == [(0, ten), (ten, 2 * ten), (2 * ten, 25 * SAMPLE_RATE)]
+    assert emotion.window_bounds(21 * SAMPLE_RATE) == [(0, ten), (ten, 21 * SAMPLE_RATE)]
 
 
 def test_missing_emotion_model_disables_vocal_confidence():

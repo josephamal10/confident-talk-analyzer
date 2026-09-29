@@ -58,9 +58,9 @@ def transcribe(audio):
     words = [
         {
             "text": word.word.strip(),
-            "start": round(word.start, 2),
-            "end": round(word.end, 2),
-            "probability": round(word.probability, 3),
+            "start": round(float(word.start), 2),
+            "end": round(float(word.end), 2),
+            "probability": round(float(word.probability), 3),
         }
         for segment in segments
         for word in segment.words or []

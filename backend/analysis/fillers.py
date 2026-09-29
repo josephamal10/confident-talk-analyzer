@@ -7,7 +7,7 @@ CLAUSE_END_PATTERN = re.compile(r"[,.;:!?—…]$")
 
 
 def normalize(token):
-    return re.sub(r"[^a-z']", "", token.lower())
+    return re.sub(r"[^a-z']", "", token.lower().replace("’", "'"))
 
 
 def split_clauses(tokens):
