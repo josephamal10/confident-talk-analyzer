@@ -969,6 +969,57 @@ textarea {
   overflow-y: auto;
   font-size: 1.2rem;
   line-height: 1.75;
+  white-space: pre-line;
+}
+
+.teleprompter-long {
+  max-height: min(55vh, 520px);
+  padding-right: 6px;
+}
+
+.document-preview {
+  max-height: 220px;
+}
+
+.document-preview p {
+  margin: 0 0 10px;
+}
+
+.document-preview p:last-child {
+  margin-bottom: 0;
+}
+
+.reading-match {
+  margin: 4px 0 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  border-left: 4px solid var(--accent-2);
+  background: var(--soft-bg);
+}
+
+.reading-match:empty {
+  display: none;
+}
+
+.match-same,
+.match-close {
+  border-left-color: #16a34a;
+}
+
+.match-skipped,
+.match-partial,
+.match-related {
+  border-left-color: #d97706;
+}
+
+.match-different {
+  border-left-color: #dc2626;
+}
+
+.coach-footer {
+  margin-top: 12px;
+  font-size: 0.8rem;
 }
 
 .timer-block {

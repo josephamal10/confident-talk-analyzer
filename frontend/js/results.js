@@ -83,9 +83,9 @@ export function createResultView(container) {
     const { hesitation, repetition, deviation } = referee.counts;
     const total = hesitation + repetition + deviation;
     part("refereeSummary").textContent = total
-      ? `You would have been challenged ${plural(total, "time")}: ${hesitation} hesitation, ${repetition} repetition, ${deviation} deviation. Clean run before the first challenge: ${referee.clean_seconds}s.`
-      : "No challenges: a clean run with no hesitation, repetition or deviation!";
-    if (!referee.deviation_checked) part("refereeSummary").textContent += " (Deviation check unavailable.)";
+      ? `A JAM referee would have stopped you ${plural(total, "time")} (${hesitation} for hesitating, ${repetition} for repeating yourself, ${deviation} for going off-topic). You got ${referee.clean_seconds}s in before the first challenge.`
+      : "Not a single challenge: no hesitating, no repeating yourself and no going off-topic. That's a clean minute.";
+    if (!referee.deviation_checked) part("refereeSummary").textContent += " (The off-topic check isn't available right now.)";
 
     const list = part("refereeEvents");
     list.textContent = "";
@@ -96,10 +96,25 @@ export function createResultView(container) {
     });
   }
 
-  function renderReading(reading) {
+  function renderReading(reading, context) {
     part("readingPanel").classList.toggle("hidden", !reading);
     if (!reading) return;
     const { counts } = reading;
+    const match = reading.match;
+    part("readingMatch").className = `reading-match${match ? ` match-${match.verdict}` : ""}`;
+    part("readingMatch").textContent = match ? match.message : "";
+
+    const doc = context?.document;
+    const section = reading.section;
+    part("readingSection").textContent = !doc
+      ? ""
+      : section
+        ? `You read about ${Math.max(1, Math.round(section.share * 100))}% of ${doc.filename}, from "${section.first_words.replace(/[.,;:!?]+$/, "")}..." to "...${section.last_words}"`
+        : `Nothing you said matched ${doc.filename} word for word, so there's no word-by-word check this time.`;
+    const aligned = reading.tokens.length > 0;
+    part("readingScript").classList.toggle("hidden", !aligned);
+    part("readingLegend").classList.toggle("hidden", !aligned);
+    part("readingSummary").classList.toggle("hidden", !aligned);
     const parts = [
       `${Math.round(reading.accuracy * 100)}% read correctly`,
       `${counts.missed} skipped`,
@@ -216,7 +231,7 @@ export function createResultView(container) {
     renderTranscript(result);
     part("feedback").textContent = result.feedback || "-";
     renderReferee(result.referee);
-    renderReading(result.reading);
+    renderReading(result.reading, result.context);
     renderSlides(result.slides_match, result.context?.deck);
     renderTimeline(result);
   }

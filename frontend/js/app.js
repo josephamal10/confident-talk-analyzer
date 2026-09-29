@@ -3,6 +3,7 @@ import { SKILL_LABELS, el, formatClock, initializeTheme, requestJson } from "./c
 import { getUser, initAuth, loadUser, onAuthChange, requireLogin, sessionExpired, showLogin } from "./auth.js";
 import { createCoachView } from "./coach.js";
 import { initDeckUpload } from "./deck.js";
+import { initDocumentUpload } from "./document.js";
 import { completeLoader, hideLoader, setStage, showLoader } from "./loader.js";
 import * as practice from "./practice.js";
 import { drawChart as drawProgressChart, showProgress } from "./progress.js";
@@ -29,7 +30,6 @@ let practiceCoach = null;
 let audioBlob = null;
 let activeLimit = null;
 let activePrep = 0;
-let restartAfterCancel = false;
 
 const onSessionExpired = () => sessionExpired(currentPath());
 
@@ -127,6 +127,8 @@ function showStage() {
   $("stagePrompt").classList.toggle("hidden", !content.text);
   $("teleprompter").textContent = content.script || "";
   $("teleprompter").classList.toggle("hidden", !content.script);
+  $("teleprompter").classList.toggle("teleprompter-long", Boolean(content.long));
+  $("teleprompter").scrollTop = 0;
   const slides = $("stageSlides");
   slides.textContent = "";
   (content.slides || []).forEach((title) => slides.appendChild(el("li", "", title)));
@@ -162,12 +164,7 @@ const recorder = new Recorder({
     if (!blob) {
       setControls("idle");
       $("stage").classList.add("hidden");
-      if (restartAfterCancel) {
-        restartAfterCancel = false;
-        startPractice();
-      } else {
-        setStatus("That take was discarded. Press Start recording when you're ready.");
-      }
+      setStatus("That take was thrown away. Take a moment, then press Start recording when you're ready.");
       return;
     }
     audioBlob = blob;
@@ -176,6 +173,14 @@ const recorder = new Recorder({
     analyzeRecording(reachedLimit ? "Time's up! " : "");
   },
 });
+
+// Back to the set-up with the Start button, so there's time to get ready (or pick a new prompt) first.
+function readyForAnotherTake() {
+  resetAttempt();
+  setControls("idle");
+  setStatus("Ready for another go. Take a moment, then press Start recording when you're ready.");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 
 async function startPractice() {
   if (!requireLogin(currentPath())) return;
@@ -305,11 +310,8 @@ document.querySelectorAll("[data-scroll]").forEach((link) => {
 $("startBtn").addEventListener("click", startPractice);
 $("skipPrepBtn").addEventListener("click", () => recorder.skipPrep());
 $("stopAnalyzeBtn").addEventListener("click", () => recorder.stop());
-$("restartBtn").addEventListener("click", () => {
-  restartAfterCancel = true;
-  recorder.cancel();
-});
-$("againBtn").addEventListener("click", startPractice);
+$("restartBtn").addEventListener("click", () => recorder.cancel());
+$("againBtn").addEventListener("click", readyForAnotherTake);
 $("retryAnalyzeBtn").addEventListener("click", () => analyzeRecording());
 window.addEventListener("resize", () => {
   redrawCharts();
@@ -338,6 +340,7 @@ Promise.all([loadUser(), practice.loadCatalog()])
       requireLogin: () => requireLogin(currentPath()),
       onSessionExpired,
     });
+    initDocumentUpload({ requireLogin: () => requireLogin(currentPath()), onSessionExpired });
     practiceResults = createResultView($("practiceResults"));
     practiceCoach = createCoachView($("practiceCoach"), onSessionExpired);
     setControls("idle");

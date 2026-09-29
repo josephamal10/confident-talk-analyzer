@@ -175,7 +175,7 @@
           </div>
 
           <div id="questionBlock" class="hidden">
-            <label for="questionCategory">Question type</label>
+            <label for="questionCategory" id="questionCategoryLabel">Question type</label>
             <select id="questionCategory"></select>
           </div>
 
@@ -204,6 +204,22 @@
             <select id="passageSelect"></select>
             <div class="passage-preview" id="passagePreview"></div>
             <textarea id="customScript" class="hidden" rows="6" maxlength="3000" placeholder="Paste the text you want to practise reading aloud"></textarea>
+            <div id="documentBlock" class="hidden">
+              <div class="upload-row">
+                <input type="file" id="documentInput" accept=".pdf,.docx,.pptx,.txt,.md">
+                <button type="button" class="btn-outline hidden" id="removeDocumentBtn">Remove</button>
+              </div>
+              <p class="result-meta" id="documentStatus"></p>
+              <div class="deck-panel hidden" id="documentPanel">
+                <p class="deck-summary" id="documentSummary"></p>
+                <ul class="deck-issues" id="documentNotes"></ul>
+                <div class="passage-preview document-preview" id="documentPreview"></div>
+              </div>
+            </div>
+            <div id="readingStyleBlock" class="hidden">
+              <label for="readingStyle">Read it as</label>
+              <select id="readingStyle"></select>
+            </div>
           </div>
 
           <div id="notesBlock" class="hidden">
@@ -406,9 +422,11 @@
 
       <div class="mode-panel hidden" data-el="readingPanel">
         <h4>Reading accuracy</h4>
+        <p class="reading-match" data-el="readingMatch"></p>
+        <p class="result-meta" data-el="readingSection"></p>
         <p class="result-meta" data-el="readingSummary"></p>
         <p class="reading-script" data-el="readingScript"></p>
-        <p class="legend"><span class="read-missed">skipped</span> <span class="read-misread">misread</span> (hover to see what you said)</p>
+        <p class="legend" data-el="readingLegend"><span class="read-missed">skipped</span> <span class="read-misread">misread</span> (hover to see what you said)</p>
         <p class="result-meta" data-el="readingAdded"></p>
       </div>
 
@@ -437,7 +455,7 @@
         <span data-kind="rise"><span class="rise-marker">↗</span> rising pitch (experimental)</span>
       </p>
 
-      <h4>Delivery feedback</h4>
+      <h4>Notes on your delivery</h4>
       <p class="feedback-text" data-el="feedback"></p>
     </div>
   </template>
@@ -447,8 +465,8 @@
       <div class="result-head">
         <div class="score-badge coach-badge"><span data-el="contentScore">-</span><small>/10</small></div>
         <div>
-          <p class="kicker">AI Coach · Content</p>
-          <h3 data-el="coachTitle">Reviewing your answer...</h3>
+          <p class="kicker">Coach's feedback</p>
+          <h3 data-el="coachTitle">Listening back to your answer...</h3>
           <p class="result-meta" data-el="coachMeta"></p>
         </div>
       </div>
@@ -465,7 +483,7 @@
             <ul class="coach-list" data-el="coachStrengths"></ul>
           </div>
           <div>
-            <h4>What to improve</h4>
+            <h4>Try this next time</h4>
             <ul class="coach-list" data-el="coachImprovements"></ul>
           </div>
         </div>
@@ -473,10 +491,11 @@
         <p class="result-line" data-el="coachTopic"></p>
 
         <div class="improved-head">
-          <h4 data-el="improvedTitle">A stronger version of your answer</h4>
+          <h4 data-el="improvedTitle">How you could say it</h4>
           <button type="button" class="btn-outline" data-el="copyImprovedBtn">Copy</button>
         </div>
         <blockquote class="improved-answer" data-el="improvedAnswer"></blockquote>
+        <p class="result-meta coach-footer" data-el="coachFooter"></p>
       </div>
       <button type="button" class="btn-outline hidden" data-el="retryCoachBtn">Try again</button>
     </div>
