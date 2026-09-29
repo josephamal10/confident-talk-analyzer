@@ -177,4 +177,7 @@ def public_catalog():
         "passages": [
             {**passage, "style_label": PASSAGE_STYLES[passage["style"]]["label"]} for passage in _PROMPTS["passages"]
         ],
+        "passage_styles": [
+            {"id": style_id, "label": style["label"], "wpm_range": style["wpm_range"]} for style_id, style in PASSAGE_STYLES.items()
+        ],
     }

@@ -136,12 +136,28 @@ def test_unrelated_speech_matches_no_section():
 
 
 @pytest.mark.parametrize(
-    "accuracy, similarity, verdict",
-    [(0.95, None, "same"), (0.7, None, "close"), (0.2, 0.62, "related"), (0.45, 0.1, "partial"), (0.1, 0.05, "different"),
-     (0.1, None, "different")],
+    "accuracy, spoken_match, similarity, verdict",
+    [
+        (0.99, 0.97, None, "same"),
+        (0.95, 0.97, None, "close"),  # three skipped words is not "exactly as written"
+        (0.7, 0.9, None, "close"),
+        (0.4, 0.95, None, "skipped"),  # read the first part of a passage correctly, then stopped
+        (1.0, 0.06, 0.1, "different"),  # a few words happen to match a tiny part of the text
+        (0.2, 0.1, 0.62, "related"),
+        (0.45, 0.4, 0.1, "partial"),
+        (0.1, 0.05, 0.05, "different"),
+        (0.0, 0.0, None, "different"),
+    ],
 )
-def test_match_verdict(accuracy, similarity, verdict):
-    assert reading.match_verdict(accuracy, similarity)["verdict"] == verdict
+def test_match_verdict(accuracy, spoken_match, similarity, verdict):
+    assert reading.match_verdict(accuracy, spoken_match, similarity)["verdict"] == verdict
+
+
+def test_a_few_shared_words_are_not_a_reading_of_the_document():
+    # "the local team won again" is in the document, but nearly everything else said is not.
+    said = "Umbrellas keep you dry in the rain and cool in the sun. Yesterday the local team won again on television."
+    result = reading.read_from_document(DOCUMENT_TEXT, spoken(said))
+    assert result["section"] is None and result["accuracy"] == 0.0 and result["spoken_match"] == 0.0
 
 
 def test_evaluation_reports_a_paraphrase_as_the_same_subject(monkeypatch):

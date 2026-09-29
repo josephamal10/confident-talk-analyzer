@@ -150,9 +150,9 @@ def evaluate(base, mode, context, deck=None, document=None):
             passages = [context["script"]]
         if reading_result:
             similarity = None
-            if reading_result["accuracy"] < reading.CLOSE_ACCURACY:
+            if reading.needs_similarity(reading_result):
                 similarity = relevance.best_passage_similarity(passages, base["transcription"])
-            reading_result["match"] = reading.match_verdict(reading_result["accuracy"], similarity)
+            reading_result["match"] = reading.match_verdict(reading_result["accuracy"], reading_result["spoken_match"], similarity)
             metrics.update(
                 {
                     "reading_accuracy": reading_result["accuracy"],

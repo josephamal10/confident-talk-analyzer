@@ -32,16 +32,23 @@ STRAY_GAP_UNITS = 40
 EDGE_MATCH_RATIO = 0.3
 # An extended edge is snapped to the nearest sentence start/end within this many words.
 SNAP_TOKENS = 10
-# How closely the reading matched the text: accuracy cut-offs, and the semantic similarity above
-# which a low word match still counts as "the same subject" (MiniLM: paraphrases of a passage
-# score about 0.6-0.9 against it, other text on the same subject 0.4-0.6, unrelated text below 0.2).
-SAME_ACCURACY = 0.85
+# How closely the reading matched the text. Two shares are compared with these cut-offs: accuracy
+# (how much of the text was read correctly) and spoken match (how much of what was said came from
+# the text). A located part of a document needs at least MIN_SECTION_MATCH of the speech to come
+# from it; below that a few shared words ("team won the final") are a coincidence.
+SAME_ACCURACY = 0.98
+SAME_SPOKEN_MATCH = 0.85
 CLOSE_ACCURACY = 0.6
 PARTIAL_ACCURACY = 0.3
+MIN_SECTION_MATCH = 0.3
+# Semantic similarity above which a low word match still counts as "the same subject" (MiniLM:
+# paraphrases of a passage score about 0.6-0.9 against it, other text on the same subject
+# 0.4-0.6, unrelated text below 0.2).
 RELATED_SIMILARITY = 0.4
 MATCH_MESSAGES = {
-    "same": "You read it as written.",
-    "close": "You followed the text, with a few changes along the way.",
+    "same": "You read it exactly as written.",
+    "close": "You read this text, with a few slips along the way.",
+    "skipped": "What you read matches the text, but a good part of it was skipped or misread.",
     "partial": "Only parts of what you said match the text.",
     "related": "You talked about the same subject, but not in the text's words. It sounds like you paraphrased it or read a different version.",
     "different": "What you said doesn't match this text.",
@@ -136,6 +143,7 @@ def align_reading(script, words):
         "added": added[:20],
         "counts": counts,
         "accuracy": round(counts["ok"] / len(units), 3),
+        "spoken_match": round(counts["ok"] / len(spoken), 3) if spoken else 0.0,
         "word_error_rate": round((counts["misread"] + counts["missed"] + counts["added"]) / len(units), 3),
         "sentence_boundaries": boundaries,
         "sentence_pause_rate": round(paused / boundaries, 2) if boundaries else None,
@@ -214,20 +222,20 @@ def read_from_document(text, words):
     "section" (where the reading was, and what share of the document) or None if nothing matched."""
     tokens = text.split()
     span = locate_reading(text, words)
-    if span is None:
-        spoken = len(_spoken_units(words))
+    result = align_reading(" ".join(tokens[span[0] : span[1]]), words) if span else None
+    if result is None or result["spoken_match"] < MIN_SECTION_MATCH:
         return {
             "tokens": [],
             "added": [],
-            "counts": {"ok": 0, "misread": 0, "missed": 0, "added": spoken},
+            "counts": {"ok": 0, "misread": 0, "missed": 0, "added": len(_spoken_units(words))},
             "accuracy": 0.0,
+            "spoken_match": 0.0,
             "word_error_rate": 1.0,
             "sentence_boundaries": 0,
             "sentence_pause_rate": None,
             "section": None,
         }
     start, end = span
-    result = align_reading(" ".join(tokens[start:end]), words)
     result["section"] = {
         "start": start,
         "end": end,
@@ -239,16 +247,24 @@ def read_from_document(text, words):
     return result
 
 
-def match_verdict(accuracy, similarity=None):
-    """How closely a reading matched the text: same, close, partial, related (same subject in
-    other words) or different. `similarity` is the transcript's semantic similarity to the text."""
-    if accuracy >= SAME_ACCURACY:
+def needs_similarity(reading_result):
+    """The semantic check only matters when little of what was said came from the text."""
+    return reading_result["spoken_match"] < CLOSE_ACCURACY
+
+
+def match_verdict(accuracy, spoken_match, similarity=None):
+    """How closely a reading matched the text: same, close, skipped (read from it but missed a lot),
+    partial, related (same subject in other words) or different. `similarity` is the transcript's
+    semantic similarity to the text, when needs_similarity() asked for it."""
+    if accuracy >= SAME_ACCURACY and spoken_match >= SAME_SPOKEN_MATCH:
         verdict = "same"
-    elif accuracy >= CLOSE_ACCURACY:
+    elif accuracy >= CLOSE_ACCURACY and spoken_match >= CLOSE_ACCURACY:
         verdict = "close"
+    elif spoken_match >= CLOSE_ACCURACY:
+        verdict = "skipped"
     elif similarity is not None and similarity >= RELATED_SIMILARITY:
         verdict = "related"
-    elif accuracy >= PARTIAL_ACCURACY:
+    elif spoken_match >= PARTIAL_ACCURACY:
         verdict = "partial"
     else:
         verdict = "different"
