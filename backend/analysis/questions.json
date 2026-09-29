@@ -2,23 +2,47 @@
   "frameworks": {
     "STAR": {
       "name": "STAR",
-      "parts": ["Situation", "Task", "Action", "Result"],
-      "description": "Set the scene, state your responsibility, describe what you did, and finish with a measurable outcome."
+      "parts": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "description": "Set the scene, state your responsibility, describe what you did, and finish with a measurable outcome.",
+      "template": "The situation was [when and where this happened]. My task was [what you were responsible for]. So I [the specific steps you took]. As a result, [the outcome, ideally measurable], and I learned [the lesson you took from it]."
     },
     "PREP": {
       "name": "PREP",
-      "parts": ["Point", "Reason", "Example", "Point restated"],
-      "description": "Lead with your answer, justify it, back it with a concrete example, then restate it."
+      "parts": [
+        "Point",
+        "Reason",
+        "Example",
+        "Point restated"
+      ],
+      "description": "Lead with your answer, justify it, back it with a concrete example, then restate it.",
+      "template": "[Your answer in one sentence]. The reason is [why this is true for you]. For example, [a specific time it showed]. So, [restate your answer in a memorable way]."
     },
     "EXPLAIN": {
       "name": "Explain simply",
-      "parts": ["Big picture", "How it works", "Concrete example", "Why it matters"],
-      "description": "Start with the one-sentence idea, walk through the mechanism, ground it in an example, and close with the takeaway."
+      "parts": [
+        "Big picture",
+        "How it works",
+        "Concrete example",
+        "Why it matters"
+      ],
+      "description": "Start with the one-sentence idea, walk through the mechanism, ground it in an example, and close with the takeaway.",
+      "template": "In simple terms, [the one-sentence idea]. It works like this: [the two or three key steps]. For example, [an everyday example]. This matters because [why the listener should care]."
     },
     "SPEECH": {
       "name": "Speech structure",
-      "parts": ["Opening", "Main point", "Supporting example", "Closing"],
-      "description": "Hook the audience, make one clear point, support it, and end with a memorable close."
+      "parts": [
+        "Opening",
+        "Main point",
+        "Supporting example",
+        "Closing"
+      ],
+      "description": "Hook the audience, make one clear point, support it, and end with a memorable close.",
+      "template": "[An opening hook: a question, surprising fact or short story]. My main point is [your one key message]. For example, [evidence or a story that supports it]. To close, [a memorable final line]."
     }
   },
   "categories": [

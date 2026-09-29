@@ -4,10 +4,13 @@ The acoustic pipeline scores how something was said; the LLM judges what was sai
 clarity, relevance, depth) against a speaking framework such as STAR, and writes a stronger
 version of the answer without inventing facts.
 """
+import re
+
 from . import llm
 
 CONTENT_DIMENSIONS = ("structure", "clarity", "relevance", "depth")
 MAX_LIST_ITEMS = 3
+NUMBER_PATTERN = re.compile(r"\d+(?:[.,]\d+)*%?")
 
 
 def _string_list():
@@ -78,8 +81,14 @@ question or topic, and depth (concrete detail, examples, evidence).
 using the part names exactly as given.
 - on_topic: whether the answer actually addresses the question or topic. topic_feedback: one sentence.
 - improved_answer: rewrite the answer in the speaker's own first-person voice so it follows the framework. \
-Keep their ideas and facts, do not invent achievements, numbers or names, and write [placeholders] where \
-the speaker should add their own specifics. At most 150 words, natural spoken English."""
+Keep their ideas and facts. Every concrete detail the speaker did not say (roles, companies, projects, \
+events, numbers, percentages, results) must be a [placeholder] describing what to add. If the answer is \
+off-topic or too thin to rewrite, write a fill-in-the-blank answer to the question instead. Write only the \
+answer itself: no preamble, apology or labels. At most 150 words, natural spoken English.
+  Example: the speaker only said "I am good at teamwork". Good: "My greatest strength is teamwork. When \
+[a project where you worked in a team], I [what you did to help the team], and as a result [the outcome]." \
+Bad: "When I led a five-person team at Google, we cut costs by 20%." (invented facts)"""
+
 
 
 def _delivery_summary(analysis):
@@ -118,12 +127,30 @@ def build_messages(transcript, context, analysis):
     return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_message}]
 
 
-def normalize(result, framework):
-    """Clamps scores, trims lists and keeps framework parts to the known names."""
+def replace_invented_numbers(improved_answer, transcript):
+    """Guardrail: numbers the speaker never said are replaced with [number], so the rewrite can't hand
+    them a fabricated statistic to repeat in a real interview."""
+    spoken = set(NUMBER_PATTERN.findall(transcript))
+    return NUMBER_PATTERN.sub(lambda match: match.group(0) if match.group(0) in spoken else "[number]", improved_answer)
+
+
+def normalize(result, framework, transcript=""):
+    """Clamps scores, trims lists, keeps framework parts to the known names and applies guardrails.
+
+    For an off-topic answer there is nothing true to rewrite, and models tend to invent a whole story,
+    so the rewrite is replaced by the framework's fill-in-the-blank template.
+    """
     scores = {name: max(0, min(10, int(result["content_scores"][name]))) for name in CONTENT_DIMENSIONS}
     known_parts = {part.lower(): part for part in framework["parts"]}
     present = [known_parts[p.lower()] for p in result["framework_check"]["present"] if p.lower() in known_parts]
     missing = [part for part in framework["parts"] if part not in present]
+    on_topic = bool(result["on_topic"])
+    if on_topic or not framework.get("template"):
+        improved_answer = replace_invented_numbers(result["improved_answer"].strip(), transcript)
+        improved_answer_type = "rewrite"
+    else:
+        improved_answer = framework["template"]
+        improved_answer_type = "template"
     return {
         "summary": result["summary"].strip(),
         "content_scores": scores,
@@ -135,9 +162,10 @@ def normalize(result, framework):
             if item["issue"].strip()
         ][:MAX_LIST_ITEMS],
         "framework": {"name": framework["name"], "parts": framework["parts"], "present": present, "missing": missing},
-        "on_topic": bool(result["on_topic"]),
+        "on_topic": on_topic,
         "topic_feedback": result["topic_feedback"].strip(),
-        "improved_answer": result["improved_answer"].strip(),
+        "improved_answer": improved_answer,
+        "improved_answer_type": improved_answer_type,
     }
 
 
@@ -145,6 +173,6 @@ def coach_answer(transcript, context, analysis, config):
     """Returns normalized coaching feedback. Raises llm.LLMError on failure."""
     messages = build_messages(transcript, context, analysis)
     result, meta = llm.chat_json(config, messages, COACH_SCHEMA, "speech_coaching")
-    coaching = normalize(result, context["framework"])
+    coaching = normalize(result, context["framework"], transcript)
     coaching["meta"] = meta
     return coaching

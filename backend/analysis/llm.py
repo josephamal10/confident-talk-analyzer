@@ -111,7 +111,7 @@ def _post(config, body):
     return response.json()
 
 
-def chat_json(config, messages, schema, schema_name, max_tokens=1500, temperature=0.3):
+def chat_json(config, messages, schema, schema_name, max_tokens=1500, temperature=0.1):
     """Sends a chat request and returns (parsed_json, meta). Retries once if the JSON is invalid."""
     body = {
         "model": config.model,

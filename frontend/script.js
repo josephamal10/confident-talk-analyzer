@@ -381,6 +381,10 @@ function renderCoach(coachResult) {
     li.append(issue, document.createElement("br"), item.suggestion);
   });
   document.getElementById("coachTopic").textContent = coachResult.topic_feedback;
+  document.getElementById("improvedTitle").textContent =
+    coachResult.improved_answer_type === "template"
+      ? "A structure to follow (fill in your own details)"
+      : "A stronger version of your answer";
   document.getElementById("improvedAnswer").textContent = coachResult.improved_answer;
   document.getElementById("coachBody").classList.remove("hidden");
 }

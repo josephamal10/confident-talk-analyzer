@@ -87,3 +87,29 @@ def test_schema_is_strict_mode_compatible():
             check(node["items"])
 
     check(coach.COACH_SCHEMA)
+
+
+def test_invented_numbers_are_replaced_but_spoken_ones_kept():
+    transcript = "We had 3 people and finished in 2024."
+    improved = "With 3 people we cut costs by 20% and finished in 2024, saving 1,500 hours."
+    assert coach.replace_invented_numbers(improved, transcript) == (
+        "With 3 people we cut costs by [number] and finished in 2024, saving [number] hours."
+    )
+
+
+def test_normalize_applies_number_guardrail():
+    result = coach.normalize(raw_result(improved_answer="It improved results by 15%."), STAR, transcript="No numbers.")
+    assert result["improved_answer"] == "It improved results by [number]."
+
+
+def test_off_topic_answer_gets_framework_template_instead_of_invented_story():
+    invented = raw_result(on_topic=False, improved_answer="I once led a project at Acme and we missed the deadline.")
+    result = coach.normalize(invented, STAR, transcript="Nature is everything around us.")
+    assert result["improved_answer_type"] == "template"
+    assert result["improved_answer"] == STAR["template"]
+    assert "Acme" not in result["improved_answer"]
+
+
+def test_on_topic_answer_keeps_the_rewrite():
+    result = coach.normalize(raw_result(), STAR, transcript="I failed a test.")
+    assert result["improved_answer_type"] == "rewrite"
