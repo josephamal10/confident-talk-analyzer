@@ -170,7 +170,8 @@
       "prompt": {
         "kind": "optional_topic",
         "bank": "topics",
-        "label": "Topic (optional)"
+        "label": "Topic (optional)",
+        "style": "text"
       },
       "timer": {
         "user_duration": true
@@ -201,7 +202,8 @@
         "kind": "question",
         "bank": "interview",
         "label": "Question",
-        "match": "loose"
+        "match": "loose",
+        "style": "card"
       },
       "timer": {
         "limit_seconds": 180
@@ -231,7 +233,8 @@
       "prompt": {
         "kind": "topic",
         "bank": "jam_topics",
-        "label": "Your topic"
+        "label": "Your topic",
+        "style": "card"
       },
       "timer": {
         "limit_seconds": 60,
@@ -267,7 +270,8 @@
         "kind": "topic",
         "bank": "snap_topics",
         "label": "Topic",
-        "reveal_on_start": true
+        "reveal_on_start": true,
+        "style": "card"
       },
       "timer": {
         "prep_seconds": 20,
@@ -309,7 +313,8 @@
         "kind": "passage",
         "bank": "passages",
         "label": "Passage",
-        "custom": true
+        "custom": true,
+        "style": "select"
       },
       "timer": {
         "limit_seconds": 300
@@ -338,7 +343,8 @@
         "bank": "topics",
         "label": "Presentation topic",
         "custom": true,
-        "notes": true
+        "notes": true,
+        "style": "text"
       },
       "timer": {
         "target_choices": [
@@ -381,7 +387,8 @@
         "bank": "pitch_prompts",
         "label": "What are you pitching?",
         "custom": true,
-        "match": "loose"
+        "match": "loose",
+        "style": "card"
       },
       "timer": {
         "target_choices": [
@@ -418,7 +425,8 @@
         "bank": "motions",
         "label": "Motion",
         "sides": true,
-        "match": "loose"
+        "match": "loose",
+        "style": "card"
       },
       "timer": {
         "limit_seconds": 150,

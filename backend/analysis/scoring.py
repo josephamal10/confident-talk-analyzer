@@ -174,11 +174,11 @@ def improvement_tip(name, value, metrics):
             f"(longest {metrics['longest_pause']}s). Decide your next point before you start the sentence."
         )
     if name == "expressiveness":
-        verdict = "a little more variety would help" if minor else "which sounds flat"
-        return (
-            f"Expressiveness: your pitch varied by {metrics['pitch_variation']} semitones; {verdict}. "
-            "Stress key words and let your tone rise and fall."
-        )
+        if minor:
+            finding = f"your pitch varied by {metrics['pitch_variation']} semitones. A little more variety would help"
+        else:
+            finding = f"your pitch varied by only {metrics['pitch_variation']} semitones, which sounds flat"
+        return f"Expressiveness: {finding}. Stress key words and let your tone rise and fall."
     if name == "vocal_confidence":
         verdict = "could sound more assertive" if minor else "sounds tentative"
         return (
