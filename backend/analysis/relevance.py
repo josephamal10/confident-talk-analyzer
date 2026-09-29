@@ -95,5 +95,15 @@ def sentence_similarities(topic, sentences):
     return [round(float(value), 3) for value in vectors[1:] @ vectors[0]]
 
 
+def best_passage_similarity(passages, transcript):
+    """Highest cosine similarity between the transcript and any of the passages (e.g. a document's
+    paragraphs), or None if the model is unavailable or there is nothing to compare."""
+    passages = [passage.strip() for passage in passages if passage and passage.strip()]
+    if not passages or not (transcript or "").strip() or _load_model() is None:
+        return None
+    vectors = embed([transcript.strip()] + passages)
+    return round(float(np.max(vectors[1:] @ vectors[0])), 3)
+
+
 def warm_up():
     _load_model()

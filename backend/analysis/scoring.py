@@ -153,76 +153,122 @@ def delivery_label(overall, sub_scores, metrics):
     return WEAKNESS_LABELS[weakest]
 
 
+# What a coach would say when an area went well.
+STRENGTH_NOTES = {
+    "pace": "your pace was easy to follow",
+    "fluency": "you spoke smoothly, with hardly any fillers",
+    "pauses": "your pauses came in the right places",
+    "expressiveness": "your voice had a nice rise and fall",
+    "vocal_confidence": "you sounded sure of yourself",
+    "language": "you said things plainly, without hedging",
+    "accuracy": "you read the text accurately",
+    "phrasing": "you gave each sentence room to breathe",
+    "timing": "you timed it well",
+    "variety": "you used a good range of words",
+}
+
+
+def _times(count):
+    return "once" if count == 1 else "twice" if count == 2 else f"{count} times"
+
+
 def improvement_tip(name, value, metrics):
-    """A concrete tip for one sub-score; the wording softens for scores that are only slightly low."""
+    """One concrete, human-sounding tip for a sub-score; softer when the score is only slightly low."""
     minor = value >= 6
     if name == "pace":
         low, high = metrics.get("wpm_range") or DEFAULT_WPM_RANGE
         if metrics["wpm"] > high:
-            return f"Pace: {metrics['wpm']} WPM is fast. Slow down and pause briefly after key points."
-        return f"Pace: {metrics['wpm']} WPM is slow. Aim for {low}-{high} WPM by linking your phrases together."
-    if name == "fluency":
-        top = f', mostly "{metrics["top_filler"]}"' if metrics.get("top_filler") else ""
-        stutters = f" and {metrics['stutter_count']} repeated starts" if metrics.get("stutter_count") else ""
+            return (
+                f"You were going at about {metrics['wpm']} words a minute, which is on the fast side. "
+                "Slow down a little and give each key point a second to land."
+            )
         return (
-            f"Fluency: {metrics['filler_count']} filler words ({metrics['fillers_per_100_words']}% of words){top}"
-            f"{stutters}. Replace them with a short silent pause."
+            f"You were at about {metrics['wpm']} words a minute, a bit slow for this. "
+            f"Try linking your words into phrases so it flows, somewhere around {low} to {high} a minute."
+        )
+    if name == "fluency":
+        found = []
+        if metrics.get("filler_count"):
+            top = f', mostly "{metrics["top_filler"]}"' if metrics.get("top_filler") else ""
+            found.append(f"{metrics['filler_count']} filler words{top}")
+        if metrics.get("stutter_count"):
+            found.append(f"{metrics['stutter_count']} restarted phrases")
+        heard = " and ".join(found) or "a few stumbles"
+        return (
+            f"I heard {heard}. When you feel one coming, just pause for a beat instead. "
+            "A short silence sounds far more sure of itself."
         )
     if name == "pauses":
         return (
-            f"Pausing: {metrics['hesitation_pause_count']} hesitation pauses mid-sentence "
-            f"(longest {metrics['longest_pause']}s). Decide your next point before you start the sentence."
+            f"You stopped mid-sentence {_times(metrics['hesitation_pause_count'])} "
+            f"(the longest gap was {metrics['longest_pause']}s). Work out your next point before you start "
+            "the sentence, then say it in one go."
         )
     if name == "expressiveness":
         if minor:
-            finding = f"your pitch varied by {metrics['pitch_variation']} semitones. A little more variety would help"
+            finding = "Your voice could use a little more rise and fall"
         else:
-            finding = f"your pitch varied by only {metrics['pitch_variation']} semitones, which sounds flat"
-        return f"Expressiveness: {finding}. Stress key words and let your tone rise and fall."
+            finding = f"Your voice stayed quite flat (it moved only {metrics['pitch_variation']} semitones)"
+        return f"{finding}. Pick one word in each sentence to lean on and let your tone move with it."
     if name == "vocal_confidence":
-        verdict = "could sound more assertive" if minor else "sounds tentative"
-        return (
-            f"Vocal confidence: your voice {verdict}. Speak from the chest and finish sentences firmly "
-            "instead of trailing off."
-        )
+        finding = "You could sound a touch more assertive" if minor else "Your voice came across as a bit unsure"
+        return f"{finding}. Speak from your chest and finish each sentence firmly instead of letting it fade."
     if name == "language":
-        top = f', such as "{metrics["top_hedge"]}"' if metrics.get("top_hedge") else ""
+        top = f' like "{metrics["top_hedge"]}"' if metrics.get("top_hedge") else ""
         return (
-            f"Confident language: {metrics.get('hedge_count', 0)} hedging words{top}. "
-            'Say "I will" rather than "I think I can", and drop "just" and "maybe".'
+            f"You softened your points with words{top} ({_times(metrics.get('hedge_count', 0))}). "
+            'Say it straight: "I will" lands better than "I think I can", and you can usually drop "just" and "maybe".'
         )
     if name == "accuracy":
         return (
-            f"Reading accuracy: {round(100 * metrics['reading_accuracy'])}% of the script read correctly "
-            f"({metrics.get('reading_missed', 0)} skipped, {metrics.get('reading_misread', 0)} misread). "
-            "Slow down slightly and let your eyes run one phrase ahead of your voice."
+            f"You read {round(100 * metrics['reading_accuracy'])}% of the text correctly "
+            f"({metrics.get('reading_missed', 0)} words skipped, {metrics.get('reading_misread', 0)} misread). "
+            "Slow down slightly and let your eyes stay one phrase ahead of your voice."
         )
     if name == "phrasing":
         return (
-            f"Phrasing: you paused at only {round(100 * metrics['sentence_pause_rate'])}% of full stops. "
-            "Take a short breath at the end of every sentence."
+            f"You paused at only {round(100 * metrics['sentence_pause_rate'])}% of the full stops. "
+            "Take a small breath at the end of every sentence so your listener can keep up."
         )
     if name == "timing":
         target, spoken = metrics["target_seconds"], round(metrics["speaking_span"])
-        direction = "Trim a point or tighten your examples" if spoken > target else "Add an example or expand a point"
-        return f"Timing: you spoke for {spoken}s against a {target}s target. {direction} to land on time."
+        if spoken > target:
+            advice = "Cut one point or tighten your examples so you finish on time."
+        else:
+            advice = "Add an example or say a bit more about one point to fill the time."
+        return f"You spoke for {spoken}s and the target was {target}s. {advice}"
     return (
-        f'Word variety: you repeated "{metrics.get("top_repeated_word")}" {metrics.get("top_repeated_count")} times. '
-        "Use a synonym or move on to a new idea."
+        f'You said "{metrics.get("top_repeated_word")}" {metrics.get("top_repeated_count")} times. '
+        "Swap in a different word now and then, or move on to a fresh idea."
     )
 
 
+def opening_line(overall, label):
+    if label == "Too Short":
+        return "That was too short to judge properly. Try talking for at least 30 seconds next time."
+    if overall >= 8.5:
+        return "That was a really confident take."
+    if overall >= 7:
+        return "Nice work, that was a solid take."
+    if overall >= 5.5:
+        return "Good effort. A couple of changes will make it noticeably better."
+    return "Thanks for getting that recorded. Let's make the next one easier to listen to."
+
+
 def build_feedback(overall, label, sub_scores, metrics, progress_note=None, topic_note=None, warnings=()):
-    lines = [f"Overall {overall}/10 ({label})."]
+    """Plain-language notes on the delivery: what to work on first, what went well, and any extra checks."""
+    lines = [opening_line(overall, label)]
     ranked = sorted((value, name) for name, value in sub_scores.items() if value is not None)
     weakest = [(name, value) for value, name in ranked if value < 8][:2]
     if weakest:
-        lines.extend(improvement_tip(name, value, metrics) for name, value in weakest)
+        lines.append("The main thing to work on: " + improvement_tip(*weakest[0], metrics))
+        if len(weakest) > 1:
+            lines.append("After that: " + improvement_tip(*weakest[1], metrics))
     else:
-        lines.append("Every area scored 8 or higher. Try a longer or harder prompt to stretch yourself.")
+        lines.append("Every area scored 8 or more. Try a longer or harder prompt next time to stretch yourself.")
     best_value, best_name = ranked[-1]
     if best_value >= 7 and best_name not in dict(weakest):
-        lines.append(f"Strength: {LABELS[best_name].lower()} ({best_value}/10).")
-    lines.extend(note for note in (progress_note, topic_note) if note)
+        lines.append(f"What went well: {STRENGTH_NOTES[best_name]}.")
+    lines.extend(note for note in (topic_note, progress_note) if note)
     lines.extend(warnings)
     return "\n".join(lines)

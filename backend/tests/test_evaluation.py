@@ -105,8 +105,8 @@ def test_presentation_timing_and_timeline_warnings():
     context = modes.build_context({"mode": "presentation", "custom_prompt": "Ideas", "target_seconds": "60"})
     result = evaluation.evaluate(base, modes.get_mode("presentation"), context)
     assert result["trends"] == {"pace_change": 0.4, "energy_change_db": -5.0}
-    assert any("sped up by 40%" in w for w in result["warnings"])
-    assert any("energy dropped" in w for w in result["warnings"])
+    assert any("sped up by about 40%" in w for w in result["warnings"])
+    assert any("energy dipped" in w for w in result["warnings"])
     assert result["sub_scores"]["timing"] is not None
 
 

@@ -18,7 +18,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Load API keys and settings from backend/.env before the analysis modules read them.
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-from analysis import AnalysisError, analyze_recording, coach, evaluation, interview, llm, modes, relevance, slides, warm_up  # noqa: E402
+from analysis import AnalysisError, analyze_recording, coach, documents, evaluation, interview, llm, modes, relevance, slides, warm_up  # noqa: E402
 from analysis.scoring import build_feedback  # noqa: E402
 import progress  # noqa: E402
 
@@ -73,6 +73,22 @@ CREATE TABLE IF NOT EXISTS role_questions (
     role TEXT NOT NULL,
     created_at TEXT NOT NULL,
     questions TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS role_jam_topics (
+    role_key TEXT PRIMARY KEY,
+    role TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    topics TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    content TEXT NOT NULL,
+    checks TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS decks (
@@ -329,6 +345,23 @@ def deck_summary(deck_row):
     }
 
 
+def get_user_document(user_id, document_id):
+    return get_db().execute("SELECT * FROM documents WHERE id = ? AND user_id = ?", (document_id, user_id)).fetchone()
+
+
+def document_summary(document_row):
+    document = json.loads(document_row["content"])
+    return {
+        "id": document_row["id"],
+        "filename": document["filename"],
+        "format": document["format"],
+        "paragraphs": document["paragraphs"],
+        "word_count": document["word_count"],
+        "truncated": document["truncated"],
+        "checks": json.loads(document_row["checks"]),
+    }
+
+
 def parse_int(value):
     try:
         return int(value)
@@ -361,27 +394,26 @@ def build_progress_note(user_id, score):
         return None
     delta = round(score - previous_score, 1)
     if delta > 0:
-        return f"Progress update: your score improved by {delta} from your previous attempt."
+        return f"That's {delta} points better than your last try. Keep it going."
     if delta < 0:
         return (
-            f"Progress update: score dropped by {abs(delta)} from your last attempt. "
-            "Focus on your weakest area in the next run."
+            f"That's {abs(delta)} points lower than last time, which happens. "
+            "Focus on the main thing above in your next take."
         )
-    return "Progress update: your score is stable compared to your previous attempt."
+    return "Same score as your last try."
 
 
 def build_topic_note(context, topic_match):
-    if context["mode"] == "read":
+    """None when there was nothing to check against (read-aloud, or no topic given)."""
+    if context["mode"] == "read" or topic_match is None:
         return None
-    if topic_match is None:
-        return "Topic check: no topic was provided for relevance scoring."
     if context["mode"] in ("interview", "pitch", "debate"):
         if topic_match["related"]:
-            return "Relevance check: your answer addresses the prompt."
-        return "Relevance check: your answer doesn't seem to address the prompt. Answer it directly first."
+            return "You answered what was asked."
+        return "Your answer didn't really address the prompt. Start by answering it directly, then add detail."
     if topic_match["related"]:
-        return "Topic check: your speech stays on the selected topic."
-    return "Topic check: your speech seems off-topic. Mention more topic-specific points in your response."
+        return "You stayed on topic the whole way."
+    return "You drifted away from the topic. Bring in more points that are clearly about it."
 
 
 init_db()
@@ -503,8 +535,17 @@ def run_analysis(user_id, form, audio_path, audio_filename, report=lambda _stage
         raise
 
     report("score")
-    context = modes.build_context(form)
-    mode = modes.get_mode(context["mode"])
+    mode = modes.get_mode(form.get("mode", modes.DEFAULT_MODE))
+    document = None
+    document_id = parse_int(form.get("document_id"))
+    if mode["prompt"]["kind"] == "passage" and document_id:
+        document_row = get_user_document(user_id, document_id)
+        if document_row:
+            document = json.loads(document_row["content"])
+    context = modes.build_context(
+        form,
+        document={"id": document_id, "filename": document["filename"], "word_count": document["word_count"]} if document else None,
+    )
     deck = None
     deck_id = parse_int(form.get("deck_id"))
     if mode["prompt"].get("slides") and deck_id:
@@ -517,7 +558,7 @@ def run_analysis(user_id, form, audio_path, audio_filename, report=lambda _stage
                 "slide_count": len(deck["slides"]),
                 "outline": slides.outline(deck),
             }
-    result = evaluation.evaluate(base, mode, context, deck)
+    result = evaluation.evaluate(base, mode, context, deck, document)
     metrics = result["metrics"]
     minutes, seconds = split_duration(metrics["duration"])
     feedback = build_feedback(
@@ -617,35 +658,56 @@ def analyze():
         return jsonify({"error": error.message}), error.status_code
 
 
-@app.route("/interview/questions", methods=["POST"])
-@login_required
-def interview_questions():
-    """Questions for the role the user is preparing for: AI-generated and cached per role, or a
-    built-in set when no LLM is available."""
+# Per-role prompt sets: (table, JSON column and response key, generator and fallback in analysis.interview).
+ROLE_PROMPT_SETS = {
+    "questions": ("role_questions", "questions", "generate_questions", "fallback_questions"),
+    "jam": ("role_jam_topics", "topics", "generate_jam_topics", "fallback_jam_topics"),
+}
+
+
+def role_prompt_set(kind):
+    """AI-written prompts for the role in the request body, cached per role; a built-in set (not
+    cached, so a later request can still get AI prompts) when no LLM is available."""
+    table, key, generator, fallback_name = ROLE_PROMPT_SETS[kind]
+    generate, fallback = getattr(interview, generator), getattr(interview, fallback_name)
     role = interview.clean_role((request.get_json(silent=True) or {}).get("role"))
     if not role:
         return jsonify({"error": "Type the role you're preparing for, e.g. Data analyst."}), 400
 
     db = get_db()
-    cached = db.execute("SELECT questions FROM role_questions WHERE role_key = ?", (role.lower(),)).fetchone()
+    cached = db.execute(f"SELECT {key} FROM {table} WHERE role_key = ?", (role.lower(),)).fetchone()
     if cached:
-        return jsonify({"role": role, "questions": json.loads(cached["questions"]), "source": "ai", "cached": True})
+        return jsonify({"role": role, key: json.loads(cached[key]), "source": "ai", "cached": True})
 
-    questions, config = None, llm.get_config()
+    items, config = None, llm.get_config()
     if config:
         try:
-            questions = interview.generate_questions(role, config)
+            items = generate(role, config)
         except llm.LLMError as error:
-            app.logger.warning("Role questions for %r fell back to the built-in set: %s", role, error.message)
-    if not questions:
-        return jsonify({"role": role, "questions": interview.fallback_questions(role), "source": "built-in", "cached": False})
+            app.logger.warning("Role %s for %r fell back to the built-in set: %s", kind, role, error.message)
+    if not items:
+        return jsonify({"role": role, key: fallback(role), "source": "built-in", "cached": False})
 
     db.execute(
-        "INSERT OR REPLACE INTO role_questions (role_key, role, created_at, questions) VALUES (?, ?, ?, ?)",
-        (role.lower(), role, current_timestamp(), json.dumps(questions)),
+        f"INSERT OR REPLACE INTO {table} (role_key, role, created_at, {key}) VALUES (?, ?, ?, ?)",
+        (role.lower(), role, current_timestamp(), json.dumps(items)),
     )
     db.commit()
-    return jsonify({"role": role, "questions": questions, "source": "ai", "cached": False})
+    return jsonify({"role": role, key: items, "source": "ai", "cached": False})
+
+
+@app.route("/interview/questions", methods=["POST"])
+@login_required
+def interview_questions():
+    """Interview questions for the role the user is preparing for."""
+    return role_prompt_set("questions")
+
+
+@app.route("/jam/topics", methods=["POST"])
+@login_required
+def jam_topics():
+    """JAM topics like the ones interview panels use for the role the user is preparing for."""
+    return role_prompt_set("jam")
 
 
 @app.route("/analyses/<int:record_id>", methods=["GET"])
@@ -708,6 +770,37 @@ def coach_analysis(record_id):
     details["coach"] = coaching
     update_record_details(record_id, details)
     return jsonify({"coach": coaching, "cached": False})
+
+
+@app.route("/documents", methods=["POST"])
+@login_required
+def upload_document():
+    """Parses an uploaded reference document for read-aloud practice. Only the extracted text is kept."""
+    file = request.files.get("document")
+    if not file or not file.filename:
+        return jsonify({"error": "Choose a document to upload."}), 400
+    extension = os.path.splitext(file.filename)[1].lower()
+    if extension not in documents.SUPPORTED_EXTENSIONS:
+        return jsonify({"error": "Upload a PDF, Word (.docx), PowerPoint (.pptx) or text (.txt, .md) file."}), 400
+
+    handle, temp_path = tempfile.mkstemp(suffix=extension)
+    os.close(handle)
+    try:
+        file.save(temp_path)
+        document = documents.parse_document(temp_path, file.filename)
+    except documents.DocumentError as error:
+        return jsonify({"error": str(error)}), 400
+    finally:
+        discard_files(temp_path)
+
+    checks = documents.check_document(document)
+    db = get_db()
+    cursor = db.execute(
+        "INSERT INTO documents (user_id, created_at, filename, content, checks) VALUES (?, ?, ?, ?, ?)",
+        (g.user["id"], current_timestamp(), document["filename"], json.dumps(document), json.dumps(checks)),
+    )
+    db.commit()
+    return jsonify(document_summary(get_user_document(g.user["id"], cursor.lastrowid))), 201
 
 
 @app.route("/decks", methods=["POST"])

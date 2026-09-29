@@ -112,7 +112,7 @@ def analyze_recording(path, on_stage=None):
 
     warnings = []
     if span < RELIABLE_SPEECH_SECONDS:
-        warnings.append("Tip: speak for at least 15 seconds so the scores are reliable.")
+        warnings.append("Talk for at least 15 seconds next time so the scores are more reliable.")
 
     logger.info("Analyzed %.1fs recording in %s ms", duration, timings)
     return {

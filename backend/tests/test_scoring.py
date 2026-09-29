@@ -98,22 +98,51 @@ def test_labels_follow_the_weakest_area():
 def test_feedback_targets_weakest_areas():
     m = metrics(filler_count=5, fillers_per_100_words=8.3, top_filler="um", pitch_variation=1.5)
     sub_scores = scoring.score_metrics(m)
-    feedback = scoring.build_feedback(6.9, "Hesitant", sub_scores, m, topic_note="Topic check: ok.")
+    feedback = scoring.build_feedback(
+        6.9, "Hesitant", sub_scores, m, progress_note="That's 0.5 points better.", topic_note="You stayed on topic."
+    )
     lines = feedback.splitlines()
-    assert lines[0] == "Overall 6.9/10 (Hesitant)."
-    assert lines[1].startswith("Fluency: 5 filler words") and '"um"' in lines[1]
-    assert lines[2].startswith("Expressiveness:") and "sounds flat" in lines[2]
-    assert lines[-1] == "Topic check: ok."
+    assert lines[0] == scoring.opening_line(6.9, "Hesitant")
+    assert lines[1].startswith("The main thing to work on: I heard 5 filler words") and '"um"' in lines[1]
+    assert lines[2].startswith("After that: Your voice stayed quite flat")
+    assert any(line.startswith("What went well: ") for line in lines)
+    assert lines[-2:] == ["You stayed on topic.", "That's 0.5 points better."]
+
+
+def test_feedback_reads_like_a_coach_not_a_report():
+    m = metrics(wpm=200, filler_count=3, fillers_per_100_words=5.0, top_filler="like", hedges_per_100_words=4.0,
+                hedge_count=3, top_hedge="maybe")
+    feedback = scoring.build_feedback(5.2, "Rushed", scoring.score_metrics(m), m)
+    assert not feedback.startswith("Overall")
+    assert "WPM" not in feedback and "/10" not in feedback
+    assert "words a minute" in feedback
+
+
+@pytest.mark.parametrize(
+    "score, label, expected",
+    [(9.0, "Confident", "really confident"), (7.4, "Steady", "solid take"), (6.0, "Hesitant", "Good effort"),
+     (3.0, "Hesitant", "Thanks for getting that recorded"), (4.0, "Too Short", "too short to judge")],
+)
+def test_opening_line_matches_the_score(score, label, expected):
+    assert expected in scoring.opening_line(score, label)
+
+
+def test_all_good_feedback_suggests_a_harder_prompt():
+    m = metrics()
+    feedback = scoring.build_feedback(9.6, "Confident", scoring.score_metrics(m), m)
+    assert "Every area scored 8 or more" in feedback
 
 
 @pytest.mark.parametrize(
     "name, extra, expected",
     [
-        ("language", {"hedge_count": 4, "top_hedge": "i think"}, 'such as "i think"'),
-        ("accuracy", {"reading_accuracy": 0.82, "reading_missed": 3, "reading_misread": 2}, "82% of the script"),
-        ("phrasing", {"sentence_pause_rate": 0.4}, "40% of full stops"),
-        ("timing", {"target_seconds": 60, "speaking_span": 80}, "80s against a 60s target"),
+        ("language", {"hedge_count": 4, "top_hedge": "i think"}, 'like "i think" (4 times)'),
+        ("accuracy", {"reading_accuracy": 0.82, "reading_missed": 3, "reading_misread": 2}, "82% of the text"),
+        ("phrasing", {"sentence_pause_rate": 0.4}, "40% of the full stops"),
+        ("timing", {"target_seconds": 60, "speaking_span": 80}, "You spoke for 80s and the target was 60s"),
         ("variety", {"top_repeated_word": "basically", "top_repeated_count": 5}, '"basically" 5 times'),
+        ("pauses", {"hesitation_pause_count": 1, "longest_pause": 2.4}, "mid-sentence once"),
+        ("fluency", {"filler_count": 0, "stutter_count": 3}, "I heard 3 restarted phrases"),
     ],
 )
 def test_tips_for_new_sub_scores(name, extra, expected):
@@ -121,5 +150,5 @@ def test_tips_for_new_sub_scores(name, extra, expected):
 
 
 def test_tips_soften_for_slightly_low_scores():
-    assert "could sound more assertive" in scoring.improvement_tip("vocal_confidence", 7.6, metrics())
-    assert "sounds tentative" in scoring.improvement_tip("vocal_confidence", 3.0, metrics())
+    assert "could sound a touch more assertive" in scoring.improvement_tip("vocal_confidence", 7.6, metrics())
+    assert "came across as a bit unsure" in scoring.improvement_tip("vocal_confidence", 3.0, metrics())

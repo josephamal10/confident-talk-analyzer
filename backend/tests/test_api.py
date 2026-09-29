@@ -4,7 +4,7 @@ import os
 import numpy as np
 
 import app as app_module
-from analysis import AnalysisError
+from analysis import AnalysisError, scoring
 from conftest import SAMPLE_RATE, write_wav
 
 TRANSCRIPT = (
@@ -106,7 +106,7 @@ def test_analyze_saves_to_the_logged_in_user_only(client, make_user, monkeypatch
     body = analyze(client, monkeypatch, mode="free", custom_prompt="confidence")
     assert body["context"]["mode"] == "free" and body["context"]["prompt"] == "confidence"
     assert set(body["sub_scores"]) == set(app_module.modes.get_mode("free")["weights"])
-    assert body["feedback"].startswith(f"Overall {body['score']}/10 ({body['delivery']}).")
+    assert body["feedback"].splitlines()[0] == scoring.opening_line(body["score"], body["delivery"])
     assert body["language"]["hedges"] == [] and body["reading"] is None
 
     history = client.get("/history").get_json()

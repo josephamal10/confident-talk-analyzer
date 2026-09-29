@@ -102,10 +102,11 @@ def _timeline_trends(timeline):
     }
 
 
-def evaluate(base, mode, context, deck=None):
+def evaluate(base, mode, context, deck=None, document=None):
     """Returns metrics, sub-scores, overall score, label and mode-specific checks for one recording.
 
-    `deck` is a parsed slide deck (presentation mode) to check the speech against.
+    `deck` is a parsed slide deck (presentation mode) to check the speech against; `document` is a
+    parsed reference document (read-aloud) the speaker read part or all of.
     """
     words = base["words"]
     tokens = [word["text"] for word in words]
@@ -140,9 +141,18 @@ def evaluate(base, mode, context, deck=None):
             metrics["hesitation_pauses_per_minute"] = round(metrics["hesitation_pause_count"] / minutes, 1)
 
     reading_result = None
-    if "reading" in checks and context.get("script"):
-        reading_result = reading.align_reading(context["script"], words)
+    if "reading" in checks and (document or context.get("script")):
+        if document:
+            reading_result = reading.read_from_document(document["text"], words)
+            passages = document["paragraphs"]
+        else:
+            reading_result = reading.align_reading(context["script"], words)
+            passages = [context["script"]]
         if reading_result:
+            similarity = None
+            if reading_result["accuracy"] < reading.CLOSE_ACCURACY:
+                similarity = relevance.best_passage_similarity(passages, base["transcription"])
+            reading_result["match"] = reading.match_verdict(reading_result["accuracy"], similarity)
             metrics.update(
                 {
                     "reading_accuracy": reading_result["accuracy"],
@@ -173,17 +183,20 @@ def evaluate(base, mode, context, deck=None):
     overall = scoring.overall_score(sub_scores, word_count, weights)
     warnings = list(base["warnings"])
     if trends and trends["pace_change"] >= 0.2:
-        warnings.append(f"Timeline: you sped up by {round(100 * trends['pace_change'])}% towards the end.")
+        warnings.append(
+            f"You sped up by about {round(100 * trends['pace_change'])}% towards the end. "
+            "Keep the same calm pace right to the finish."
+        )
     if trends and trends["energy_change_db"] <= -3:
-        warnings.append("Timeline: your energy dropped in the last part. Save a strong point for the end.")
+        warnings.append("Your energy dipped in the last part. Save a strong point for the end so you finish with punch.")
     uptalk = base.get("uptalk")
     if slides_match and slides_match["coverage"] < 0.6:
         missed = [slide["title"] for slide in slides_match["slides"] if not slide["covered"]]
-        warnings.append(f"Slides: you didn't talk about {len(missed)} of your slides ({', '.join(missed[:3])}).")
+        warnings.append(f"You skipped {len(missed)} of your slides ({', '.join(missed[:3])}).")
     if uptalk and uptalk["statements"] >= 3 and uptalk["share"] >= 0.4:
         warnings.append(
-            "Intonation (experimental): many statements end on a rising pitch, which can sound like a question. "
-            "Let your voice fall at the end of a statement."
+            "A lot of your statements ended on a rising pitch, which can make them sound like questions. "
+            "Let your voice drop at the end of a statement. (This check is experimental.)"
         )
 
     return {

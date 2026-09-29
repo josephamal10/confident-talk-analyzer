@@ -155,3 +155,79 @@ def test_streamed_analysis_reports_errors(client, make_user, monkeypatch):
     monkeypatch.setattr(app_module, "analyze_recording", silent)
     events = stream_events(client.post("/analyze?stream=1", data=upload()))
     assert events == [{"stage": "decode"}, {"error": "No speech was detected.", "status": 422}]
+
+
+# ---------- Interview JAM rounds ----------
+
+
+def test_fallback_jam_topics_mention_the_role_and_mix_types():
+    topics = interview.fallback_jam_topics("Data analyst")
+    assert any("Data analyst" in topic["text"] for topic in topics)
+    assert {topic["type"] for topic in topics} == {"role", "general"}
+    assert topics[0]["id"] == "jam-role-1" and topics[0]["type_label"] == "About the role"
+
+
+def test_normalize_jam_topics_dedupes_trims_and_drops_long_ones():
+    result = {"topics": [
+        {"text": ' "Data in everyday life." ', "type": "ROLE"},
+        {"text": "data in everyday life", "type": "role"},
+        {"text": "Teamwork", "type": "general"},
+        {"text": "A topic that is far too long to be a JAM topic for anyone", "type": "general"},
+        {"text": "Dashboards", "type": "weird"},
+    ]}
+    topics = interview.normalize_jam_topics(result)
+    assert [(t["text"], t["type"]) for t in topics] == [("Data in everyday life", "role"), ("Teamwork", "general"), ("Dashboards", "role")]
+
+
+def test_generate_jam_topics_delimits_the_role(monkeypatch):
+    seen = {}
+
+    def fake_chat_json(config, messages, schema, name, **options):
+        seen.update(messages=messages, schema=schema, name=name)
+        return {"topics": [{"text": "Data in everyday life", "type": "role"}]}, {}
+
+    monkeypatch.setattr(interview.llm, "chat_json", fake_chat_json)
+    topics = interview.generate_jam_topics("Data analyst", object())
+    assert topics[0]["text"] == "Data in everyday life"
+    assert seen["name"] == "jam_topics" and seen["messages"][1]["content"] == "<role>Data analyst</role>"
+    assert "untrusted" in seen["messages"][0]["content"] and seen["schema"]["additionalProperties"] is False
+
+
+def test_jam_topics_endpoint_falls_back_then_caches_ai_topics(client, make_user, monkeypatch):
+    make_user()
+    body = client.post("/jam/topics", json={"role": "Nurse"}).get_json()
+    assert body["source"] == "built-in" and any("Nurse" in topic["text"] for topic in body["topics"])
+    assert client.post("/jam/topics", json={"role": "  "}).status_code == 400
+
+    calls = []
+
+    def fake_generate(role, config):
+        calls.append(role)
+        return interview.normalize_jam_topics({"topics": [{"text": "Patient care at night", "type": "role"}]})
+
+    monkeypatch.setattr(app_module.llm, "get_config", lambda: object())
+    monkeypatch.setattr(app_module.interview, "generate_jam_topics", fake_generate)
+    first = client.post("/jam/topics", json={"role": "Staff nurse"}).get_json()
+    second = client.post("/jam/topics", json={"role": "STAFF NURSE"}).get_json()
+    assert first["cached"] is False and second["cached"] is True and calls == ["Staff nurse"]
+    assert second["topics"][0]["text"] == "Patient care at night"
+
+
+def test_jam_topics_require_login(client):
+    assert client.post("/jam/topics", json={"role": "Nurse"}).status_code == 401
+
+
+def test_interview_jam_keeps_the_role_and_judges_like_a_panel(client, make_user, monkeypatch):
+    make_user()
+    body = analyze(client, monkeypatch, mode="jam", custom_prompt="Data in everyday life", role="Data analyst")
+    context = body["context"]
+    assert context["role"] == "Data analyst" and context["prompt"] == "Data in everyday life"
+    mode = modes.get_mode("jam")
+    analysis = {"score": 7.0, "delivery": "Steady", "metrics": FAKE_BASE["metrics"]}
+    user = coach.build_messages("Data is everywhere.", context, analysis, mode["coach"])[1]["content"]
+    assert "JAM round of a job interview for a Data analyst role" in user
+    assert "preparing for a job interview as" not in user
+
+
+def test_modes_without_roles_ignore_a_role():
+    assert "role" not in modes.build_context({"mode": "free", "role": "Nurse"})

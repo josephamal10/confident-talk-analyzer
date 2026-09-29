@@ -69,7 +69,7 @@ def test_normalize_clamps_scores_trims_lists_and_fixes_framework_parts():
 def test_coach_answer_uses_schema_and_attaches_meta(monkeypatch):
     calls = {}
 
-    def fake_chat_json(config, messages, schema, name):
+    def fake_chat_json(config, messages, schema, name, **_options):
         calls.update(schema=schema, name=name)
         return raw_result(), {"model": "m", "provider": "p", "latency_ms": 900}
 
@@ -141,3 +141,31 @@ def test_debate_prompt_includes_side_and_outline_is_delimited():
     user = coach.build_messages("Exams matter.", context, ANALYSIS, debate["coach"], modes.coach_dimensions(debate))[1]["content"]
     assert "argues against the motion" in user and "argues AGAINST the motion" in user
     assert "<outline>\npoint one\n</outline>" in user
+
+
+def test_system_prompt_asks_for_a_human_coaching_voice():
+    system = coach.build_messages("Hello there.", INTERVIEW, ANALYSIS)[0]["content"]
+    assert 'use "you"' in system and "Never call them" in system
+    assert "leverage" in system and "em dashes" in system
+
+
+def test_humanize_removes_chatbot_tells():
+    assert coach.humanize("Overall, you did well — but the ending was weak; add a result!!") == (
+        "You did well, but the ending was weak. Add a result!"
+    )
+    assert coach.humanize("Great job! You opened with a clear point.") == "You opened with a clear point."
+    assert coach.humanize("Aim for 120–160 words a minute.") == "Aim for 120–160 words a minute."
+    assert coach.humanize("Well done") == "Well done"
+
+
+def test_normalize_humanizes_every_text_field():
+    result = coach.normalize(raw_result(
+        summary="Overall, a clear story — with a weak ending.",
+        strengths=["Great job! You owned the mistake."],
+        improvements=[{"issue": "No result; it just stops", "suggestion": "Add the outcome — even a small one."}],
+        topic_feedback="Overall: it answers the question.",
+    ), STAR)
+    assert result["summary"] == "A clear story, with a weak ending."
+    assert result["strengths"] == ["You owned the mistake."]
+    assert result["improvements"] == [{"issue": "No result. It just stops", "suggestion": "Add the outcome, even a small one."}]
+    assert result["topic_feedback"] == "It answers the question."

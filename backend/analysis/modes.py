@@ -73,8 +73,11 @@ def resolve_timer(mode, requested_target=None):
     return target, limit
 
 
-def build_context(form):
-    """What the speaker is practising, resolved from the submitted form against the content banks."""
+def build_context(form, document=None):
+    """What the speaker is practising, resolved from the submitted form against the content banks.
+
+    `document` is the uploaded reference document chosen for read-aloud ({"id", "filename", "word_count"}).
+    """
     mode = get_mode(form.get("mode", DEFAULT_MODE))
     prompt_config = mode["prompt"]
     framework_key = mode.get("framework")
@@ -88,13 +91,14 @@ def build_context(form):
     }
     custom_prompt = (form.get("custom_prompt") or "").strip()[:MAX_CUSTOM_PROMPT]
     prompt_id = form.get("prompt_id") or ""
+    # The job role the user is practising for (interview questions, interview JAM rounds).
+    role = interview.clean_role(form.get("role")) if prompt_config.get("roles") else ""
+    if role:
+        context["role"] = role
 
     if prompt_config["kind"] == "question":
         question = INTERVIEW_QUESTIONS.get(prompt_id)
         question_type = form.get("question_type")
-        role = interview.clean_role(form.get("role"))
-        if role:
-            context["role"] = role
         if custom_prompt:
             # A typed question, or one generated for the user's role (which sends its type along).
             context.update(prompt=custom_prompt, framework=FRAMEWORKS[interview.framework_key(question_type)])
@@ -112,8 +116,12 @@ def build_context(form):
     elif prompt_config["kind"] == "passage":
         custom_script = (form.get("custom_script") or "").strip()[:MAX_CUSTOM_SCRIPT]
         passage = PASSAGES.get(prompt_id)
-        if custom_script:
-            context.update(prompt="Your own text", script=custom_script, style="custom")
+        # Your own text or document can be read in any style (news, story...), which sets the target pace.
+        style = form.get("reading_style") if form.get("reading_style") in PASSAGE_STYLES else "custom"
+        if document:
+            context.update(prompt=document["filename"], document=document, style=style)
+        elif custom_script:
+            context.update(prompt="Your own text", script=custom_script, style=style)
         elif passage:
             context.update(prompt=passage["title"], prompt_id=passage["id"], script=passage["text"], style=passage["style"])
     else:

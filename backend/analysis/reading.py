@@ -3,6 +3,9 @@
 Uses a sequence alignment (difflib, like a word-level diff) to find skipped, misread and added
 words, then checks whether the reader paused at the end of each sentence. Accuracy is limited by
 the speech recogniser, which can "correct" small misreadings, so treat it as an estimate.
+
+For a longer reference document the reader may read only part of it, so the part they read is
+located first (from runs of matching words) and only that part is aligned.
 """
 import difflib
 import re
@@ -19,6 +22,30 @@ NUMBER_WORDS = {
 SENTENCE_END_PATTERN = re.compile(r"[.!?][\"')\]]*$")
 MIN_SENTENCE_PAUSE_SECONDS = 0.25
 STATUS_RANK = {"ok": 0, "misread": 1, "missed": 2}
+# A run of this many matching words anchors where in a document the reader was.
+MIN_ANCHOR_UNITS = 3
+# A short anchor this far (in words) from the others is a coincidence, not the part that was read.
+STRAY_ANCHOR_UNITS = 6
+STRAY_GAP_UNITS = 40
+# Unmatched words said at either edge extend the located part if at least this much of them matches
+# the neighbouring text (a misread start/end); below it they were ad-libbed.
+EDGE_MATCH_RATIO = 0.3
+# An extended edge is snapped to the nearest sentence start/end within this many words.
+SNAP_TOKENS = 10
+# How closely the reading matched the text: accuracy cut-offs, and the semantic similarity above
+# which a low word match still counts as "the same subject" (MiniLM: paraphrases of a passage
+# score about 0.6-0.9 against it, other text on the same subject 0.4-0.6, unrelated text below 0.2).
+SAME_ACCURACY = 0.85
+CLOSE_ACCURACY = 0.6
+PARTIAL_ACCURACY = 0.3
+RELATED_SIMILARITY = 0.4
+MATCH_MESSAGES = {
+    "same": "You read it as written.",
+    "close": "You followed the text, with a few changes along the way.",
+    "partial": "Only parts of what you said match the text.",
+    "related": "You talked about the same subject, but not in the text's words. It sounds like you paraphrased it or read a different version.",
+    "different": "What you said doesn't match this text.",
+}
 
 
 def _pieces(token):
@@ -33,6 +60,19 @@ def _pieces(token):
     return units
 
 
+def _script_units(tokens):
+    return [(piece, token_index) for token_index, token in enumerate(tokens) for piece in _pieces(token)]
+
+
+def _spoken_units(words):
+    return [
+        (piece, word_index)
+        for word_index, word in enumerate(words)
+        if not word.get("filler")
+        for piece in _pieces(word["text"])
+    ]
+
+
 def align_reading(script, words):
     """Compares the spoken words (fillers excluded) with the script.
 
@@ -40,13 +80,8 @@ def align_reading(script, words):
     rate and the share of sentence ends where the reader paused.
     """
     tokens = script.split()
-    units = [(piece, token_index) for token_index, token in enumerate(tokens) for piece in _pieces(token)]
-    spoken = [
-        (piece, word_index)
-        for word_index, word in enumerate(words)
-        if not word.get("filler")
-        for piece in _pieces(word["text"])
-    ]
+    units = _script_units(tokens)
+    spoken = _spoken_units(words)
     if not units:
         return None
 
@@ -105,3 +140,116 @@ def align_reading(script, words):
         "sentence_boundaries": boundaries,
         "sentence_pause_rate": round(paused / boundaries, 2) if boundaries else None,
     }
+
+
+def _is_stray(anchor, neighbour):
+    """A short anchor far from its neighbour in the document, but not in the speech, is a coincidence."""
+    earlier, later = sorted((anchor, neighbour), key=lambda block: block.a)
+    document_gap = later.a - (earlier.a + earlier.size)
+    spoken_gap = later.b - (earlier.b + earlier.size)
+    return anchor.size < STRAY_ANCHOR_UNITS and document_gap > 3 * spoken_gap + STRAY_GAP_UNITS
+
+
+def _sentence_start(tokens, index):
+    return index == 0 or bool(SENTENCE_END_PATTERN.search(tokens[index - 1]))
+
+
+def locate_reading(script, words):
+    """Finds the part of a longer text that was read aloud. Returns (first_token, end_token), or None
+    if no run of words matches the text at all."""
+    tokens = script.split()
+    units = _script_units(tokens)
+    spoken = _spoken_units(words)
+    if not units or not spoken:
+        return None
+    matcher = difflib.SequenceMatcher(a=[u[0] for u in units], b=[s[0] for s in spoken], autojunk=False)
+    anchors = [block for block in matcher.get_matching_blocks() if block.size >= MIN_ANCHOR_UNITS]
+    if not anchors:
+        return None
+    while len(anchors) > 1 and _is_stray(anchors[0], anchors[1]):
+        anchors.pop(0)
+    while len(anchors) > 1 and _is_stray(anchors[-1], anchors[-2]):
+        anchors.pop()
+
+    first, last = anchors[0], anchors[-1]
+    pieces = [u[0] for u in units]
+    said = [s[0] for s in spoken]
+    # Words said before the first anchor (or after the last) were probably read just before (after)
+    # it, as long as they resemble the text there; otherwise they were ad-libbed, not read.
+    before, after = said[: first.b], said[last.b + last.size :]
+    extend_start = _resembles(pieces[max(0, first.a - len(before)) : first.a], before)
+    extend_end = _resembles(pieces[last.a + last.size : last.a + last.size + len(after)], after)
+    start_unit = max(0, first.a - len(before)) if extend_start else first.a
+    end_unit = min(len(units), last.a + last.size + len(after)) if extend_end else last.a + last.size
+    start, end = units[start_unit][1], units[end_unit - 1][1] + 1
+    first_anchor, last_anchor = units[first.a][1], units[last.a + last.size - 1][1] + 1
+
+    # An extended edge is only an estimate, and readers start and stop at sentence boundaries, so
+    # snap it to the nearest boundary close by. An edge that is an anchor is exact.
+    if extend_start:
+        starts = [
+            i for i in range(max(0, start - SNAP_TOKENS), min(first_anchor, start + SNAP_TOKENS) + 1) if _sentence_start(tokens, i)
+        ]
+        if starts:
+            start = min(starts, key=lambda i: abs(i - start))
+    if extend_end:
+        ends = [
+            i for i in range(max(last_anchor, end - SNAP_TOKENS), min(len(tokens), end + SNAP_TOKENS) + 1)
+            if i == len(tokens) or SENTENCE_END_PATTERN.search(tokens[i - 1])
+        ]
+        if ends:
+            end = min(ends, key=lambda i: abs(i - end))
+    return start, end
+
+
+def _resembles(text_pieces, said_pieces):
+    """Whether unanchored spoken words look like a (mis)reading of the neighbouring text."""
+    if not said_pieces or not text_pieces:
+        return False
+    return difflib.SequenceMatcher(a=text_pieces, b=said_pieces, autojunk=False).ratio() >= EDGE_MATCH_RATIO
+
+
+def read_from_document(text, words):
+    """Aligns the reading with the part of the document that was read. The result also has a
+    "section" (where the reading was, and what share of the document) or None if nothing matched."""
+    tokens = text.split()
+    span = locate_reading(text, words)
+    if span is None:
+        spoken = len(_spoken_units(words))
+        return {
+            "tokens": [],
+            "added": [],
+            "counts": {"ok": 0, "misread": 0, "missed": 0, "added": spoken},
+            "accuracy": 0.0,
+            "word_error_rate": 1.0,
+            "sentence_boundaries": 0,
+            "sentence_pause_rate": None,
+            "section": None,
+        }
+    start, end = span
+    result = align_reading(" ".join(tokens[start:end]), words)
+    result["section"] = {
+        "start": start,
+        "end": end,
+        "total_words": len(tokens),
+        "share": round((end - start) / len(tokens), 3),
+        "first_words": " ".join(tokens[start : start + 6]),
+        "last_words": " ".join(tokens[max(start, end - 6) : end]),
+    }
+    return result
+
+
+def match_verdict(accuracy, similarity=None):
+    """How closely a reading matched the text: same, close, partial, related (same subject in
+    other words) or different. `similarity` is the transcript's semantic similarity to the text."""
+    if accuracy >= SAME_ACCURACY:
+        verdict = "same"
+    elif accuracy >= CLOSE_ACCURACY:
+        verdict = "close"
+    elif similarity is not None and similarity >= RELATED_SIMILARITY:
+        verdict = "related"
+    elif accuracy >= PARTIAL_ACCURACY:
+        verdict = "partial"
+    else:
+        verdict = "different"
+    return {"verdict": verdict, "similarity": similarity, "message": MATCH_MESSAGES[verdict]}

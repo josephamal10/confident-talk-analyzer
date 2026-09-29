@@ -203,7 +203,8 @@
         "bank": "interview",
         "label": "Question",
         "match": "loose",
-        "style": "card"
+        "style": "card",
+        "roles": true
       },
       "timer": {
         "limit_seconds": 180
@@ -223,18 +224,20 @@
       },
       "coach": {
         "dimensions": "content",
-        "focus": "Job interview answer. Judge it like an experienced interviewer: does it answer the question directly, with specific evidence, in a well-organised way?"
+        "focus": "Job interview answer. Judge it like an experienced interviewer: does it answer the question directly, with specific evidence, in a well-organised way?",
+        "role_focus": "The speaker is preparing for a job interview as: {role}. Judge the answer the way an interviewer hiring for that role would."
       }
     },
     {
       "id": "jam",
       "label": "JAM",
-      "tagline": "Just A Minute: talk for 60 seconds with no hesitation, repetition or deviation.",
+      "tagline": "Just A Minute: 60 seconds with no hesitation, repetition or deviation, including interview JAM rounds for your role.",
       "prompt": {
         "kind": "topic",
         "bank": "jam_topics",
         "label": "Your topic",
-        "style": "card"
+        "style": "card",
+        "roles": true
       },
       "timer": {
         "limit_seconds": 60,
@@ -259,7 +262,8 @@
       ],
       "coach": {
         "dimensions": "jam",
-        "focus": "JAM (Just A Minute) round: the speaker must talk for one minute on the topic without hesitation, repetition or deviation. Reward creative, engaging ideas that stay on the topic."
+        "focus": "JAM (Just A Minute) round: the speaker must talk for one minute on the topic without hesitation, repetition or deviation. Reward creative, engaging ideas that stay on the topic.",
+        "role_focus": "This is practice for the JAM round of a job interview for a {role} role. Judge it the way that interview panel would: a clear point, confident flow and sensible ideas matter most, and linking the topic to the role is a bonus, not a requirement."
       }
     },
     {
