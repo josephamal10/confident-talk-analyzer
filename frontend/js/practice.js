@@ -5,7 +5,6 @@ import { currentDocument, documentScript } from "./document.js";
 
 const $ = (id) => document.getElementById(id);
 const CUSTOM_PASSAGE = "__custom__";
-const DOCUMENT_PASSAGE = "__document__";
 const ROLE_CATEGORY = "__role__";
 const GENERAL_CATEGORY = "__general__";
 // Role questions come typed; each type is answered with the framework of the matching bank category.
@@ -144,7 +143,6 @@ export function initPractice(options = {}) {
     groups[passage.style_label].appendChild(new Option(passage.title, passage.id));
   });
   passageSelect.appendChild(new Option("Use my own text", CUSTOM_PASSAGE));
-  passageSelect.appendChild(new Option("Upload a document", DOCUMENT_PASSAGE));
   passageSelect.addEventListener("change", () => {
     selection().passageId = passageSelect.value;
     renderSetup();
@@ -202,6 +200,15 @@ function bankItems() {
 }
 
 // Whether the current prompt was written for the user's role (so it isn't in the server's bank).
+function usingDocument() {
+  return mode.prompt.kind === "passage" && Boolean(currentDocument());
+}
+
+// Re-renders the set-up panel (e.g. after a document is uploaded or removed).
+export function refreshSetup() {
+  if (mode) renderSetup();
+}
+
 function isRolePrompt() {
   return Boolean(mode.prompt.roles && roleSet() && selection().categoryId === ROLE_CATEGORY);
 }
@@ -288,10 +295,11 @@ function renderSetup() {
   }
   if (isPassage) {
     $("passageSelect").value = chosen.passageId;
-    const custom = chosen.passageId === CUSTOM_PASSAGE;
-    const fromDocument = chosen.passageId === DOCUMENT_PASSAGE;
+    // An uploaded document replaces the passage until it's removed.
+    const fromDocument = usingDocument();
+    const custom = !fromDocument && chosen.passageId === CUSTOM_PASSAGE;
+    $("passageChooser").classList.toggle("hidden", fromDocument);
     $("customScript").classList.toggle("hidden", !custom);
-    $("documentBlock").classList.toggle("hidden", !fromDocument);
     $("passagePreview").classList.toggle("hidden", custom || fromDocument);
     $("passagePreview").textContent = custom || fromDocument ? "" : catalog.passages.find((p) => p.id === chosen.passageId).text;
     $("readingStyleBlock").classList.toggle("hidden", !(custom || fromDocument));
@@ -377,9 +385,9 @@ export function presentationContext() {
 export function stageContent() {
   if (mode.prompt.kind === "passage") {
     const chosen = selection();
-    if (chosen.passageId === DOCUMENT_PASSAGE) {
+    if (usingDocument()) {
       return {
-        title: currentDocument() ? `Read from ${currentDocument().filename}` : "Read from your document",
+        title: `Read from ${currentDocument().filename}`,
         text: "Read any part you like, as much as you like. The analysis finds where you read from.",
         script: documentScript(),
         long: true,
@@ -418,9 +426,6 @@ export function setLocked(locked) {
 }
 
 export function validate() {
-  if (mode.prompt.kind === "passage" && selection().passageId === DOCUMENT_PASSAGE && !currentDocument()) {
-    return "Upload a document first, or pick another passage.";
-  }
   if (mode.prompt.kind === "passage" && !stageContent().script) return "Paste the text you want to practise reading.";
   if (mode.timer.user_duration && !userDurationSeconds()) return "Set a duration above 0 seconds.";
   return null;
@@ -443,10 +448,10 @@ export function formFields() {
     }
   }
   if (mode.prompt.kind === "passage") {
-    if (chosen.passageId === CUSTOM_PASSAGE) fields.custom_script = $("customScript").value.trim();
-    else if (chosen.passageId === DOCUMENT_PASSAGE) fields.document_id = String(currentDocument().id);
+    if (usingDocument()) fields.document_id = String(currentDocument().id);
+    else if (chosen.passageId === CUSTOM_PASSAGE) fields.custom_script = $("customScript").value.trim();
     else fields.prompt_id = chosen.passageId;
-    if (chosen.passageId === CUSTOM_PASSAGE || chosen.passageId === DOCUMENT_PASSAGE) fields.reading_style = chosen.readingStyle;
+    if (usingDocument() || chosen.passageId === CUSTOM_PASSAGE) fields.reading_style = chosen.readingStyle;
   }
   if (mode.prompt.sides) fields.side = chosen.side;
   if (mode.prompt.notes) fields.notes = $("notesInput").value.trim();

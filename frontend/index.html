@@ -200,13 +200,17 @@
           </div>
 
           <div id="passageBlock" class="hidden">
-            <label for="passageSelect">Passage</label>
-            <select id="passageSelect"></select>
-            <div class="passage-preview" id="passagePreview"></div>
-            <textarea id="customScript" class="hidden" rows="6" maxlength="3000" placeholder="Paste the text you want to practise reading aloud"></textarea>
-            <div id="documentBlock" class="hidden">
+            <div id="passageChooser">
+              <label for="passageSelect">Passage</label>
+              <select id="passageSelect"></select>
+              <div class="passage-preview" id="passagePreview"></div>
+              <textarea id="customScript" class="hidden" rows="6" maxlength="3000" placeholder="Paste the text you want to practise reading aloud"></textarea>
+            </div>
+            <div id="documentBlock" class="document-block">
+              <label for="documentPickBtn">Or read from your own document (optional)</label>
               <div class="upload-row">
-                <input type="file" id="documentInput" accept=".pdf,.docx,.pptx,.txt,.md">
+                <button type="button" class="btn-outline upload-btn" id="documentPickBtn"><span class="upload-icon" aria-hidden="true">⤒</span><span id="documentPickLabel">Upload a document</span></button>
+                <input type="file" id="documentInput" class="file-hidden" accept=".pdf,.docx,.pptx,.txt,.md" tabindex="-1" aria-hidden="true">
                 <button type="button" class="btn-outline hidden" id="removeDocumentBtn">Remove</button>
               </div>
               <p class="result-meta" id="documentStatus"></p>

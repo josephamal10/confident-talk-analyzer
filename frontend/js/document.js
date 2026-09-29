@@ -3,7 +3,7 @@ import { el, formatClock, requestJson } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 const INTRO =
-  "Upload a PDF, Word, PowerPoint or text file. Read any part of it aloud and the analysis finds where you read from and checks it word by word.";
+  "Have your own article, script or notes? PDF, Word, PowerPoint and text files all work. Read any part of it and the analysis finds where you read from and checks it word by word.";
 let current = null;
 let hooks = {};
 
@@ -26,7 +26,9 @@ function clearDocument() {
   $("documentInput").value = "";
   $("documentPanel").classList.add("hidden");
   $("removeDocumentBtn").classList.add("hidden");
+  $("documentPickLabel").textContent = "Upload a document";
   setStatus(INTRO);
+  hooks.onChange?.();
 }
 
 function render() {
@@ -59,6 +61,7 @@ function render() {
   current.paragraphs.forEach((paragraph) => preview.appendChild(el("p", "", paragraph)));
   $("documentPanel").classList.remove("hidden");
   $("removeDocumentBtn").classList.remove("hidden");
+  $("documentPickLabel").textContent = "Upload a different document";
 }
 
 async function upload(file) {
@@ -71,19 +74,22 @@ async function upload(file) {
   setStatus(`Reading ${file.name}...`);
   try {
     current = await requestJson("/documents", { method: "POST", body: form });
-    setStatus("Ready. It'll be on screen while you read, so you can read straight from it.");
+    setStatus("Ready. You'll read from this instead of a passage, and it stays on screen while you read. Remove it to pick a passage again.");
     render();
   } catch (error) {
     if (error.status === 401) return hooks.onSessionExpired();
-    current = null;
-    $("documentPanel").classList.add("hidden");
-    setStatus(error.message, true);
+    // A failed replacement keeps the document that was already loaded.
+    setStatus(current ? `${error.message} Still using ${current.filename}.` : error.message, true);
+  } finally {
+    $("documentInput").value = "";
+    hooks.onChange?.();
   }
 }
 
 export function initDocumentUpload(options) {
   hooks = options;
   setStatus(INTRO);
+  $("documentPickBtn").addEventListener("click", () => $("documentInput").click());
   $("documentInput").addEventListener("change", () => {
     const file = $("documentInput").files[0];
     if (file) upload(file);

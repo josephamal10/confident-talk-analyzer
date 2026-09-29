@@ -48,7 +48,7 @@ function showView(name) {
   });
   document.querySelectorAll("[data-nav]").forEach((link) => link.classList.toggle("active", link.dataset.nav === NAV_FOR_VIEW[name]));
   if (name !== "session") leaveSession();
-  if (name !== "practice" && recorder.state !== "idle") recorder.cancel();
+  if (name !== "practice") recorder.cancel();
   window.scrollTo({ top: 0 });
 }
 
@@ -340,7 +340,7 @@ Promise.all([loadUser(), practice.loadCatalog()])
       requireLogin: () => requireLogin(currentPath()),
       onSessionExpired,
     });
-    initDocumentUpload({ requireLogin: () => requireLogin(currentPath()), onSessionExpired });
+    initDocumentUpload({ requireLogin: () => requireLogin(currentPath()), onSessionExpired, onChange: practice.refreshSetup });
     practiceResults = createResultView($("practiceResults"));
     practiceCoach = createCoachView($("practiceCoach"), onSessionExpired);
     setControls("idle");

@@ -1640,6 +1640,33 @@ a.mode-card {
   padding: 9px;
 }
 
+.document-block {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+/* The real file input stays in the page for the picker, but the button stands in for it. */
+.upload-row input.file-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .deck-panel {
   margin-top: 12px;
   padding: 14px 16px;

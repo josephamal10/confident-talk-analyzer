@@ -10,8 +10,21 @@ export class Recorder {
 
   // Asks for the microphone first, so the permission prompt appears before any countdown.
   async start({ prepSeconds = 0, limitSeconds = null } = {}) {
-    if (this.state !== "idle") return;
-    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (this.state !== "idle" || this.starting) return;
+    this.starting = true;
+    this.cancelled = false;
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } finally {
+      this.starting = false;
+    }
+    // Cancelled while the browser was still asking for the microphone.
+    if (this.cancelled) {
+      this.cancelled = false;
+      this.releaseMicrophone();
+      this.handlers.onStop?.(null, 0);
+      return;
+    }
     this.limitSeconds = limitSeconds;
     if (prepSeconds > 0) {
       this.state = "prep";
@@ -33,6 +46,7 @@ export class Recorder {
 
   beginRecording() {
     this.state = "recording";
+    this.discard = false;
     this.chunks = [];
     this.mediaRecorder = new MediaRecorder(this.stream);
     this.mediaRecorder.ondataavailable = (event) => this.chunks.push(event.data);
@@ -75,6 +89,11 @@ export class Recorder {
 
   // Stops and throws the recording away (onStop receives no blob).
   cancel() {
+    if (this.starting) {
+      this.cancelled = true;
+      return;
+    }
+    if (this.state === "idle") return;
     this.discard = true;
     this.stop();
   }
