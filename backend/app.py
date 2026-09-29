@@ -685,7 +685,9 @@ def review_deck(deck_id):
     if config is None:
         return jsonify({"error": "The AI coach is not configured on this server.", "code": "coach_disabled"}), 503
     try:
-        review = coach.review_deck(slides.outline(deck, max_chars=3000), topic, target_seconds, json.loads(deck_row["checks"]), config)
+        review = coach.review_deck(
+            slides.outline(deck, max_chars=3000, per_slide_chars=500), topic, target_seconds, json.loads(deck_row["checks"]), config
+        )
     except llm.LLMError as error:
         return jsonify({"error": error.message, "retryable": error.retryable}), error.status_code
     db.execute("UPDATE decks SET review = ? WHERE id = ?", (json.dumps(review), deck_id))

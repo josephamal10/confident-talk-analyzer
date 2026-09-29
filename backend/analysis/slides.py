@@ -212,13 +212,23 @@ def match_speech_to_slides(sentences, slides):
     }
 
 
-def outline(deck, max_chars=1500):
+SHORTENED_MARK = " [...]"
+
+
+def _shorten(text, limit):
+    """Cuts at a word boundary and marks the cut, so the LLM doesn't mistake it for a typo on the slide."""
+    if len(text) <= limit:
+        return text
+    return text[:limit].rsplit(" ", 1)[0] + SHORTENED_MARK
+
+
+def outline(deck, max_chars=1500, per_slide_chars=200):
     """Compact slide-by-slide text for the LLM prompt."""
     parts, used = [], 0
     for slide in deck["slides"]:
         line = f"Slide {slide['number']}: {slide['title'] or '(no title)'}"
         if slide["lines"]:
-            line += " - " + "; ".join(slide["lines"])[:200]
+            line += " - " + _shorten("; ".join(slide["lines"]), per_slide_chars)
         if used + len(line) > max_chars:
             parts.append(f"... ({len(deck['slides']) - len(parts)} more slides)")
             break

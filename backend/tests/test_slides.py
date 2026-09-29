@@ -151,3 +151,9 @@ def test_title_and_closing_slides_do_not_count_towards_the_slide_budget(tmp_path
     deck = slides.parse_deck(str(make_pptx(tmp_path / "framed.pptx", specs)), "framed.pptx")
     checks = slides.check_deck(deck, target_seconds=120)
     assert checks["content_slide_count"] == 4 and not any("content slides" in i["message"] for i in checks["issues"])
+
+
+def test_outline_marks_shortened_text_at_a_word_boundary():
+    deck = {"slides": [{"number": 1, "title": "Costs", "lines": ["Maintenance is cheap: occasional cleaning and inspection"]}]}
+    text = slides.outline(deck, per_slide_chars=30)
+    assert text == "Slide 1: Costs - Maintenance is cheap: [...]"
