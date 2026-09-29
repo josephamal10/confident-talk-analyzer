@@ -231,3 +231,14 @@ def test_coach_is_scoped_to_the_owner(client, make_user, monkeypatch):
     other = app_module.app.test_client()
     make_user(other)
     assert other.post(f"/analyses/{record_id}/coach").status_code == 404
+
+
+def test_progress_endpoint(client, make_user, monkeypatch):
+    make_user()
+    analyze(client, monkeypatch, mode="jam", prompt_id="jam_topics-1")
+    analyze(client, monkeypatch, mode="free")
+    everything = client.get("/progress").get_json()
+    assert everything["sessions"] == 2 and everything["streak"] == 1
+    jam_only = client.get("/progress?mode=jam").get_json()
+    assert jam_only["sessions"] == 1 and jam_only["mode"] == "jam"
+    assert client.get("/progress?mode=karaoke").get_json()["mode"] is None

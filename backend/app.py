@@ -18,6 +18,7 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 from analysis import AnalysisError, analyze_recording, coach, evaluation, llm, modes, relevance, warm_up  # noqa: E402
 from analysis.scoring import build_feedback  # noqa: E402
+import progress  # noqa: E402
 
 UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", os.path.join(BASE_DIR, "uploads"))
 DB_FILE = os.getenv("DATABASE_PATH", os.path.join(BASE_DIR, "app_data.db"))
@@ -396,6 +397,13 @@ def me():
 def history():
     entries = get_user_history(g.user["id"])
     return jsonify({"history": entries, "count": len(entries)})
+
+
+@app.route("/progress", methods=["GET"])
+@login_required
+def progress_summary():
+    mode_filter = request.args.get("mode")
+    return jsonify(progress.summarize(get_user_history(g.user["id"]), mode_filter if mode_filter in modes.MODES else None))
 
 
 @app.route("/modes", methods=["GET"])

@@ -1,244 +1,159 @@
-const API_BASE = "";
+// Progress page: stats, focus areas, skill trends and session history, filterable by mode.
+import { el, formatDateLabel, formatDuration, initializeTheme, postJson, requestJson } from "./common.js";
+import { drawLineChart } from "./charts.js";
 
-const trackerUser = document.getElementById("trackerUser");
-const historySummary = document.getElementById("historySummary");
-const historyList = document.getElementById("historyList");
-const progressChart = document.getElementById("progressChart");
-const backBtn = document.getElementById("backBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const themeToggle = document.getElementById("themeToggle");
+const $ = (id) => document.getElementById(id);
+let history = [];
+let modeLabels = {};
+let activeMode = null;
 
-let historyCache = [];
-const THEME_STORAGE_KEY = "cta_theme";
-
-function getThemeValue(name, fallback) {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return value || fallback;
+function filtered() {
+  return activeMode ? history.filter((entry) => (entry.mode || "free") === activeMode) : history;
 }
 
-function applyTheme(theme) {
-  const resolved = theme === "light" ? "light" : "dark";
-  document.documentElement.setAttribute("data-theme", resolved);
-  if (themeToggle) {
-    themeToggle.textContent = resolved === "light" ? "Dark Theme" : "Light Theme";
-  }
-}
-
-function initializeTheme() {
-  let saved = localStorage.getItem(THEME_STORAGE_KEY);
-  if (saved !== "light" && saved !== "dark") {
-    saved = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-  }
-  applyTheme(saved);
-}
-
-async function requestJson(url, options = {}) {
-  const response = await fetch(url, options);
-
-  let data = {};
-  try {
-    data = await response.json();
-  } catch {
-    data = {};
-  }
-
-  if (!response.ok) {
-    const error = new Error(data.error || "Request failed.");
-    error.status = response.status;
-    throw error;
-  }
-  return data;
-}
-
-function formatDateLabel(timestamp) {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) return "Unknown date";
-  return date.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+function renderFilter(summary) {
+  const container = $("modeFilter");
+  container.textContent = "";
+  const options = [{ id: null, label: "All modes", count: summary.total_sessions }, ...summary.modes.filter((mode) => mode.count)];
+  options.forEach((option) => {
+    const button = el("button", option.id === activeMode ? "active" : "", `${option.label} (${option.count})`);
+    button.type = "button";
+    button.addEventListener("click", () => {
+      activeMode = option.id;
+      loadProgress();
+    });
+    container.appendChild(button);
   });
 }
 
-function formatDuration(minutes, seconds) {
-  const safeMinutes = Math.max(0, Number.parseInt(minutes, 10) || 0);
-  const safeSeconds = Math.max(0, Number.parseInt(seconds, 10) || 0);
-  const totalSeconds = (safeMinutes * 60) + safeSeconds;
-  const normalizedMinutes = Math.floor(totalSeconds / 60);
-  const normalizedSeconds = totalSeconds % 60;
-  return `${normalizedMinutes}m ${String(normalizedSeconds).padStart(2, "0")}s`;
-}
-
-function drawProgressChart(entries) {
-  const canvas = progressChart;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  const cssWidth = Math.max(320, Math.floor(canvas.getBoundingClientRect().width || 320));
-  const cssHeight = 260;
-  const dpr = window.devicePixelRatio || 1;
-
-  canvas.width = Math.floor(cssWidth * dpr);
-  canvas.height = Math.floor(cssHeight * dpr);
-
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  if (!entries.length) {
-    ctx.fillStyle = getThemeValue("--chart-text", "rgba(148, 163, 184, 0.9)");
-    ctx.font = '15px "Space Grotesk", sans-serif';
-    ctx.fillText("No sessions found. Analyze your speech to generate progress data.", 20, 132);
+function renderSkills(skills) {
+  const container = $("skillList");
+  container.textContent = "";
+  if (!skills.length) {
+    container.appendChild(el("p", "result-meta", "Skill scores appear after your first analysis with the new modes."));
     return;
   }
-
-  const padding = { left: 44, right: 20, top: 20, bottom: 34 };
-  const plotW = cssWidth - padding.left - padding.right;
-  const plotH = cssHeight - padding.top - padding.bottom;
-  const scores = entries.map((entry) => Number(entry.score) || 0);
-  const maxScore = 10;
-  const minScore = 0;
-
-  ctx.strokeStyle = getThemeValue("--chart-grid", "rgba(148, 163, 184, 0.22)");
-  ctx.fillStyle = getThemeValue("--chart-text", "rgba(148, 163, 184, 0.9)");
-  ctx.font = '12px "Space Grotesk", sans-serif';
-
-  for (let tick = minScore; tick <= maxScore; tick += 2) {
-    const y = padding.top + ((maxScore - tick) / (maxScore - minScore)) * plotH;
-    ctx.beginPath();
-    ctx.moveTo(padding.left, y);
-    ctx.lineTo(cssWidth - padding.right, y);
-    ctx.stroke();
-    ctx.fillText(String(tick), 12, y + 4);
-  }
-
-  const xAt = (index) => {
-    if (scores.length === 1) return padding.left + plotW / 2;
-    return padding.left + (index * plotW) / (scores.length - 1);
-  };
-
-  const yAt = (score) => padding.top + ((maxScore - score) / (maxScore - minScore)) * plotH;
-
-  ctx.strokeStyle = getThemeValue("--chart-line", "#3b82f6");
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  scores.forEach((score, index) => {
-    const x = xAt(index);
-    const y = yAt(score);
-    if (index === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+  skills.forEach((skill) => {
+    const row = el("div", "breakdown-row skill-row");
+    const track = el("div", "breakdown-track");
+    const bar = el("div", "breakdown-bar");
+    bar.style.width = `${skill.recent * 10}%`;
+    track.appendChild(bar);
+    const change = skill.change;
+    const trend = el("span", `trend ${change > 0 ? "trend-up" : change < 0 ? "trend-down" : ""}`);
+    trend.textContent = change == null ? "" : `${change > 0 ? "↑ +" : change < 0 ? "↓ " : ""}${change === 0 ? "±0" : change}`;
+    trend.title = change == null ? "" : `Previous 5 sessions: ${skill.previous}/10`;
+    row.append(el("span", "", skill.label), track, el("span", "breakdown-value", skill.recent.toFixed(1)), trend);
+    container.appendChild(row);
   });
-  ctx.stroke();
-
-  ctx.fillStyle = getThemeValue("--chart-point", "#38bdf8");
-  scores.forEach((score, index) => {
-    const x = xAt(index);
-    const y = yAt(score);
-    ctx.beginPath();
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  ctx.fillStyle = getThemeValue("--chart-text", "rgba(148, 163, 184, 0.95)");
-  const firstLabel = formatDateLabel(entries[0].timestamp).split(",")[0];
-  const lastLabel = formatDateLabel(entries[entries.length - 1].timestamp).split(",")[0];
-  ctx.fillText(firstLabel, padding.left, cssHeight - 10);
-  ctx.fillText(lastLabel, cssWidth - padding.right - 70, cssHeight - 10);
 }
 
-function renderHistory(entries) {
-  historyCache = entries;
-  historyList.textContent = "";
-
-  if (!entries.length) {
-    historySummary.textContent = "No history yet. Go back and run your first analysis.";
-    drawProgressChart([]);
-    return;
+function renderFocus(summary) {
+  const list = $("focusList");
+  list.textContent = "";
+  if (!summary.focus.length) {
+    list.appendChild(el("li", "", summary.sessions ? "No weak spots right now. Keep practising to stay sharp." : "Record a session to find your focus areas."));
   }
+  summary.focus.forEach((item) => {
+    const li = el("li");
+    li.append(el("b", "", `${item.label} (${item.average}/10)`), el("br"), item.reason);
+    list.appendChild(li);
+  });
+  $("suggestionText").textContent = `Next: ${summary.suggestion.label}. ${summary.suggestion.reason}`;
+  $("suggestionLink").href = `/?mode=${encodeURIComponent(summary.suggestion.mode)}`;
+  $("suggestionLink").textContent = `Practise ${summary.suggestion.label}`;
+}
 
-  const firstScore = Number(entries[0].score) || 0;
-  const latestScore = Number(entries[entries.length - 1].score) || 0;
-  const delta = +(latestScore - firstScore).toFixed(1);
-  const trend = delta > 0 ? `+${delta}` : `${delta}`;
-
-  historySummary.textContent =
-    `Total sessions: ${entries.length} | Latest score: ${latestScore}/10 | Trend: ${trend}`;
-
+function renderHistory() {
+  const entries = filtered();
+  const list = $("historyList");
+  list.textContent = "";
+  if (!entries.length) {
+    $("historySummary").textContent = "No sessions yet. Go back and record your first one.";
+  } else {
+    const first = Number(entries[0].score) || 0;
+    const latest = Number(entries[entries.length - 1].score) || 0;
+    const delta = +(latest - first).toFixed(1);
+    $("historySummary").textContent = `Trend since your first session: ${delta > 0 ? "+" : ""}${delta}`;
+  }
   entries
     .slice(-10)
     .reverse()
     .forEach((entry) => {
-      const item = document.createElement("div");
-      item.className = "history-item";
-
-      const title = document.createElement("p");
-      title.textContent = `${formatDateLabel(entry.timestamp)} - Score ${entry.score}/10 - ${entry.delivery}`;
-
-      const meta = document.createElement("p");
-      meta.className = "meta";
-      meta.textContent = `Duration: ${formatDuration(entry.minutes, entry.seconds)} | WPM: ${entry.wpm} | Fillers: ${entry.filler_count} | Topic: ${entry.topic || "General"}`;
-
-      item.append(title, meta);
-      historyList.appendChild(item);
+      const item = el("div", "history-item");
+      const mode = modeLabels[entry.mode || "free"] || "Free practice";
+      item.append(
+        el("p", "", `${formatDateLabel(entry.timestamp, true)} · ${mode} · ${entry.score}/10 · ${entry.delivery}`),
+        el(
+          "p",
+          "meta",
+          `${entry.topic ? `${entry.topic} · ` : ""}${formatDuration(entry.minutes, entry.seconds)} · ${entry.wpm} WPM · ` +
+            `${entry.filler_count} filler${entry.filler_count === 1 ? "" : "s"}`
+        )
+      );
+      list.appendChild(item);
     });
-
-  drawProgressChart(entries);
+  drawChart();
 }
 
-async function loadHistory() {
+function drawChart() {
+  const entries = filtered();
+  drawLineChart($("progressChart"), {
+    values: entries.map((entry) => Number(entry.score) || 0),
+    min: 0,
+    max: 10,
+    ticks: [0, 2, 4, 6, 8, 10],
+    labels: entries.map((entry) => formatDateLabel(entry.timestamp)),
+    height: 240,
+    emptyText: "No sessions yet. Analyze your speech to build your progress graph.",
+  });
+}
+
+async function loadProgress() {
   try {
-    const result = await requestJson(`${API_BASE}/history`);
-    const entries = Array.isArray(result.history) ? result.history : [];
-    entries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    renderHistory(entries);
+    const query = activeMode ? `?mode=${encodeURIComponent(activeMode)}` : "";
+    const summary = await requestJson(`/progress${query}`);
+    modeLabels = Object.fromEntries(summary.modes.map((mode) => [mode.id, mode.label]));
+    $("statSessions").textContent = summary.sessions;
+    $("statLatest").textContent = summary.latest_score ?? "-";
+    $("statBest").textContent = summary.best?.score ?? "-";
+    $("statStreak").textContent = summary.streak;
+    renderFilter(summary);
+    renderFocus(summary);
+    renderSkills(summary.skills);
+    renderHistory();
   } catch (error) {
-    if (error.status === 401) {
-      window.location.href = "/";
-      return;
-    }
-    historySummary.textContent = error.message || "Unable to load history right now.";
-    drawProgressChart([]);
+    if (error.status === 401) window.location.href = "/";
+    else $("historySummary").textContent = error.message || "Unable to load your progress right now.";
   }
 }
 
 async function bootstrap() {
   let user;
   try {
-    user = (await requestJson(`${API_BASE}/me`)).user;
+    user = (await requestJson("/me")).user;
   } catch {
     window.location.href = "/";
     return;
   }
-
-  trackerUser.textContent = `${user.name || "Speaker"} - Progress Overview`;
-  loadHistory();
+  $("trackerUser").textContent = `${user.name || "Speaker"}'s progress`;
+  history = (await requestJson("/history")).history;
+  history.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  loadProgress();
 }
 
-backBtn.addEventListener("click", () => {
+$("backBtn").addEventListener("click", () => {
   window.location.href = "/";
 });
-
-logoutBtn.addEventListener("click", async () => {
+$("logoutBtn").addEventListener("click", async () => {
   try {
-    await requestJson(`${API_BASE}/logout`, { method: "POST" });
+    await postJson("/logout", {});
   } catch {
     // Return to the login screen even if the request failed.
   }
   window.location.href = "/";
 });
+window.addEventListener("resize", drawChart);
 
-if (themeToggle) {
-  themeToggle.addEventListener("click", () => {
-    const currentTheme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
-    const nextTheme = currentTheme === "light" ? "dark" : "light";
-    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-    applyTheme(nextTheme);
-    drawProgressChart(historyCache);
-  });
-}
-
-window.addEventListener("resize", () => drawProgressChart(historyCache));
-
-initializeTheme();
+initializeTheme($("themeToggle"), drawChart);
 bootstrap();

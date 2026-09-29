@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Speech Tracker</title>
+  <title>My Progress - Confident Talk Analyzer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,17 +19,44 @@
     <section class="analyzer-card tracker-card">
       <div class="app-header">
         <div>
-          <p class="kicker">My Speech Tracker</p>
-          <h2 id="trackerUser">Progress Overview</h2>
+          <p class="kicker">My progress</p>
+          <h2 id="trackerUser">Progress overview</h2>
         </div>
         <div class="tracker-actions">
-          <button id="backBtn" class="btn-outline" type="button">Back to Analyzer</button>
+          <button id="backBtn" class="btn-outline" type="button">Back to practice</button>
           <button id="logoutBtn" class="btn-outline" type="button">Logout</button>
         </div>
       </div>
 
-      <p id="historySummary">Loading your speech history...</p>
+      <div class="stat-row">
+        <div class="stat"><span class="stat-value" id="statSessions">-</span><span class="stat-label">Sessions</span></div>
+        <div class="stat"><span class="stat-value" id="statLatest">-</span><span class="stat-label">Latest score</span></div>
+        <div class="stat"><span class="stat-value" id="statBest">-</span><span class="stat-label">Best score</span></div>
+        <div class="stat"><span class="stat-value" id="statStreak">-</span><span class="stat-label">Day streak</span></div>
+      </div>
+
+      <div class="segmented mode-filter" id="modeFilter" aria-label="Filter by mode"></div>
+
+      <div class="tracker-grid">
+        <div class="mode-panel">
+          <h4>Focus areas</h4>
+          <ul class="coach-list" id="focusList"></ul>
+          <div class="suggestion">
+            <p id="suggestionText"></p>
+            <a class="btn-primary suggestion-link" id="suggestionLink" href="/">Practise now</a>
+          </div>
+        </div>
+        <div class="mode-panel">
+          <h4>Skills <span class="result-meta">(average of your last 5 sessions)</span></h4>
+          <div class="breakdown" id="skillList"></div>
+        </div>
+      </div>
+
+      <h4>Score over time</h4>
       <canvas id="progressChart"></canvas>
+      <p id="historySummary">Loading your speech history...</p>
+
+      <h4>Recent sessions</h4>
       <div id="historyList" class="history-list"></div>
     </section>
   </main>

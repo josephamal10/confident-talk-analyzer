@@ -52,6 +52,12 @@ async function showApp(user) {
       setStatus("Could not load practice modes. Refresh the page to try again.");
       return;
     }
+    // The progress page links here with ?mode=... to suggest what to practise next.
+    const requested = new URLSearchParams(window.location.search).get("mode");
+    if (requested) {
+      practice.selectMode(requested);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
   }
   setStatus("Pick a mode, then press Start.");
 }
