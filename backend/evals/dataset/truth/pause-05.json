@@ -1,0 +1,59 @@
+{
+ "voice": "david",
+ "rate": 0,
+ "duration": 12.79,
+ "speech_start": 0.1,
+ "speech_end": 11.98,
+ "speech_span": 11.88,
+ "word_count": 17,
+ "wpm": 85.9,
+ "word_starts": [
+  0.1,
+  0.265,
+  0.765,
+  2.21,
+  2.415,
+  3.355,
+  3.725,
+  3.82,
+  5.54,
+  5.855,
+  6.14,
+  8.41,
+  8.535,
+  8.84,
+  11.365,
+  11.68,
+  11.775
+ ],
+ "pauses": [
+  {
+   "after": 2,
+   "seconds": 0.8,
+   "kind": "hesitation",
+   "start": 1.36,
+   "end": 2.22
+  },
+  {
+   "after": 7,
+   "seconds": 1.2,
+   "kind": "hesitation",
+   "start": 4.32,
+   "end": 5.54
+  },
+  {
+   "after": 10,
+   "seconds": 0.8,
+   "kind": "natural",
+   "start": 6.72,
+   "end": 8.42
+  },
+  {
+   "after": 13,
+   "seconds": 2.0,
+   "kind": "hesitation",
+   "start": 9.34,
+   "end": 11.36
+  }
+ ]
+}

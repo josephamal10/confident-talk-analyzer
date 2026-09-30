@@ -1,0 +1,15 @@
+{
+  "about": "Your own recordings of some of the synthetic scripts. Each entry reuses the labels of the synthetic clip named in same_as. Put the audio in audio/ (it is not committed) and see RECORDING_GUIDE.md.",
+  "recordings": [
+    {"id": "own-01", "same_as": "fill-03", "instructions": "Say it like a relaxed answer, with the um, uh, like and hmm where they are written."},
+    {"id": "own-02", "same_as": "fill-04", "instructions": "A hesitant answer: say every um and uh, and 'you know' as a filler."},
+    {"id": "own-03", "same_as": "fill-05", "instructions": "Say 'like' and 'you know' as fillers only where they sit between commas."},
+    {"id": "own-04", "same_as": "fill-08", "instructions": "A fluent, confident delivery with no fillers at all."},
+    {"id": "own-05", "same_as": "pause-01", "instructions": "Stop mid-sentence where it says (pause), as if you lost your train of thought."},
+    {"id": "own-06", "same_as": "pause-02", "instructions": "Take a calm breath between sentences where it says (pause)."},
+    {"id": "own-07", "same_as": "pause-05", "instructions": "Pause where marked; the two-second one should feel like a real hesitation."},
+    {"id": "own-08", "same_as": "hedge-01", "instructions": "Sound unsure: lean on 'I think', 'maybe', 'I guess' and 'kind of'."},
+    {"id": "own-09", "same_as": "read-01", "instructions": "Read the passage exactly as written, like a news reader."},
+    {"id": "own-10", "same_as": "read-03", "instructions": "Read the passage as written here. It leaves out three words of the original, which the check should catch."}
+  ]
+}

@@ -13,6 +13,9 @@ backend/.env
 backend/uploads/
 backend/models/
 
+# Your own evaluation recordings stay on your computer
+backend/evals/dataset/own/audio/
+
 # Editor / tooling
 .freebuff/
 .vscode/

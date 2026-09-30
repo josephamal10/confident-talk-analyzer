@@ -2,3 +2,5 @@
 pytest
 # Only needed by scripts/prepare_emotion_model.py (onnxruntime's quantizer imports it).
 onnx
+# The evaluation suite (evals/) writes and reads its clips as FLAC.
+soundfile

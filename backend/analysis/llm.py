@@ -142,6 +142,7 @@ def chat_json(config, messages, schema, schema_name, max_tokens=1500, temperatur
             "model": config.model,
             "latency_ms": latency_ms,
             "usage": data.get("usage"),
+            "attempts": attempt,
         }
         logger.info("LLM %s/%s answered in %s ms, usage %s", config.provider, config.model, latency_ms, data.get("usage"))
         return result, meta

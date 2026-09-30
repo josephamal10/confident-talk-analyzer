@@ -1,0 +1,34 @@
+{
+ "voice": "david",
+ "rate": 0,
+ "duration": 8.39,
+ "speech_start": 0.12,
+ "speech_end": 7.48,
+ "speech_span": 7.36,
+ "word_count": 13,
+ "wpm": 106.0,
+ "word_starts": [
+  0.1,
+  0.32,
+  0.52,
+  0.615,
+  4.43,
+  4.67,
+  4.84,
+  4.96,
+  5.405,
+  5.525,
+  6.28,
+  6.475,
+  6.965
+ ],
+ "pauses": [
+  {
+   "after": 3,
+   "seconds": 2.5,
+   "kind": "hesitation",
+   "start": 1.02,
+   "end": 4.52
+  }
+ ]
+}

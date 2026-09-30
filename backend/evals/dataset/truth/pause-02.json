@@ -1,0 +1,42 @@
+{
+ "voice": "zira",
+ "rate": 0,
+ "duration": 8.44,
+ "speech_start": 0.1,
+ "speech_end": 7.68,
+ "speech_span": 7.58,
+ "word_count": 14,
+ "wpm": 110.8,
+ "word_starts": [
+  0.1,
+  0.23,
+  0.67,
+  2.92,
+  3.045,
+  3.37,
+  3.545,
+  6.005,
+  6.18,
+  6.46,
+  6.595,
+  6.765,
+  7.085,
+  7.185
+ ],
+ "pauses": [
+  {
+   "after": 2,
+   "seconds": 1.0,
+   "kind": "natural",
+   "start": 1.08,
+   "end": 2.94
+  },
+  {
+   "after": 6,
+   "seconds": 1.2,
+   "kind": "natural",
+   "start": 3.96,
+   "end": 6.04
+  }
+ ]
+}
