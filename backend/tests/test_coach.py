@@ -100,9 +100,41 @@ def test_invented_numbers_are_replaced_but_spoken_ones_kept():
     )
 
 
+SAID = "In my second year I failed a maths test because I did not plan my revision, so I learned to plan."
+
+
 def test_normalize_applies_number_guardrail():
-    result = coach.normalize(raw_result(improved_answer="It improved results by 15%."), STAR, transcript="No numbers.")
-    assert result["improved_answer"] == "It improved results by [number]."
+    rewrite = "In my second year I failed a maths test by 15%, so I learned to plan my revision."
+    result = coach.normalize(raw_result(improved_answer=rewrite), STAR, transcript=SAID)
+    assert result["improved_answer"] == "In my second year I failed a maths test by [number], so I learned to plan my revision."
+
+
+def test_spelled_out_numbers_are_guarded_too():
+    said = "We had four deadlines and 3 people."
+    assert coach.replace_invented_numbers("Four deadlines, three people, twenty hours, one plan.", said) == (
+        "Four deadlines, three people, [number] hours, one plan."
+    )
+    assert coach.replace_invented_numbers("We cut it by thirty percent.", "No numbers here.") == "We cut it by [number] percent."
+
+
+def test_tips_get_the_number_guardrail():
+    raw = raw_result(improvements=[{"issue": "No result", "suggestion": 'Say "we saved 30 hours a month".'}])
+    assert coach.normalize(raw, STAR, transcript=SAID)["improvements"][0]["suggestion"] == 'Say "we saved [number] hours a month".'
+
+
+def test_a_rewrite_of_a_one_line_answer_that_is_mostly_new_is_replaced_by_the_template():
+    # Found by evals/coach_eval.py: a one-line answer came back as a whole invented story.
+    story = ("In my previous role as a project coordinator, we were launching a software update. "
+             "Midway through, I missed a testing deadline, reorganised the workflow and brought in another tester.")
+    result = coach.normalize(raw_result(improved_answer=story), STAR, transcript="I failed once, but I learned from it.")
+    assert result["improved_answer_type"] == "template" and result["improved_answer"] == STAR["template"]
+    assert coach.new_content_share(story, "I failed once, but I learned from it.") > 0.9
+
+
+def test_framework_parts_match_whatever_the_word_order():
+    prep = modes.FRAMEWORKS["PREP"]
+    raw = raw_result(framework_check={"present": ["Restated point", "point", "Point"], "missing": []})
+    assert coach.normalize(raw, prep, transcript=SAID)["framework"]["present"] == ["Point restated", "Point"]
 
 
 def test_off_topic_answer_gets_framework_template_instead_of_invented_story():
@@ -114,7 +146,8 @@ def test_off_topic_answer_gets_framework_template_instead_of_invented_story():
 
 
 def test_on_topic_answer_keeps_the_rewrite():
-    result = coach.normalize(raw_result(), STAR, transcript="I failed a test.")
+    rewrite = "In my second year I failed a maths test. I had not planned my revision, so now I plan every week."
+    result = coach.normalize(raw_result(improved_answer=rewrite), STAR, transcript=SAID)
     assert result["improved_answer_type"] == "rewrite"
 
 

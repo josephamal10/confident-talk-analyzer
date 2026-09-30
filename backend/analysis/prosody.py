@@ -19,33 +19,55 @@ def speaking_span(words):
     return max(0.0, words[-1]["end"] - words[0]["start"])
 
 
-def _speech_overlap(start, end, speech_regions):
-    return sum(max(0.0, min(end, region_end) - max(start, region_start)) for region_start, region_end in speech_regions)
+def _silences(words, speech_regions):
+    """Silent stretches as (start, end): the gaps between VAD speech regions, or between Whisper's
+    word timestamps when there are no VAD regions."""
+    if speech_regions:
+        return [(end, start) for (_s, end), (start, _e) in zip(speech_regions, speech_regions[1:])]
+    return [(previous["end"], current["start"]) for previous, current in zip(words, words[1:])]
 
 
 def find_pauses(words, speech_regions, filler_indexes):
-    """Silent gaps of at least MIN_PAUSE_SECONDS between consecutive words.
+    """Silences of at least MIN_PAUSE_SECONDS inside the speech, each placed before a word.
+
+    The silence comes from the VAD rather than from gaps between Whisper's word timestamps:
+    Whisper tends to stretch a word's start back over the silence before it, which hid about half
+    of the scripted pauses in the evaluation set (see evals/). Word end times stay accurate, so a
+    silence belongs before the first word that ends after it. A VAD gap with a whole word inside it
+    is quiet speech the VAD missed, not a pause.
 
     A pause counts as *hesitation* when it falls mid-phrase (the previous word has no
     punctuation), sits next to a filler, or lasts LONG_PAUSE_SECONDS or more. Pauses at
-    commas and sentence ends are *natural*. The VAD speech regions confirm the gap is really
-    silent, so words Whisper skipped are not mistaken for pauses.
+    commas and sentence ends are *natural*.
     """
-    pauses = []
-    for index in range(1, len(words)):
-        previous, current = words[index - 1], words[index]
-        gap_start, gap_end = previous["end"], current["start"]
-        silence = (gap_end - gap_start) - _speech_overlap(gap_start, gap_end, speech_regions)
-        if silence < MIN_PAUSE_SECONDS:
+    if len(words) < 2:
+        return []
+    found = {}  # before_word -> [start, end, silence]
+    for gap_start, gap_end in _silences(words, speech_regions):
+        silence = gap_end - gap_start
+        if silence < MIN_PAUSE_SECONDS or gap_start < words[0]["start"] or gap_end > words[-1]["end"]:
             continue
+        if speech_regions and any(gap_start <= word["start"] and word["end"] <= gap_end for word in words):
+            continue
+        index = next((i for i, word in enumerate(words) if word["end"] > gap_end), None)
+        if not index:
+            continue
+        if index in found:  # a breath split one pause into two silences
+            found[index][1] = gap_end
+            found[index][2] += silence
+        else:
+            found[index] = [gap_start, gap_end, silence]
 
+    pauses = []
+    for index, (start, end, silence) in sorted(found.items()):
+        previous = words[index - 1]
         mid_phrase = not CLAUSE_END_PATTERN.search(previous["text"])
         next_to_filler = (index - 1) in filler_indexes or index in filler_indexes
         hesitation = mid_phrase or next_to_filler or silence >= LONG_PAUSE_SECONDS
         pauses.append(
             {
-                "start": round(gap_start, 2),
-                "end": round(gap_end, 2),
+                "start": round(start, 2),
+                "end": round(end, 2),
                 "duration": round(silence, 2),
                 "kind": "hesitation" if hesitation else "natural",
                 "before_word": index,

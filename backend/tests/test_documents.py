@@ -138,7 +138,9 @@ def test_unrelated_speech_matches_no_section():
 @pytest.mark.parametrize(
     "accuracy, spoken_match, similarity, verdict",
     [
-        (0.99, 0.97, None, "same"),
+        (1.0, 1.0, None, "same"),
+        (0.99, 0.99, None, "same"),  # one slip per 100 words is still exact
+        (1.0, 0.96, None, "close"),  # two added words in 52
         (0.95, 0.97, None, "close"),  # three skipped words is not "exactly as written"
         (0.7, 0.9, None, "close"),
         (0.4, 0.95, None, "skipped"),  # read the first part of a passage correctly, then stopped

@@ -33,6 +33,26 @@ def test_pause_next_to_filler_is_hesitation():
     assert pauses[0]["kind"] == "hesitation"
 
 
+def test_pauses_come_from_the_vad_when_whisper_stretches_a_word_over_the_silence():
+    # Found by the evaluation set: Whisper started "today." at 4.16 s although it was said at 5.45 s,
+    # so there was no gap between the words; the VAD still sees the 1.2 s of silence.
+    words = [word("leave", 3.54, 3.78), word("early", 3.78, 4.16), word("today.", 4.16, 5.74), word("Hmm,", 6.70, 6.88)]
+    regions = [(3.55, 4.29), (5.47, 5.85), (6.69, 7.01)]
+    pauses = find_pauses(words, regions, filler_indexes={3})
+    assert [(p["before_word"], p["kind"], p["duration"]) for p in pauses] == [(2, "hesitation", 1.18), (3, "hesitation", 0.84)]
+
+
+def test_silences_split_by_a_breath_are_one_pause():
+    words = [word("so", 0.0, 0.3), word("anyway,", 2.0, 2.4)]
+    pauses = find_pauses(words, [(0.0, 0.3), (0.9, 1.0), (2.0, 2.4)], filler_indexes=set())
+    assert [(p["start"], p["end"], p["duration"]) for p in pauses] == [(0.3, 2.0, 1.6)]
+
+
+def test_a_word_inside_a_vad_gap_means_the_vad_missed_quiet_speech():
+    words = [word("one", 0.0, 0.3), word("two", 0.6, 0.9), word("three", 1.6, 1.9)]
+    assert find_pauses(words, [(0.0, 0.3), (1.6, 1.9)], filler_indexes=set()) == []
+
+
 def test_gap_covered_by_speech_is_not_a_pause():
     words = [word("one", 0.0, 0.3), word("two", 1.3, 1.6)]
     # VAD heard speech in the gap (e.g. a word Whisper skipped), so there is no real silence.

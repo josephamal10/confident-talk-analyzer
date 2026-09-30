@@ -7,10 +7,19 @@ STAR, and writes a stronger version of the answer without inventing facts.
 import re
 
 from . import llm
+from .language import STOPWORDS
+from .reading import NUMBER_WORDS
 
 DEFAULT_DIMENSIONS = (("structure", "Structure"), ("clarity", "Clarity"), ("relevance", "Relevance"), ("depth", "Depth"))
 MAX_LIST_ITEMS = 3
 NUMBER_PATTERN = re.compile(r"\d+(?:[.,]\d+)*%?")
+# Spelled-out numbers from two up ("one" is too common to police: "one example").
+SPELLED_NUMBERS = [word for word in NUMBER_WORDS if word not in ("zero", "one")] + ["hundred", "thousand", "million", "billion"]
+SPELLED_NUMBER_PATTERN = re.compile(r"\b(" + "|".join(SPELLED_NUMBERS) + r")\b", re.IGNORECASE)
+# A rewrite whose content words are mostly not in the transcript is a made-up answer, not a
+# rewrite. In the evaluation set (evals/results/COACH.md), rewrites of real answers had 24-76%
+# new content words and rewrites of a one-line answer 98%.
+MAX_NEW_CONTENT_SHARE = 0.85
 
 
 def _string_list():
@@ -97,7 +106,9 @@ contractions and short everyday words, and be friendly but honest. Never call th
 one change that would help most.
 - strengths: up to 3, each one sentence about something they really did.
 - improvements: up to 3. issue: what happened, in plain words (never a category name like "Structure"). \
-suggestion: exactly what to try in the next take, ideally with a short example of what they could say.
+suggestion: exactly what to try in the next take, ideally with a short example of what they could say. An \
+example follows the same rule as improved_answer: only their own details, and a [placeholder] for anything \
+they did not say.
 - topic_feedback: one natural sentence about whether they answered what was asked.
 - improved_answer: rewrite the answer in their own first-person voice so it follows the framework. Keep their \
 ideas and facts. Every concrete detail they did not say (roles, companies, projects, events, numbers, \
@@ -186,30 +197,78 @@ def build_messages(transcript, context, analysis, coach_config=None, dimensions=
     return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": "\n".join(lines)}]
 
 
-def replace_invented_numbers(improved_answer, transcript):
-    """Guardrail: numbers the speaker never said are replaced with [number], so the rewrite can't hand
-    them a fabricated statistic to repeat in a real interview."""
+def _spoken_numbers(transcript):
+    """Numbers in the transcript, as written and as digits ("four" and "4")."""
     spoken = set(NUMBER_PATTERN.findall(transcript))
-    return NUMBER_PATTERN.sub(lambda match: match.group(0) if match.group(0) in spoken else "[number]", improved_answer)
+    for word in SPELLED_NUMBER_PATTERN.findall(transcript):
+        spoken.add(word.lower())
+        spoken.add(NUMBER_WORDS.get(word.lower(), word.lower()))
+    return spoken
+
+
+def replace_invented_numbers(text, transcript):
+    """Guardrail: numbers the speaker never said (as digits or words) are replaced with [number], so
+    the coach can't hand them a fabricated statistic to repeat in a real interview."""
+    spoken = _spoken_numbers(transcript)
+
+    def keep_digits(match):
+        return match.group(0) if match.group(0) in spoken else "[number]"
+
+    def keep_word(match):
+        word = match.group(0).lower()
+        return match.group(0) if word in spoken or NUMBER_WORDS.get(word) in spoken else "[number]"
+
+    return SPELLED_NUMBER_PATTERN.sub(keep_word, NUMBER_PATTERN.sub(keep_digits, text))
+
+
+def _content_words(text):
+    def stem(word):
+        for suffix in ("ing", "ed", "es", "s"):
+            if len(word) > 4 and word.endswith(suffix):
+                return word[: -len(suffix)]
+        return word
+
+    text = re.sub(r"\[[^\]]*\]", " ", text.lower())
+    return [stem(word) for word in re.findall(r"[a-z']+", text) if len(word) >= 3 and word not in STOPWORDS]
+
+
+def new_content_share(rewrite, transcript):
+    """Share of the rewrite's content words (outside [placeholders]) that the speaker never said."""
+    words = _content_words(rewrite)
+    if not words:
+        return 0.0
+    said = set(_content_words(transcript))
+    return sum(word not in said for word in words) / len(words)
+
+
+def _part_key(part):
+    return frozenset(re.findall(r"[a-z]+", part.lower()))
 
 
 def normalize(result, framework, transcript="", dimensions=DEFAULT_DIMENSIONS):
     """Clamps scores, trims lists, keeps framework parts to the known names and applies guardrails.
 
-    For an off-topic answer there is nothing true to rewrite, and models tend to invent a whole story,
-    so the rewrite is replaced by the framework's fill-in-the-blank template.
+    For an off-topic answer there is nothing true to rewrite, and models tend to invent a whole story;
+    the same happens with an answer too thin to rewrite, which shows up as a "rewrite" made almost
+    entirely of new content. Both get the framework's fill-in-the-blank template instead.
     """
     scores = {key: max(0, min(10, int(result["content_scores"][key]))) for key, _label in dimensions}
-    known_parts = {part.lower(): part for part in framework["parts"]}
-    present = [known_parts[p.lower()] for p in result["framework_check"]["present"] if p.lower() in known_parts]
+    # Match part names by their words, so "Restated point" finds "Point restated".
+    known_parts = {_part_key(part): part for part in framework["parts"]}
+    present = []
+    for name in result["framework_check"]["present"]:
+        part = known_parts.get(_part_key(name))
+        if part and part not in present:
+            present.append(part)
     missing = [part for part in framework["parts"] if part not in present]
     on_topic = bool(result["on_topic"])
-    if on_topic or not framework.get("template"):
-        improved_answer = replace_invented_numbers(humanize(result["improved_answer"]), transcript)
-        improved_answer_type = "rewrite"
-    else:
+    made_up = new_content_share(result["improved_answer"], transcript) >= MAX_NEW_CONTENT_SHARE
+    if framework.get("template") and (not on_topic or made_up):
         improved_answer = framework["template"]
         improved_answer_type = "template"
+    else:
+        improved_answer = replace_invented_numbers(humanize(result["improved_answer"]), transcript)
+        improved_answer_type = "rewrite"
     return {
         "summary": humanize(result["summary"]),
         "dimensions": [list(pair) for pair in dimensions],
@@ -217,7 +276,7 @@ def normalize(result, framework, transcript="", dimensions=DEFAULT_DIMENSIONS):
         "content_score": round(sum(scores.values()) / len(scores), 1),
         "strengths": [humanize(item) for item in result["strengths"] if item.strip()][:MAX_LIST_ITEMS],
         "improvements": [
-            {"issue": humanize(item["issue"]), "suggestion": humanize(item["suggestion"])}
+            {"issue": humanize(item["issue"]), "suggestion": replace_invented_numbers(humanize(item["suggestion"]), transcript)}
             for item in result["improvements"]
             if item["issue"].strip()
         ][:MAX_LIST_ITEMS],

@@ -36,8 +36,11 @@ SNAP_TOKENS = 10
 # (how much of the text was read correctly) and spoken match (how much of what was said came from
 # the text). A located part of a document needs at least MIN_SECTION_MATCH of the speech to come
 # from it; below that a few shared words ("team won the final") are a coincidence.
-SAME_ACCURACY = 0.98
-SAME_SPOKEN_MATCH = 0.85
+# "Exactly as written" allows about one slip per 100 words either way (the speech recogniser
+# makes some); the evaluation set showed looser limits calling readings with added or skipped
+# words exact.
+SAME_ACCURACY = 0.99
+SAME_SPOKEN_MATCH = 0.99
 CLOSE_ACCURACY = 0.6
 PARTIAL_ACCURACY = 0.3
 MIN_SECTION_MATCH = 0.3
