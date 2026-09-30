@@ -297,7 +297,7 @@ def main():
         "roles": roles,
     }
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    with open(os.path.join(RESULTS_DIR, "coach_latest.json"), "w", encoding="utf-8") as file:
+    with open(os.path.join(RESULTS_DIR, "coach_latest.json"), "w", encoding="utf-8", newline="\n") as file:
         json.dump(results, file, indent=1)
     write_report(results)
     print(json.dumps(results["coach"], indent=1, default=str))

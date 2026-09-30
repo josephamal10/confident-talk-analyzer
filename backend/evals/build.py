@@ -137,7 +137,7 @@ def render(clips):
             truth = truth_for(clip, job["wav"], events)
             samples, rate = _read_wav(job["wav"])
             soundfile.write(os.path.join(AUDIO_DIR, f"{clip.id}.flac"), samples, rate, subtype="PCM_16")
-            with open(os.path.join(TRUTH_DIR, f"{clip.id}.json"), "w", encoding="utf-8") as file:
+            with open(os.path.join(TRUTH_DIR, f"{clip.id}.json"), "w", encoding="utf-8", newline="\n") as file:
                 json.dump(truth, file, indent=1)
             print(f"{clip.id}: {truth['speech_span']}s, {truth['wpm']} wpm, {len(truth['pauses'])} pauses")
 

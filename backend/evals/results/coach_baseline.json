@@ -1,0 +1,1364 @@
+{
+ "generated": "2026-09-30 13:35",
+ "provider": "groq",
+ "model": "openai/gpt-oss-120b",
+ "coach": {
+  "cases": 12,
+  "first_try_valid": 1.0,
+  "latency_ms": {
+   "n": 12,
+   "mean": 2022.5,
+   "median": 2057.0,
+   "p95": 2249,
+   "max": 2919
+  },
+  "tokens_mean": 1929.5833333333333,
+  "on_topic_agreement": 1.0,
+  "rewrites_with_invented_numbers_raw": 0.4,
+  "invented_numbers_after_guardrail": 0,
+  "thin_answers_with_placeholders": 0.0,
+  "unknown_framework_parts": 1,
+  "quotes": 30,
+  "grounded_quote_share": 0.06666666666666667,
+  "style_raw": {
+   "words": 170.33333333333334,
+   "chatbot_phrases_per_100_words": 0.0,
+   "em_dashes": 0.0,
+   "semicolons": 0.08333333333333333,
+   "third_person": 0.0,
+   "you_per_100_words": 6.2805537829227305,
+   "words_per_sentence": 18.136994949494948
+  },
+  "style_clean": {
+   "words": 170.33333333333334,
+   "chatbot_phrases_per_100_words": 0.0,
+   "em_dashes": 0.0,
+   "semicolons": 0.0,
+   "third_person": 0.0,
+   "you_per_100_words": 6.2805537829227305,
+   "words_per_sentence": 18.05050505050505
+  }
+ },
+ "rows": [
+  {
+   "id": "coach-01",
+   "mode": "interview",
+   "prompt": "Tell me about yourself.",
+   "latency_ms": 2249,
+   "attempts": 1,
+   "tokens": 1942,
+   "on_topic_expected": true,
+   "on_topic_found": true,
+   "thin": false,
+   "improved_answer_type": "rewrite",
+   "placeholders": 0,
+   "invented_numbers_raw": [],
+   "invented_numbers_after": [],
+   "unknown_framework_parts": [],
+   "quotes": 3,
+   "grounded_quotes": 0,
+   "style_raw": {
+    "words": 193,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 6.7357512953367875,
+    "words_per_sentence": 21.444444444444443
+   },
+   "style_clean": {
+    "words": 193,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 6.7357512953367875,
+    "words_per_sentence": 21.444444444444443
+   },
+   "raw": {
+    "summary": "You gave a clear, friendly intro that hits the present\u2011past\u2011future flow, but adding a bit more detail about your role and impact would make it stronger.",
+    "content_scores": {
+     "structure": 8,
+     "clarity": 7,
+     "relevance": 8,
+     "depth": 6
+    },
+    "strengths": [
+     "You start with a confident greeting and state who you are now.",
+     "You give a concrete past project (the weather station) that shows your skills.",
+     "You end with a forward\u2011looking goal that matches the job."
+    ],
+    "improvements": [
+     {
+      "issue": "The past example is brief and doesn\u2019t explain what you actually did or what you learned.",
+      "suggestion": "Add a line like, \u201cI designed the sensor circuit, wrote the Python code, and troubleshooted the data upload, which taught me real\u2011time debugging.\u201d"
+     },
+     {
+      "issue": "The future statement is vague about what you want to achieve.",
+      "suggestion": "Specify the kind of product or team you\u2019re aiming for, e.g., \u201cI\u2019d love to contribute to embedded\u2011systems products at a fast\u2011growing IoT company.\u201d"
+     },
+     {
+      "issue": "You don\u2019t mention any soft\u2011skill or teamwork experience.",
+      "suggestion": "Insert a quick note about collaborating, such as, \u201cI worked with two classmates to integrate the hardware and web interface, keeping the project on schedule.\u201d"
+     }
+    ],
+    "framework_check": {
+     "present": [
+      "Present"
+     ],
+     "missing": []
+    },
+    "on_topic": true,
+    "topic_feedback": "Your answer follows the self\u2011introduction prompt and uses the Present\u2011Past\u2011Future framework.",
+    "improved_answer": "Hi, I\u2019m Priya, a recent electronics graduate from a college in Chennai. In my final year I built a small weather station with a Raspberry Pi, designing the sensor circuit, writing the Python code, and posting readings to a website every ten minutes. I worked with two teammates, which sharpened my collaboration and debugging skills. Now I\u2019m looking to join a team that develops real\u2011world embedded products, so I can apply my hardware and coding experience and keep learning in a fast\u2011moving environment."
+   },
+   "clean": {
+    "summary": "You gave a clear, friendly intro that hits the present\u2011past\u2011future flow, but adding a bit more detail about your role and impact would make it stronger.",
+    "strengths": [
+     "You start with a confident greeting and state who you are now.",
+     "You give a concrete past project (the weather station) that shows your skills.",
+     "You end with a forward\u2011looking goal that matches the job."
+    ],
+    "improvements": [
+     {
+      "issue": "The past example is brief and doesn\u2019t explain what you actually did or what you learned.",
+      "suggestion": "Add a line like, \u201cI designed the sensor circuit, wrote the Python code, and troubleshooted the data upload, which taught me real\u2011time debugging.\u201d"
+     },
+     {
+      "issue": "The future statement is vague about what you want to achieve.",
+      "suggestion": "Specify the kind of product or team you\u2019re aiming for, e.g., \u201cI\u2019d love to contribute to embedded\u2011systems products at a fast\u2011growing IoT company.\u201d"
+     },
+     {
+      "issue": "You don\u2019t mention any soft\u2011skill or teamwork experience.",
+      "suggestion": "Insert a quick note about collaborating, such as, \u201cI worked with two classmates to integrate the hardware and web interface, keeping the project on schedule.\u201d"
+     }
+    ],
+    "topic_feedback": "Your answer follows the self\u2011introduction prompt and uses the Present\u2011Past\u2011Future framework.",
+    "improved_answer": "Hi, I\u2019m Priya, a recent electronics graduate from a college in Chennai. In my final year I built a small weather station with a Raspberry Pi, designing the sensor circuit, writing the Python code, and posting readings to a website every ten minutes. I worked with two teammates, which sharpened my collaboration and debugging skills. Now I\u2019m looking to join a team that develops real\u2011world embedded products, so I can apply my hardware and coding experience and keep learning in a fast\u2011moving environment."
+   }
+  },
+  {
+   "id": "coach-02",
+   "mode": "interview",
+   "prompt": "Tell me about a time you failed.",
+   "latency_ms": 2164,
+   "attempts": 1,
+   "tokens": 1873,
+   "on_topic_expected": true,
+   "on_topic_found": true,
+   "thin": true,
+   "improved_answer_type": "rewrite",
+   "placeholders": 0,
+   "invented_numbers_raw": [],
+   "invented_numbers_after": [],
+   "unknown_framework_parts": [],
+   "quotes": 3,
+   "grounded_quotes": 0,
+   "style_raw": {
+    "words": 201,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 7.462686567164179,
+    "words_per_sentence": 25.125
+   },
+   "style_clean": {
+    "words": 201,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 7.462686567164179,
+    "words_per_sentence": 25.125
+   },
+   "raw": {
+    "summary": "You gave a brief answer that shows you learned from a failure, but it\u2019s too short and missing the key parts of the STAR story.",
+    "content_scores": {
+     "structure": 2,
+     "clarity": 4,
+     "relevance": 5,
+     "depth": 2
+    },
+    "strengths": [
+     "You acknowledged a failure and showed a positive attitude.",
+     "Your tone was steady and you used very few filler words."
+    ],
+    "improvements": [
+     {
+      "issue": "You didn\u2019t set the scene or explain what you were trying to achieve.",
+      "suggestion": "Start with a quick description of the situation and your responsibility, like \"In my last project as a product lead, we needed to launch a new feature in three weeks.\""
+     },
+     {
+      "issue": "You skipped the actions you took and the measurable result.",
+      "suggestion": "Explain what you did to address the failure and end with a concrete outcome, e.g., \"I reorganized the timeline, ran daily stand\u2011ups, and we delivered the feature two days late but with no bugs, improving customer satisfaction by 10%.\""
+     },
+     {
+      "issue": "The answer is too brief to show depth.",
+      "suggestion": "Add a sentence about what you learned and how you applied that lesson later, such as \"From that experience I now always build a buffer for testing, which helped my next release stay on schedule.\""
+     }
+    ],
+    "framework_check": {
+     "present": [],
+     "missing": [
+      "Situation",
+      "Task",
+      "Action",
+      "Result"
+     ]
+    },
+    "on_topic": true,
+    "topic_feedback": "You answered the question about a failure, but you didn\u2019t give the detailed story the interview expects.",
+    "improved_answer": "In my previous role as a project coordinator, we were tasked with launching a new software update in four weeks. I was responsible for keeping the team on schedule. Midway through, I missed a key testing deadline, which delayed the release. I reorganized the workflow, added daily check\u2011ins, and brought in an extra tester. We ended up releasing the update one week late, but with zero critical bugs, and I learned to build extra testing time into future plans."
+   },
+   "clean": {
+    "summary": "You gave a brief answer that shows you learned from a failure, but it\u2019s too short and missing the key parts of the STAR story.",
+    "strengths": [
+     "You acknowledged a failure and showed a positive attitude.",
+     "Your tone was steady and you used very few filler words."
+    ],
+    "improvements": [
+     {
+      "issue": "You didn\u2019t set the scene or explain what you were trying to achieve.",
+      "suggestion": "Start with a quick description of the situation and your responsibility, like \"In my last project as a product lead, we needed to launch a new feature in three weeks.\""
+     },
+     {
+      "issue": "You skipped the actions you took and the measurable result.",
+      "suggestion": "Explain what you did to address the failure and end with a concrete outcome, e.g., \"I reorganized the timeline, ran daily stand\u2011ups, and we delivered the feature two days late but with no bugs, improving customer satisfaction by 10%.\""
+     },
+     {
+      "issue": "The answer is too brief to show depth.",
+      "suggestion": "Add a sentence about what you learned and how you applied that lesson later, such as \"From that experience I now always build a buffer for testing, which helped my next release stay on schedule.\""
+     }
+    ],
+    "topic_feedback": "You answered the question about a failure, but you didn\u2019t give the detailed story the interview expects.",
+    "improved_answer": "In my previous role as a project coordinator, we were tasked with launching a new software update in four weeks. I was responsible for keeping the team on schedule. Midway through, I missed a key testing deadline, which delayed the release. I reorganized the workflow, added daily check\u2011ins, and brought in an extra tester. We ended up releasing the update one week late, but with zero critical bugs, and I learned to build extra testing time into future plans."
+   }
+  },
+  {
+   "id": "coach-03",
+   "mode": "interview",
+   "prompt": "Why do you want to work here?",
+   "latency_ms": 1422,
+   "attempts": 1,
+   "tokens": 1770,
+   "on_topic_expected": false,
+   "on_topic_found": false,
+   "thin": false,
+   "improved_answer_type": "template",
+   "placeholders": 4,
+   "invented_numbers_raw": [],
+   "invented_numbers_after": [],
+   "unknown_framework_parts": [],
+   "quotes": 3,
+   "grounded_quotes": 0,
+   "style_raw": {
+    "words": 145,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 6.206896551724138,
+    "words_per_sentence": 18.125
+   },
+   "style_clean": {
+    "words": 145,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 6.206896551724138,
+    "words_per_sentence": 18.125
+   },
+   "raw": {
+    "summary": "Your answer didn't address why you want to work here at all. The biggest change is to actually answer the question with a clear point, reason, example, and restated point.",
+    "content_scores": {
+     "structure": 1,
+     "clarity": 2,
+     "relevance": 0,
+     "depth": 1
+    },
+    "strengths": [
+     "You spoke without filler words."
+    ],
+    "improvements": [
+     {
+      "issue": "You talked about a cricket match instead of the job.",
+      "suggestion": "Start by stating your main reason for wanting the role, e.g., \"I\u2019m excited to join because the company\u2019s focus on sustainable tech aligns with my passion.\""
+     },
+     {
+      "issue": "No PREP framework was used.",
+      "suggestion": "Follow the PREP pattern: point, reason, concrete example, then restate the point."
+     },
+     {
+      "issue": "Lack of specific evidence about the company.",
+      "suggestion": "Add a brief example, like a project or value you admire, e.g., \"When I read about your recent renewable\u2011energy partnership, I saw how my experience in X could help expand it.\""
+     }
+    ],
+    "framework_check": {
+     "present": [],
+     "missing": [
+      "Point",
+      "Reason",
+      "Example",
+      "Point restated"
+     ]
+    },
+    "on_topic": false,
+    "topic_feedback": "Your response does not answer the question \"Why do you want to work here?\"",
+    "improved_answer": "I want to work here because the company\u2019s commitment to sustainable technology matches my own passion. I\u2019ve spent the last three years developing low\u2011carbon solutions at [previous company], which gave me hands\u2011on experience that fits your recent renewable\u2011energy partnership. That project showed me how I can help your team scale impact. So, I\u2019m excited to bring my skills to a place that values the same goals."
+   },
+   "clean": {
+    "summary": "Your answer didn't address why you want to work here at all. The biggest change is to actually answer the question with a clear point, reason, example, and restated point.",
+    "strengths": [
+     "You spoke without filler words."
+    ],
+    "improvements": [
+     {
+      "issue": "You talked about a cricket match instead of the job.",
+      "suggestion": "Start by stating your main reason for wanting the role, e.g., \"I\u2019m excited to join because the company\u2019s focus on sustainable tech aligns with my passion.\""
+     },
+     {
+      "issue": "No PREP framework was used.",
+      "suggestion": "Follow the PREP pattern: point, reason, concrete example, then restate the point."
+     },
+     {
+      "issue": "Lack of specific evidence about the company.",
+      "suggestion": "Add a brief example, like a project or value you admire, e.g., \"When I read about your recent renewable\u2011energy partnership, I saw how my experience in X could help expand it.\""
+     }
+    ],
+    "topic_feedback": "Your response does not answer the question \"Why do you want to work here?\"",
+    "improved_answer": "[Your answer in one sentence]. The reason is [why this is true for you]. For example, [a specific time it showed]. So, [restate your answer in a memorable way]."
+   }
+  },
+  {
+   "id": "coach-04",
+   "mode": "interview",
+   "prompt": "Tell me about a time you improved a process.",
+   "latency_ms": 2040,
+   "attempts": 1,
+   "tokens": 1949,
+   "on_topic_expected": true,
+   "on_topic_found": true,
+   "thin": false,
+   "improved_answer_type": "rewrite",
+   "placeholders": 2,
+   "invented_numbers_raw": [
+    "30"
+   ],
+   "invented_numbers_after": [],
+   "unknown_framework_parts": [],
+   "quotes": 2,
+   "grounded_quotes": 0,
+   "style_raw": {
+    "words": 192,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 5.729166666666667,
+    "words_per_sentence": 19.2
+   },
+   "style_clean": {
+    "words": 192,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 5.729166666666667,
+    "words_per_sentence": 19.2
+   },
+   "raw": {
+    "summary": "You gave a clear, concrete example of improving a process, and it was easy to follow. Adding a bit more about your specific responsibility and the impact would make it even stronger.",
+    "content_scores": {
+     "structure": 7,
+     "clarity": 8,
+     "relevance": 9,
+     "depth": 6
+    },
+    "strengths": [
+     "You set the scene quickly \u2013 an internship where data entry was done by hand.",
+     "You described the action you took \u2013 writing a Python script to pull the numbers.",
+     "You gave a measurable result \u2013 cutting work from three hours to twenty minutes."
+    ],
+    "improvements": [
+     {
+      "issue": "You didn\u2019t spell out your exact task or responsibility in the situation.",
+      "suggestion": "Start the story with a line like, \u201cMy task was to find a faster way to collect the weekly sales numbers.\u201d"
+     },
+     {
+      "issue": "The result stops at the time saved and doesn\u2019t mention broader impact.",
+      "suggestion": "Add what the manager\u2019s follow\u2011up meant, e.g., \u201cThe other teams adopted the script, saving the whole department 30 hours each month.\u201d"
+     },
+     {
+      "issue": "The story is a bit brief, missing details that show depth.",
+      "suggestion": "Include a sentence about challenges you faced, such as handling data format differences, and how you solved them."
+     }
+    ],
+    "framework_check": {
+     "present": [
+      "Situation",
+      "Action",
+      "Result"
+     ],
+     "missing": [
+      "Task"
+     ]
+    },
+    "on_topic": true,
+    "topic_feedback": "Your answer addresses the question and follows the STAR idea, but it could flesh out the Task and broader Result.",
+    "improved_answer": "During my internship at [company], our team manually entered sales data every Friday, which took about three hours. My task was to streamline that process. I wrote a small Python script that pulled the numbers directly from the billing system, handling format differences and testing it with real data. The script reduced the weekly effort from three hours to twenty minutes, and my manager rolled it out to two other teams, saving the department roughly 30 hours each month."
+   },
+   "clean": {
+    "summary": "You gave a clear, concrete example of improving a process, and it was easy to follow. Adding a bit more about your specific responsibility and the impact would make it even stronger.",
+    "strengths": [
+     "You set the scene quickly, an internship where data entry was done by hand.",
+     "You described the action you took, writing a Python script to pull the numbers.",
+     "You gave a measurable result, cutting work from three hours to twenty minutes."
+    ],
+    "improvements": [
+     {
+      "issue": "You didn\u2019t spell out your exact task or responsibility in the situation.",
+      "suggestion": "Start the story with a line like, \u201cMy task was to find a faster way to collect the weekly sales numbers.\u201d"
+     },
+     {
+      "issue": "The result stops at the time saved and doesn\u2019t mention broader impact.",
+      "suggestion": "Add what the manager\u2019s follow\u2011up meant, e.g., \u201cThe other teams adopted the script, saving the whole department 30 hours each month.\u201d"
+     },
+     {
+      "issue": "The story is a bit brief, missing details that show depth.",
+      "suggestion": "Include a sentence about challenges you faced, such as handling data format differences, and how you solved them."
+     }
+    ],
+    "topic_feedback": "Your answer addresses the question and follows the STAR idea, but it could flesh out the Task and broader Result.",
+    "improved_answer": "During my internship at [company], our team manually entered sales data every Friday, which took about three hours. My task was to streamline that process. I wrote a small Python script that pulled the numbers directly from the billing system, handling format differences and testing it with real data. The script reduced the weekly effort from three hours to twenty minutes, and my manager rolled it out to two other teams, saving the department roughly [number] hours each month."
+   }
+  },
+  {
+   "id": "coach-05",
+   "mode": "interview",
+   "prompt": "How would you explain a surprising trend in a dashboard to a manager?",
+   "latency_ms": 2074,
+   "attempts": 1,
+   "tokens": 2076,
+   "on_topic_expected": true,
+   "on_topic_found": true,
+   "thin": false,
+   "improved_answer_type": "rewrite",
+   "placeholders": 1,
+   "invented_numbers_raw": [
+    "12%"
+   ],
+   "invented_numbers_after": [],
+   "unknown_framework_parts": [],
+   "quotes": 4,
+   "grounded_quotes": 0,
+   "style_raw": {
+    "words": 212,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 4.245283018867925,
+    "words_per_sentence": 21.2
+   },
+   "style_clean": {
+    "words": 212,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 4.245283018867925,
+    "words_per_sentence": 21.2
+   },
+   "raw": {
+    "summary": "You gave a clear, practical rundown of how you'd explain the trend, which is a solid start. Adding a brief concrete example would make it even stronger.",
+    "content_scores": {
+     "structure": 7,
+     "clarity": 8,
+     "relevance": 8,
+     "depth": 6
+    },
+    "strengths": [
+     "You start by verifying the data, which shows good analytical rigor.",
+     "You keep the language simple and focus on what the manager needs to know.",
+     "You end with a suggestion for next steps, showing you think ahead."
+    ],
+    "improvements": [
+     {
+      "issue": "You mention showing a chart but don\u2019t give a concrete example of what the chart looks like or what it reveals.",
+      "suggestion": "Add a short illustration, e.g., \"I\u2019d pull up the line chart that shows a sudden dip in sales after the promotion, and point out the exact week it happened.\""
+     },
+     {
+      "issue": "The \u201cwhy it matters\u201d part is vague \u2013 you say \u2018what we could do next\u2019 without tying it to business impact.",
+      "suggestion": "Explain the implication, like \"This dip means we might miss our quarterly target, so I\u2019d recommend investigating the promotion\u2019s timing.\""
+     },
+     {
+      "issue": "The answer jumps straight from data check to manager talk without a clear transition.",
+      "suggestion": "Use a linking sentence, such as \"Once I\u2019m sure the data is clean, I\u2019d frame the insight in plain terms before showing the visual.\""
+     }
+    ],
+    "framework_check": {
+     "present": [
+      "Big picture",
+      "How it works",
+      "Concrete example",
+      "Why it matters"
+     ],
+     "missing": []
+    },
+    "on_topic": true,
+    "topic_feedback": "You answered the interview question directly and stayed focused on the manager explanation.",
+    "improved_answer": "First, I\u2019d verify the data \u2013 make sure no filter changed and nothing\u2019s missing. Then I\u2019d tell the manager in one sentence what\u2019s shifted, like \u201csales dropped 12% last week.\u201d I\u2019d pull up a line chart that highlights the dip and point out the exact date. Next, I\u2019d explain why I think it happened \u2013 maybe a promotion ended \u2013 and suggest a next step, such as running a quick A/B test. The takeaway is that the trend is real, we know the likely cause, and we have a plan to address it."
+   },
+   "clean": {
+    "summary": "You gave a clear, practical rundown of how you'd explain the trend, which is a solid start. Adding a brief concrete example would make it even stronger.",
+    "strengths": [
+     "You start by verifying the data, which shows good analytical rigor.",
+     "You keep the language simple and focus on what the manager needs to know.",
+     "You end with a suggestion for next steps, showing you think ahead."
+    ],
+    "improvements": [
+     {
+      "issue": "You mention showing a chart but don\u2019t give a concrete example of what the chart looks like or what it reveals.",
+      "suggestion": "Add a short illustration, e.g., \"I\u2019d pull up the line chart that shows a sudden dip in sales after the promotion, and point out the exact week it happened.\""
+     },
+     {
+      "issue": "The \u201cwhy it matters\u201d part is vague, you say \u2018what we could do next\u2019 without tying it to business impact.",
+      "suggestion": "Explain the implication, like \"This dip means we might miss our quarterly target, so I\u2019d recommend investigating the promotion\u2019s timing.\""
+     },
+     {
+      "issue": "The answer jumps straight from data check to manager talk without a clear transition.",
+      "suggestion": "Use a linking sentence, such as \"Once I\u2019m sure the data is clean, I\u2019d frame the insight in plain terms before showing the visual.\""
+     }
+    ],
+    "topic_feedback": "You answered the interview question directly and stayed focused on the manager explanation.",
+    "improved_answer": "First, I\u2019d verify the data, make sure no filter changed and nothing\u2019s missing. Then I\u2019d tell the manager in one sentence what\u2019s shifted, like \u201csales dropped [number] last week.\u201d I\u2019d pull up a line chart that highlights the dip and point out the exact date. Next, I\u2019d explain why I think it happened, maybe a promotion ended, and suggest a next step, such as running a quick A/B test. The takeaway is that the trend is real, we know the likely cause, and we have a plan to address it."
+   }
+  },
+  {
+   "id": "coach-06",
+   "mode": "jam",
+   "prompt": "Umbrellas",
+   "latency_ms": 2919,
+   "attempts": 1,
+   "tokens": 1952,
+   "on_topic_expected": true,
+   "on_topic_found": true,
+   "thin": false,
+   "improved_answer_type": "rewrite",
+   "placeholders": 0,
+   "invented_numbers_raw": [],
+   "invented_numbers_after": [],
+   "unknown_framework_parts": [],
+   "quotes": 2,
+   "grounded_quotes": 0,
+   "style_raw": {
+    "words": 174,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 6.32183908045977,
+    "words_per_sentence": 19.333333333333332
+   },
+   "style_clean": {
+    "words": 174,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 6.32183908045977,
+    "words_per_sentence": 19.333333333333332
+   },
+   "raw": {
+    "summary": "You gave a clear picture of umbrellas and even mentioned some fun uses, but you need a stronger hook and a tidy wrap\u2011up to hit the minute.",
+    "content_scores": {
+     "relevance": 8,
+     "creativity": 7,
+     "flow": 6,
+     "clarity": 7
+    },
+    "strengths": [
+     "You opened with a relatable fact about how we only notice umbrellas when it rains.",
+     "You gave a vivid example of a big golf umbrella covering two people.",
+     "Your language was clear and you avoided filler words."
+    ],
+    "improvements": [
+     {
+      "issue": "You didn\u2019t start with a hook that grabs attention.",
+      "suggestion": "Begin with a quick question or surprising fact, e.g., \u201cEver wonder why the simplest invention can change your whole day?\u201d"
+     },
+     {
+      "issue": "There\u2019s no memorable closing line.",
+      "suggestion": "End with a punchy takeaway, like \u201cSo next time you open an umbrella, remember it\u2019s more than just rain\u2011proof \u2013 it\u2019s your portable shade and style.\u201d"
+     },
+     {
+      "issue": "The speech is short of the one\u2011minute target.",
+      "suggestion": "Add a brief personal anecdote or a quick statistic about umbrella usage to stretch it to about 60 seconds."
+     }
+    ],
+    "framework_check": {
+     "present": [
+      "Main point",
+      "Supporting example"
+     ],
+     "missing": [
+      "Opening",
+      "Closing"
+     ]
+    },
+    "on_topic": true,
+    "topic_feedback": "You stayed on the umbrella topic and gave useful details, but missed a strong hook and closing.",
+    "improved_answer": "Ever notice how we only think about umbrellas when the sky opens up? My point is that an umbrella isn\u2019t just a rain shield \u2013 it\u2019s a versatile tool. For example, a compact folding umbrella fits in a pocket, while a large golf umbrella can shelter two people from a sudden downpour. I remember once getting caught in a gusty storm and the wind turned my umbrella inside out, which was a wild reminder of its limits. So next time you open an umbrella, think of it as your portable shade and style, ready for rain or sunshine."
+   },
+   "clean": {
+    "summary": "You gave a clear picture of umbrellas and even mentioned some fun uses, but you need a stronger hook and a tidy wrap\u2011up to hit the minute.",
+    "strengths": [
+     "You opened with a relatable fact about how we only notice umbrellas when it rains.",
+     "You gave a vivid example of a big golf umbrella covering two people.",
+     "Your language was clear and you avoided filler words."
+    ],
+    "improvements": [
+     {
+      "issue": "You didn\u2019t start with a hook that grabs attention.",
+      "suggestion": "Begin with a quick question or surprising fact, e.g., \u201cEver wonder why the simplest invention can change your whole day?\u201d"
+     },
+     {
+      "issue": "There\u2019s no memorable closing line.",
+      "suggestion": "End with a punchy takeaway, like \u201cSo next time you open an umbrella, remember it\u2019s more than just rain\u2011proof, it\u2019s your portable shade and style.\u201d"
+     },
+     {
+      "issue": "The speech is short of the one\u2011minute target.",
+      "suggestion": "Add a brief personal anecdote or a quick statistic about umbrella usage to stretch it to about 60 seconds."
+     }
+    ],
+    "topic_feedback": "You stayed on the umbrella topic and gave useful details, but missed a strong hook and closing.",
+    "improved_answer": "Ever notice how we only think about umbrellas when the sky opens up? My point is that an umbrella isn\u2019t just a rain shield, it\u2019s a versatile tool. For example, a compact folding umbrella fits in a pocket, while a large golf umbrella can shelter two people from a sudden downpour. I remember once getting caught in a gusty storm and the wind turned my umbrella inside out, which was a wild reminder of its limits. So next time you open an umbrella, think of it as your portable shade and style, ready for rain or sunshine."
+   }
+  },
+  {
+   "id": "coach-07",
+   "mode": "jam",
+   "prompt": "Social media",
+   "latency_ms": 1678,
+   "attempts": 1,
+   "tokens": 1844,
+   "on_topic_expected": false,
+   "on_topic_found": false,
+   "thin": false,
+   "improved_answer_type": "template",
+   "placeholders": 4,
+   "invented_numbers_raw": [
+    "200"
+   ],
+   "invented_numbers_after": [],
+   "unknown_framework_parts": [],
+   "quotes": 1,
+   "grounded_quotes": 0,
+   "style_raw": {
+    "words": 137,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 1,
+    "third_person": 0,
+    "you_per_100_words": 5.109489051094891,
+    "words_per_sentence": 12.454545454545455
+   },
+   "style_clean": {
+    "words": 137,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 5.109489051094891,
+    "words_per_sentence": 11.416666666666666
+   },
+   "raw": {
+    "summary": "You jumped straight into gardening, which isn\u2019t the topic, and you only spoke for a few seconds. Try to stick to social media and fill a full minute.",
+    "content_scores": {
+     "relevance": 2,
+     "creativity": 2,
+     "flow": 2,
+     "clarity": 5
+    },
+    "strengths": [
+     "You spoke clearly with no filler words.",
+     "Your voice was steady and easy to understand."
+    ],
+    "improvements": [
+     {
+      "issue": "You talked about gardening instead of social media.",
+      "suggestion": "Start with a hook about how social media shapes our lives, then stay on that theme."
+     },
+     {
+      "issue": "You only spoke for 10 seconds, far short of the one\u2011minute target.",
+      "suggestion": "Plan a short outline with opening, main point, example, and closing, then practice timing each part."
+     },
+     {
+      "issue": "Your structure was missing \u2013 no clear opening, point, example, or closing.",
+      "suggestion": "Use a simple template: \"[Hook], [Point], [Example], [Memorable close]\" and fill it in with social\u2011media content."
+     }
+    ],
+    "framework_check": {
+     "present": [],
+     "missing": [
+      "Opening",
+      "Main point",
+      "Supporting example",
+      "Closing"
+     ]
+    },
+    "on_topic": false,
+    "topic_feedback": "The answer does not address the social media prompt; it talks about gardening.",
+    "improved_answer": "My favorite social\u2011media platform is Instagram because it lets me share my photography. I use it to post a photo a day, and each post gets feedback from friends and strangers. For example, last week I posted a picture of a sunrise and got 200 likes, which boosted my confidence and helped me connect with a local photography club. So, if you want a quick way to showcase creativity and build community, give Instagram a try and watch your network grow."
+   },
+   "clean": {
+    "summary": "You jumped straight into gardening, which isn\u2019t the topic, and you only spoke for a few seconds. Try to stick to social media and fill a full minute.",
+    "strengths": [
+     "You spoke clearly with no filler words.",
+     "Your voice was steady and easy to understand."
+    ],
+    "improvements": [
+     {
+      "issue": "You talked about gardening instead of social media.",
+      "suggestion": "Start with a hook about how social media shapes our lives, then stay on that theme."
+     },
+     {
+      "issue": "You only spoke for 10 seconds, far short of the one\u2011minute target.",
+      "suggestion": "Plan a short outline with opening, main point, example, and closing, then practice timing each part."
+     },
+     {
+      "issue": "Your structure was missing, no clear opening, point, example, or closing.",
+      "suggestion": "Use a simple template: \"[Hook], [Point], [Example], [Memorable close]\" and fill it in with social\u2011media content."
+     }
+    ],
+    "topic_feedback": "The answer does not address the social media prompt. It talks about gardening.",
+    "improved_answer": "[An opening hook: a question, surprising fact or short story]. My main point is [your one key message]. For example, [evidence or a story that supports it]. To close, [a memorable final line]."
+   }
+  },
+  {
+   "id": "coach-08",
+   "mode": "pitch",
+   "prompt": "Pitch yourself for your dream internship",
+   "latency_ms": 1807,
+   "attempts": 1,
+   "tokens": 1965,
+   "on_topic_expected": true,
+   "on_topic_found": true,
+   "thin": false,
+   "improved_answer_type": "rewrite",
+   "placeholders": 4,
+   "invented_numbers_raw": [
+    "30%",
+    "15"
+   ],
+   "invented_numbers_after": [],
+   "unknown_framework_parts": [],
+   "quotes": 3,
+   "grounded_quotes": 0,
+   "style_raw": {
+    "words": 141,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 5.673758865248227,
+    "words_per_sentence": 15.666666666666666
+   },
+   "style_clean": {
+    "words": 141,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 5.673758865248227,
+    "words_per_sentence": 15.666666666666666
+   },
+   "raw": {
+    "summary": "You gave a clear, friendly intro and ended with a solid ask, but the opening could grab attention more and the problem could be stated sharper.",
+    "content_scores": {
+     "hook": 5,
+     "clarity": 4,
+     "persuasiveness": 5,
+     "call_to_action": 8
+    },
+    "strengths": [
+     "You introduced yourself and your passion in one smooth sentence.",
+     "You gave a concrete example of impact with the canteen dashboard.",
+     "You closed with a specific request for a short call."
+    ],
+    "improvements": [
+     {
+      "issue": "The opening line doesn\u2019t hook the listener right away.",
+      "suggestion": "Start with a punchy fact or question, e.g., \"Did you know colleges waste 30% of their food?\""
+     },
+     {
+      "issue": "The problem isn\u2019t stated clearly enough.",
+      "suggestion": "Briefly name the pain point, like \"College canteens lose money and resources due to food waste.\""
+     },
+     {
+      "issue": "The solution part feels tacked on.",
+      "suggestion": "Tie your dashboard directly to the problem: \"I built a dashboard that cut waste by 20% in just one month.\""
+     }
+    ],
+    "framework_check": {
+     "present": [
+      "Hook",
+      "Problem",
+      "Solution",
+      "Ask"
+     ],
+     "missing": []
+    },
+    "on_topic": true,
+    "topic_feedback": "You answered the prompt and followed the pitch framework.",
+    "improved_answer": "Hi, I'm Rahul, a third\u2011year CS student. Did you know college canteens waste up to 30% of their food? Last semester I built a dashboard that cut our canteen\u2019s waste by [percentage] and saved [amount] dollars. I\u2019d love to bring that data\u2011driven approach to your analytics team this summer. Could we schedule a 15\u2011minute call next week to discuss how I can help?"
+   },
+   "clean": {
+    "summary": "You gave a clear, friendly intro and ended with a solid ask, but the opening could grab attention more and the problem could be stated sharper.",
+    "strengths": [
+     "You introduced yourself and your passion in one smooth sentence.",
+     "You gave a concrete example of impact with the canteen dashboard.",
+     "You closed with a specific request for a short call."
+    ],
+    "improvements": [
+     {
+      "issue": "The opening line doesn\u2019t hook the listener right away.",
+      "suggestion": "Start with a punchy fact or question, e.g., \"Did you know colleges waste 30% of their food?\""
+     },
+     {
+      "issue": "The problem isn\u2019t stated clearly enough.",
+      "suggestion": "Briefly name the pain point, like \"College canteens lose money and resources due to food waste.\""
+     },
+     {
+      "issue": "The solution part feels tacked on.",
+      "suggestion": "Tie your dashboard directly to the problem: \"I built a dashboard that cut waste by 20% in just one month.\""
+     }
+    ],
+    "topic_feedback": "You answered the prompt and followed the pitch framework.",
+    "improved_answer": "Hi, I'm Rahul, a third\u2011year CS student. Did you know college canteens waste up to [number] of their food? Last semester I built a dashboard that cut our canteen\u2019s waste by [percentage] and saved [amount] dollars. I\u2019d love to bring that data\u2011driven approach to your analytics team this summer. Could we schedule a [number]\u2011minute call next week to discuss how I can help?"
+   }
+  },
+  {
+   "id": "coach-09",
+   "mode": "debate",
+   "prompt": "Social media does more harm than good",
+   "latency_ms": 2075,
+   "attempts": 1,
+   "tokens": 1935,
+   "on_topic_expected": true,
+   "on_topic_found": true,
+   "thin": false,
+   "improved_answer_type": "rewrite",
+   "placeholders": 1,
+   "invented_numbers_raw": [
+    "30"
+   ],
+   "invented_numbers_after": [],
+   "unknown_framework_parts": [],
+   "quotes": 2,
+   "grounded_quotes": 0,
+   "style_raw": {
+    "words": 165,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 4.848484848484849,
+    "words_per_sentence": 16.5
+   },
+   "style_clean": {
+    "words": 165,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 4.848484848484849,
+    "words_per_sentence": 16.5
+   },
+   "raw": {
+    "summary": "You made a clear stance and gave a solid reason, but the evidence was thin and the counter\u2011argument could be stronger. Adding a concrete fact would boost your impact the most.",
+    "content_scores": {
+     "argument": 7,
+     "evidence": 4,
+     "counterpoint": 6,
+     "clarity": 8
+    },
+    "strengths": [
+     "You stated your position right at the start.",
+     "Your reason about scrolling eating into sleep was easy to follow.",
+     "You acknowledged the opposite view about staying connected."
+    ],
+    "improvements": [
+     {
+      "issue": "The evidence is just a claim, no concrete data or example.",
+      "suggestion": "Add a specific study or statistic, e.g., \"A 2022 Pew survey found that 45% of teens say social media hurts their sleep.\""
+     },
+     {
+      "issue": "The counterpoint is brief and doesn't refute the other side fully.",
+      "suggestion": "Explain why online connections aren\u2019t enough, maybe say, \"Even if we can chat online, research shows face\u2011to\u2011face interaction builds stronger bonds.\""
+     },
+     {
+      "issue": "You stopped after 20 seconds, leaving the argument under\u2011developed.",
+      "suggestion": "Expand each point with a short example or anecdote to reach the target length."
+     }
+    ],
+    "framework_check": {
+     "present": [
+      "Stance",
+      "Reasoning",
+      "Evidence",
+      "Counterpoint"
+     ],
+     "missing": []
+    },
+    "on_topic": true,
+    "topic_feedback": "You addressed the motion and gave a pro stance, but the answer is a bit short.",
+    "improved_answer": "I argue that social media does more harm than good. My main reason is that its design keeps us scrolling, which steals sleep and study time. For example, a recent study found that heavy social\u2011media users lose an average of 30 minutes of sleep each night. Some say it helps us stay connected, but research shows real friendships need in\u2011person interaction, not just likes and comments. So even though it offers convenience, the negative impact on health and relationships outweighs the benefits."
+   },
+   "clean": {
+    "summary": "You made a clear stance and gave a solid reason, but the evidence was thin and the counter\u2011argument could be stronger. Adding a concrete fact would boost your impact the most.",
+    "strengths": [
+     "You stated your position right at the start.",
+     "Your reason about scrolling eating into sleep was easy to follow.",
+     "You acknowledged the opposite view about staying connected."
+    ],
+    "improvements": [
+     {
+      "issue": "The evidence is just a claim, no concrete data or example.",
+      "suggestion": "Add a specific study or statistic, e.g., \"A 2022 Pew survey found that 45% of teens say social media hurts their sleep.\""
+     },
+     {
+      "issue": "The counterpoint is brief and doesn't refute the other side fully.",
+      "suggestion": "Explain why online connections aren\u2019t enough, maybe say, \"Even if we can chat online, research shows face\u2011to\u2011face interaction builds stronger bonds.\""
+     },
+     {
+      "issue": "You stopped after 20 seconds, leaving the argument under\u2011developed.",
+      "suggestion": "Expand each point with a short example or anecdote to reach the target length."
+     }
+    ],
+    "topic_feedback": "You addressed the motion and gave a pro stance, but the answer is a bit short.",
+    "improved_answer": "I argue that social media does more harm than good. My main reason is that its design keeps us scrolling, which steals sleep and study time. For example, a recent study found that heavy social\u2011media users lose an average of [number] minutes of sleep each night. Some say it helps us stay connected, but research shows real friendships need in\u2011person interaction, not just likes and comments. So even though it offers convenience, the negative impact on health and relationships outweighs the benefits."
+   }
+  },
+  {
+   "id": "coach-10",
+   "mode": "presentation",
+   "prompt": "Solar energy for homes",
+   "latency_ms": 2199,
+   "attempts": 1,
+   "tokens": 2071,
+   "on_topic_expected": true,
+   "on_topic_found": true,
+   "thin": false,
+   "improved_answer_type": "rewrite",
+   "placeholders": 0,
+   "invented_numbers_raw": [],
+   "invented_numbers_after": [],
+   "unknown_framework_parts": [],
+   "quotes": 3,
+   "grounded_quotes": 0,
+   "style_raw": {
+    "words": 181,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 6.629834254143646,
+    "words_per_sentence": 18.1
+   },
+   "style_clean": {
+    "words": 181,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 6.629834254143646,
+    "words_per_sentence": 18.1
+   },
+   "raw": {
+    "summary": "You gave a clear, concise rundown of solar panels and savings, but the opening and wrap\u2011up were missing. Adding a hook and a quick roadmap would make the short talk feel complete.",
+    "content_scores": {
+     "structure": 3,
+     "clarity": 7,
+     "relevance": 8,
+     "depth": 4
+    },
+    "strengths": [
+     "You explained in plain language how panels turn sunlight into electricity.",
+     "You mentioned the cost\u2011upfront and the pay\u2011back through lower bills.",
+     "Your delivery was steady with no filler words."
+    ],
+    "improvements": [
+     {
+      "issue": "No opening hook to grab attention.",
+      "suggestion": "Start with a short fact or question, e.g., \"Did you know a typical roof can generate enough power to cut your electric bill by half?\""
+     },
+     {
+      "issue": "You didn\u2019t give a roadmap of what you\u2019d cover.",
+      "suggestion": "Add a line like \"I'll quickly cover why solar matters now, how panels work, and what you can expect to save.\""
+     },
+     {
+      "issue": "The talk ends abruptly without a conclusion or call to action.",
+      "suggestion": "Close with a call, for example \"If you\u2019re curious, check out a local installer this week and see how solar could work for you.\""
+     }
+    ],
+    "framework_check": {
+     "present": [
+      "Key points"
+     ],
+     "missing": [
+      "Opening hook",
+      "Roadmap",
+      "Conclusion"
+     ]
+    },
+    "on_topic": true,
+    "topic_feedback": "You stayed on the solar\u2011for\u2011homes topic, but missed the structural elements the prompt asked for.",
+    "improved_answer": "Good morning everyone. Did you know a typical roof can generate enough power to cut your electric bill by half? Today I\u2019ll quickly cover why solar matters now, how panels work, and what you can expect to save. Solar panels turn sunlight into electricity using silicon cells, and an inverter makes that power usable in the house. The panels cost money up front, but over a few years they pay for themselves through lower bills. If you\u2019re curious, check out a local installer this week and see how solar could work for you."
+   },
+   "clean": {
+    "summary": "You gave a clear, concise rundown of solar panels and savings, but the opening and wrap\u2011up were missing. Adding a hook and a quick roadmap would make the short talk feel complete.",
+    "strengths": [
+     "You explained in plain language how panels turn sunlight into electricity.",
+     "You mentioned the cost\u2011upfront and the pay\u2011back through lower bills.",
+     "Your delivery was steady with no filler words."
+    ],
+    "improvements": [
+     {
+      "issue": "No opening hook to grab attention.",
+      "suggestion": "Start with a short fact or question, e.g., \"Did you know a typical roof can generate enough power to cut your electric bill by half?\""
+     },
+     {
+      "issue": "You didn\u2019t give a roadmap of what you\u2019d cover.",
+      "suggestion": "Add a line like \"I'll quickly cover why solar matters now, how panels work, and what you can expect to save.\""
+     },
+     {
+      "issue": "The talk ends abruptly without a conclusion or call to action.",
+      "suggestion": "Close with a call, for example \"If you\u2019re curious, check out a local installer this week and see how solar could work for you.\""
+     }
+    ],
+    "topic_feedback": "You stayed on the solar\u2011for\u2011homes topic, but missed the structural elements the prompt asked for.",
+    "improved_answer": "Good morning everyone. Did you know a typical roof can generate enough power to cut your electric bill by half? Today I\u2019ll quickly cover why solar matters now, how panels work, and what you can expect to save. Solar panels turn sunlight into electricity using silicon cells, and an inverter makes that power usable in the house. The panels cost money up front, but over a few years they pay for themselves through lower bills. If you\u2019re curious, check out a local installer this week and see how solar could work for you."
+   }
+  },
+  {
+   "id": "coach-11",
+   "mode": "snap",
+   "prompt": "Your favourite season",
+   "latency_ms": 1726,
+   "attempts": 1,
+   "tokens": 1860,
+   "on_topic_expected": true,
+   "on_topic_found": true,
+   "thin": false,
+   "improved_answer_type": "rewrite",
+   "placeholders": 0,
+   "invented_numbers_raw": [],
+   "invented_numbers_after": [],
+   "unknown_framework_parts": [
+    "Restated Point"
+   ],
+   "quotes": 2,
+   "grounded_quotes": 2,
+   "style_raw": {
+    "words": 157,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 9.554140127388536,
+    "words_per_sentence": 14.272727272727273
+   },
+   "style_clean": {
+    "words": 157,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 9.554140127388536,
+    "words_per_sentence": 14.272727272727273
+   },
+   "raw": {
+    "summary": "You picked a vivid season and gave a nice reason and example, but you didn\u2019t clearly restate your main point at the end.",
+    "content_scores": {
+     "structure": 6,
+     "clarity": 8,
+     "relevance": 9,
+     "depth": 5
+    },
+    "strengths": [
+     "You opened with a clear answer \u2013 the monsoon is your favourite season.",
+     "Your description of the rain\u2019s smell and the green scenery is vivid.",
+     "You gave a concrete example with hot tea and snacks."
+    ],
+    "improvements": [
+     {
+      "issue": "You didn\u2019t restate your main point at the close.",
+      "suggestion": "Finish by repeating that the monsoon is your favourite season because of the rain, the green, and the cozy tea."
+     },
+     {
+      "issue": "The talk was very short for a 90\u2011second target.",
+      "suggestion": "Add a couple more details, like how the weather changes your mood or a favorite activity during the monsoon."
+     },
+     {
+      "issue": "Your pitch was a bit flat, making the story sound less lively.",
+      "suggestion": "Raise your voice slightly on key words like \"rain\" and \"green\" to add energy."
+     }
+    ],
+    "framework_check": {
+     "present": [
+      "Point",
+      "Reason",
+      "Example"
+     ],
+     "missing": [
+      "Restated Point"
+     ]
+    },
+    "on_topic": true,
+    "topic_feedback": "You answered the prompt about your favourite season and gave reasons and an example.",
+    "improved_answer": "My favourite season is the monsoon because the first rain after a hot summer smells amazing and turns everything green. I love sitting with hot tea and snacks while it pours outside \u2013 it feels cozy and refreshing. So, the monsoon is my top season for its scent, the fresh greenery, and the comforting tea moments."
+   },
+   "clean": {
+    "summary": "You picked a vivid season and gave a nice reason and example, but you didn\u2019t clearly restate your main point at the end.",
+    "strengths": [
+     "You opened with a clear answer, the monsoon is your favourite season.",
+     "Your description of the rain\u2019s smell and the green scenery is vivid.",
+     "You gave a concrete example with hot tea and snacks."
+    ],
+    "improvements": [
+     {
+      "issue": "You didn\u2019t restate your main point at the close.",
+      "suggestion": "Finish by repeating that the monsoon is your favourite season because of the rain, the green, and the cozy tea."
+     },
+     {
+      "issue": "The talk was very short for a 90\u2011second target.",
+      "suggestion": "Add a couple more details, like how the weather changes your mood or a favorite activity during the monsoon."
+     },
+     {
+      "issue": "Your pitch was a bit flat, making the story sound less lively.",
+      "suggestion": "Raise your voice slightly on key words like \"rain\" and \"green\" to add energy."
+     }
+    ],
+    "topic_feedback": "You answered the prompt about your favourite season and gave reasons and an example.",
+    "improved_answer": "My favourite season is the monsoon because the first rain after a hot summer smells amazing and turns everything green. I love sitting with hot tea and snacks while it pours outside, it feels cozy and refreshing. So, the monsoon is my top season for its scent, the fresh greenery, and the comforting tea moments."
+   }
+  },
+  {
+   "id": "coach-12",
+   "mode": "free",
+   "prompt": "",
+   "latency_ms": 1917,
+   "attempts": 1,
+   "tokens": 1918,
+   "on_topic_expected": true,
+   "on_topic_found": true,
+   "thin": false,
+   "improved_answer_type": "rewrite",
+   "placeholders": 0,
+   "invented_numbers_raw": [],
+   "invented_numbers_after": [],
+   "unknown_framework_parts": [],
+   "quotes": 2,
+   "grounded_quotes": 0,
+   "style_raw": {
+    "words": 146,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 6.8493150684931505,
+    "words_per_sentence": 16.22222222222222
+   },
+   "style_clean": {
+    "words": 146,
+    "chatbot_phrases_per_100_words": 0.0,
+    "em_dashes": 0,
+    "semicolons": 0,
+    "third_person": 0,
+    "you_per_100_words": 6.8493150684931505,
+    "words_per_sentence": 16.22222222222222
+   },
+   "raw": {
+    "summary": "You made a clear point about waking up earlier and how it helped you, but the ending felt a bit abrupt.",
+    "content_scores": {
+     "structure": 5,
+     "clarity": 8,
+     "relevance": 8,
+     "depth": 4
+    },
+    "strengths": [
+     "You state a specific habit you\u2019re working on.",
+     "Your main benefit \u2013 extra reading time \u2013 is easy to understand.",
+     "You speak without filler words, so the idea comes across cleanly."
+    ],
+    "improvements": [
+     {
+      "issue": "The talk ends without a memorable close.",
+      "suggestion": "Add a short wrap\u2011up, like \u201cThat extra hour has really changed my day, and I\u2019m excited to keep this routine.\u201d"
+     },
+     {
+      "issue": "There\u2019s no hook to grab the listener at the start.",
+      "suggestion": "Begin with a quick anecdote or question, e.g., \u201cEver wish you had an extra hour in the morning?\u201d"
+     },
+     {
+      "issue": "You only give one example of the benefit.",
+      "suggestion": "Include another detail, such as how the extra reading improved your grades or mood."
+     }
+    ],
+    "framework_check": {
+     "present": [
+      "Opening",
+      "Main point",
+      "Supporting example"
+     ],
+     "missing": [
+      "Closing"
+     ]
+    },
+    "on_topic": true,
+    "topic_feedback": "Your answer stays on topic by making a clear point and giving an example.",
+    "improved_answer": "Ever wish you could add an extra hour to your day? I\u2019ve been trying to wake up earlier this month. At first it was tough, but now I get an hour before class to read, which makes me feel less rushed. That extra hour has really changed my day, and I\u2019m excited to keep this routine."
+   },
+   "clean": {
+    "summary": "You made a clear point about waking up earlier and how it helped you, but the ending felt a bit abrupt.",
+    "strengths": [
+     "You state a specific habit you\u2019re working on.",
+     "Your main benefit, extra reading time, is easy to understand.",
+     "You speak without filler words, so the idea comes across cleanly."
+    ],
+    "improvements": [
+     {
+      "issue": "The talk ends without a memorable close.",
+      "suggestion": "Add a short wrap\u2011up, like \u201cThat extra hour has really changed my day, and I\u2019m excited to keep this routine.\u201d"
+     },
+     {
+      "issue": "There\u2019s no hook to grab the listener at the start.",
+      "suggestion": "Begin with a quick anecdote or question, e.g., \u201cEver wish you had an extra hour in the morning?\u201d"
+     },
+     {
+      "issue": "You only give one example of the benefit.",
+      "suggestion": "Include another detail, such as how the extra reading improved your grades or mood."
+     }
+    ],
+    "topic_feedback": "Your answer stays on topic by making a clear point and giving an example.",
+    "improved_answer": "Ever wish you could add an extra hour to your day? I\u2019ve been trying to wake up earlier this month. At first it was tough, but now I get an hour before class to read, which makes me feel less rushed. That extra hour has really changed my day, and I\u2019m excited to keep this routine."
+   }
+  }
+ ],
+ "roles": [
+  {
+   "role": "Data analyst",
+   "kind": "questions",
+   "count": 8,
+   "types": {
+    "behavioral": 3,
+    "role": 3,
+    "motivation": 2
+   },
+   "types_as_asked": true,
+   "too_long": 0,
+   "mentions_role": 6,
+   "seconds": 1.1,
+   "examples": [
+    "Tell me about a time you cleaned a messy dataset and what steps you took.",
+    "Describe a situation where you had to meet a tight deadline for a data report.",
+    "Give an example of how you communicated complex findings to a non\u2011technical audience."
+   ]
+  },
+  {
+   "role": "Data analyst",
+   "kind": "jam",
+   "count": 10,
+   "types": {
+    "role": 6,
+    "general": 4
+   },
+   "types_as_asked": true,
+   "too_long": 0,
+   "mentions_role": 3,
+   "seconds": 1.6,
+   "examples": [
+    "Data in everyday life",
+    "Visualizing trends with dashboards",
+    "Cleaning messy datasets"
+   ]
+  },
+  {
+   "role": "Nurse",
+   "kind": "questions",
+   "count": 8,
+   "types": {
+    "behavioral": 3,
+    "role": 3,
+    "motivation": 2
+   },
+   "types_as_asked": true,
+   "too_long": 0,
+   "mentions_role": 0,
+   "seconds": 1.2,
+   "examples": [
+    "Tell me about a time you handled a medical emergency under pressure.",
+    "Describe a situation where you had to communicate a difficult diagnosis to a patient\u2019s family.",
+    "Give an example of how you resolved a conflict with a coworker on a shift."
+   ]
+  },
+  {
+   "role": "Nurse",
+   "kind": "jam",
+   "count": 10,
+   "types": {
+    "role": 6,
+    "general": 4
+   },
+   "types_as_asked": true,
+   "too_long": 0,
+   "mentions_role": 1,
+   "seconds": 1.2,
+   "examples": [
+    "Patient care routines",
+    "Medication administration safety",
+    "Electronic health records usage"
+   ]
+  },
+  {
+   "role": "Civil engineer",
+   "kind": "questions",
+   "count": 8,
+   "types": {
+    "behavioral": 3,
+    "role": 3,
+    "motivation": 2
+   },
+   "types_as_asked": true,
+   "too_long": 0,
+   "mentions_role": 1,
+   "seconds": 1.2,
+   "examples": [
+    "Tell me about a project where you solved an unexpected design challenge.",
+    "Describe a time you had to coordinate with multiple stakeholders to meet a deadline.",
+    "Give an example of how you handled a conflict within your project team."
+   ]
+  },
+  {
+   "role": "Civil engineer",
+   "kind": "jam",
+   "count": 10,
+   "types": {
+    "role": 6,
+    "general": 4
+   },
+   "types_as_asked": true,
+   "too_long": 0,
+   "mentions_role": 1,
+   "seconds": 1.2,
+   "examples": [
+    "Structural safety in daily projects",
+    "Sustainable materials for modern construction",
+    "Using BIM for efficient design"
+   ]
+  }
+ ]
+}

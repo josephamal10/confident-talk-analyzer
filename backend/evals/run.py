@@ -535,7 +535,7 @@ def main(argv=None):
             compare = {**json.load(file), "name": args.compare}
     os.makedirs(RESULTS_DIR, exist_ok=True)
     for name in ["latest"] + ([args.save_as] if args.save_as else []):
-        with open(os.path.join(RESULTS_DIR, f"{name}.json"), "w", encoding="utf-8") as file:
+        with open(os.path.join(RESULTS_DIR, f"{name}.json"), "w", encoding="utf-8", newline="\n") as file:
             json.dump(results, file, indent=1, default=str)
     write_report(results, compare)
     print("\n".join(f"{part:12} {metric:48} {value}" for part, metric, value in headline(results)))

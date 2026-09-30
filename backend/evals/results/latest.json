@@ -1,0 +1,742 @@
+{
+ "generated": "2026-09-30 13:52",
+ "machine": "Windows AMD64, Python 3.10.10",
+ "commit": "c1e0e69",
+ "whisper": "small.en",
+ "clips": {
+  "synthetic": 53,
+  "own": 0
+ },
+ "errors": {},
+ "label_lint": [],
+ "components": {
+  "transcription": {
+   "metrics": {
+    "synthetic_all_wer": 0.008259587020648967,
+    "synthetic_content_wer": 0.007164179104477612
+   },
+   "rows": [
+    {
+     "clip": "fill-01",
+     "wer": 0.0,
+     "said": "I like working with people, and I know the value of a good team. Last year I led a small project at college, and we finished it a week early."
+    },
+    {
+     "clip": "fill-02",
+     "wer": 0.0,
+     "said": "My name is Arjun, and um I recently finished my degree in computer science. I enjoy solving problems, and uh I want to keep learning every day."
+    },
+    {
+     "clip": "fill-03",
+     "wer": 0.032,
+     "said": "So, um, the reason I chose this field is, um, mostly curiosity. I was, like, always taking things apart as a child. Hmm, my parents were not always happy about that."
+    },
+    {
+     "clip": "fill-04",
+     "wer": 0.0,
+     "said": "Um, I think the uh biggest challenge was um time. We had, you know, three deadlines in one week, and uh I had to um plan everything carefully."
+    },
+    {
+     "clip": "fill-05",
+     "wer": 0.0,
+     "said": "It was, like, the best trip ever. I like mountains more than beaches. You know the feeling when the air is cold and clean. It was, you know, perfect."
+    },
+    {
+     "clip": "fill-06",
+     "wer": 0.0,
+     "said": "Ah, good morning everyone. Today I want to talk about, uh, public transport, and why um it matters for every city."
+    },
+    {
+     "clip": "fill-07",
+     "wer": 0.0,
+     "said": "Uh, well, I have worked on two projects. The first one was a website for a local bakery, and um the second was a small app for tracking expenses."
+    },
+    {
+     "clip": "fill-08",
+     "wer": 0.0,
+     "said": "Good communication is a skill that anyone can learn. It starts with listening carefully, then saying one clear idea at a time."
+    },
+    {
+     "clip": "fill-09",
+     "wer": 0.0,
+     "said": "And then, like, we walked to the station. It was, like, really late. I like trains, but that night I just wanted to get home."
+    },
+    {
+     "clip": "fill-10",
+     "wer": 0.042,
+     "said": "Um, uh, sorry, where was I? Right. The results were um better than we expected, um mostly because the team worked so well together."
+    },
+    {
+     "clip": "pause-01",
+     "wer": 0.0,
+     "said": "I believe the most important thing is to stay consistent. Small steps every day add up over a whole year."
+    },
+    {
+     "clip": "pause-02",
+     "wer": 0.0,
+     "said": "We started early. The roads were empty. By nine we had reached the coast."
+    },
+    {
+     "clip": "pause-03",
+     "wer": 0.0,
+     "said": "That was the plan. But then it started to rain, and everything changed."
+    },
+    {
+     "clip": "pause-04",
+     "wer": 0.0,
+     "said": "The answer is, um, yes, we can do it."
+    },
+    {
+     "clip": "pause-05",
+     "wer": 0.059,
+     "said": "My favorite subject was history, because the teacher told great stories. I still remember most of them."
+    },
+    {
+     "clip": "pause-06",
+     "wer": 0.0,
+     "said": "Please remember to bring your identity card and a black pen."
+    },
+    {
+     "clip": "pause-07",
+     "wer": 0.0,
+     "said": "First, we collect the data. Second, we clean it. And finally we train the model."
+    },
+    {
+     "clip": "pause-08",
+     "wer": 0.0,
+     "said": "Learning a new language takes patience, but every conversation makes the next one a little easier."
+    },
+    {
+     "clip": "pace-01",
+     "wer": 0.0,
+     "said": "Public speaking gets easier with practice. Start by knowing your main point, then support it with one example that people will remember. Speak a little slower than feels natural, and pause after each important idea so your listeners can keep up with you."
+    },
+    {
+     "clip": "pace-02",
+     "wer": 0.0,
+     "said": "Public speaking gets easier with practice. Start by knowing your main point, then support it with one example that people will remember. Speak a little slower than feels natural, and pause after each important idea so your listeners can keep up with you."
+    },
+    {
+     "clip": "pace-03",
+     "wer": 0.0,
+     "said": "Public speaking gets easier with practice. Start by knowing your main point, then support it with one example that people will remember. Speak a little slower than feels natural, and pause after each important idea so your listeners can keep up with you."
+    },
+    {
+     "clip": "pace-04",
+     "wer": 0.0,
+     "said": "Public speaking gets easier with practice. Start by knowing your main point, then support it with one example that people will remember. Speak a little slower than feels natural, and pause after each important idea so your listeners can keep up with you."
+    },
+    {
+     "clip": "pace-05",
+     "wer": 0.0,
+     "said": "Public speaking gets easier with practice. Start by knowing your main point, then support it with one example that people will remember. Speak a little slower than feels natural, and pause after each important idea so your listeners can keep up with you."
+    },
+    {
+     "clip": "pace-06",
+     "wer": 0.0,
+     "said": "Public speaking gets easier with practice. Start by knowing your main point, then support it with one example that people will remember. Speak a little slower than feels natural, and pause after each important idea so your listeners can keep up with you."
+    },
+    {
+     "clip": "hedge-01",
+     "wer": 0.0,
+     "said": "I think this plan could work, but maybe we should test it first. I guess the budget is kind of tight."
+    },
+    {
+     "clip": "hedge-02",
+     "wer": 0.0,
+     "said": "What kind of car do you drive? This sort of thing happens every day."
+    },
+    {
+     "clip": "hedge-03",
+     "wer": 0.0,
+     "said": "I will finish the report by Friday. Our team has delivered every project on time this year."
+    },
+    {
+     "clip": "hedge-04",
+     "wer": 0.0,
+     "said": "Hopefully the new design works. It is probably fine, and sorry if this sounds a little bit rushed."
+    },
+    {
+     "clip": "topic-01",
+     "wer": 0.0,
+     "said": "Global warming is changing weather patterns everywhere. Summers are getting hotter, floods are more common, and sea levels keep rising. We need cleaner energy and fewer cars to slow it down."
+    },
+    {
+     "clip": "topic-02",
+     "wer": 0.05,
+     "said": "My favorite food is biryani. My mother cooks it every Sunday with fresh spices, and the whole house smells amazing."
+    },
+    {
+     "clip": "topic-03",
+     "wer": 0.0,
+     "said": "Reading books opens your mind to new ideas. Every novel lets you live another person's life for a while, and regular readers usually write and speak better too."
+    },
+    {
+     "clip": "topic-04",
+     "wer": 0.0,
+     "said": "Football is the most popular sport in the world. Last season my club won the league after a very tense final match."
+    },
+    {
+     "clip": "topic-05",
+     "wer": 0.051,
+     "said": "I am a final -year engineering student from Kochi. I enjoy building small apps, and last summer I interned at a software company, where I worked on their testing tools. Now I am looking for my first full -time role."
+    },
+    {
+     "clip": "topic-06",
+     "wer": 0.0,
+     "said": "The weather in my city has been very hot this week, so I have been staying indoors and watching films in the evening."
+    },
+    {
+     "clip": "topic-07",
+     "wer": 0.0,
+     "said": "An umbrella is a simple invention that keeps us dry in the rain and cool in the sun. Folding umbrellas fit easily in a bag."
+    },
+    {
+     "clip": "topic-08",
+     "wer": 0.0,
+     "said": "Gardening is a relaxing hobby. Planting tomatoes and watering them every morning gives me a sense of calm."
+    },
+    {
+     "clip": "jam-01",
+     "wer": 0.0,
+     "said": "Mobile phones have changed the way we live. We can call our families from almost anywhere in the world. A good phone also works as a camera, a map, and a music player. Yesterday I watched a cricket match and my team won the final. Still, we should put our phones down at dinner time."
+    },
+    {
+     "clip": "jam-02",
+     "wer": 0.0,
+     "said": "Coffee is one of the most popular drinks on the planet. Many people cannot start their morning without a hot cup. The beans are grown in warm countries like Brazil and Ethiopia. A strong espresso can wake you up in minutes, but too much can keep you awake at night."
+    },
+    {
+     "clip": "jam-03",
+     "wer": 0.0,
+     "said": "Trains are a comfortable way to travel long distances. You can read a book or look out of the window as the countryside passes by. My sister is getting married next month in Goa. I bought a new laptop last week and it is very fast. Night trains also save you the cost of a hotel."
+    },
+    {
+     "clip": "jam-04",
+     "wer": 0.023,
+     "said": "Rain is my favorite weather. When it rains I take my umbrella and walk to the lake. The umbrella keeps me dry, and a big umbrella can cover two people. I once lost my umbrella on a bus, and I still miss that umbrella."
+    },
+    {
+     "clip": "read-01",
+     "wer": 0.0,
+     "said": "The city library will open a new reading room next month. The room will have quiet desks, fast internet, and a small cafe. Students can book a desk online for up to four hours a day. The library hopes the space will help people who have nowhere quiet to study at home."
+    },
+    {
+     "clip": "read-02",
+     "wer": 0.0,
+     "said": "The city library will open a new reading room next month. The room will have quiet desks, fast internet, and a small cafe. Students can book a desk online for up to four hours a day. The library hopes the space will help people who have nowhere quiet to study at home."
+    },
+    {
+     "clip": "read-03",
+     "wer": 0.0,
+     "said": "The city library will open a reading room next month. The room will have quiet desks, internet, and a small cafe. Students can book a desk for up to four hours a day. The library hopes the space will help people who have nowhere quiet to study at home."
+    },
+    {
+     "clip": "read-04",
+     "wer": 0.0,
+     "said": "The city library will open a new reading room next week. The room will have quiet desks, fast internet, and a small cafe. Students can book a desk online for up to three hours a day. The library hopes the space will help people who have nowhere quiet to study at home."
+    },
+    {
+     "clip": "read-05",
+     "wer": 0.0,
+     "said": "The city library will soon open a new reading room next month. The room will have quiet desks, fast internet, and a really small cafe. Students can book a desk online for up to four hours a day. The library hopes the space will help people who have nowhere quiet to study at home."
+    },
+    {
+     "clip": "read-06",
+     "wer": 0.0,
+     "said": "The city library will open a new reading room next month. The room will have quiet desks, fast internet, and a small cafe."
+    },
+    {
+     "clip": "read-07",
+     "wer": 0.045,
+     "said": "Next month the library is opening a fresh study room, with calm desks, quick Wi -Fi and a little coffee shop. You can reserve a spot on the web for four hours each day, so anyone without a peaceful place at home can study there."
+    },
+    {
+     "clip": "read-08",
+     "wer": 0.031,
+     "said": "Umbrellas are one of the most useful inventions ever made. They keep you dry in the rain and cool in the sun, and a bright umbrella can cheer up a great day."
+    },
+    {
+     "clip": "doc-01",
+     "wer": 0.0,
+     "said": "Good evening, here are tonight's headlines. The city council has announced that free night buses will begin running from next Monday. The new service will operate every 30 minutes on four of the busiest routes, from late evening until early morning. Officials say the plan is meant to help shift workers, nurses and students travel home safely. The scheme will be reviewed after six months, and residents in the outer suburbs have already asked for more routes to be added."
+    },
+    {
+     "clip": "doc-02",
+     "wer": 0.06,
+     "said": "Now the weather. Expect heavy rain across the north on Saturday, with temperatures of around 18 degrees, clearing to bright spells by Sunday afternoon. The Met Office has issued a warning for wind along the coast. In sport, the city's cricket team won the final by 42 runs after a record -breaking innings from their captain, who scored an unbeaten century in front of a crowd of 25 ,000."
+    },
+    {
+     "clip": "doc-03",
+     "wer": 0.0,
+     "said": "Welcome to the evening digest from the newsroom."
+    },
+    {
+     "clip": "doc-04",
+     "wer": 0.0,
+     "said": "To make a simple tomato soup, fry an onion in butter, add 6 ripe tomatoes and a cup of water, then cook it for 20 minutes before blending."
+    },
+    {
+     "clip": "doc-05",
+     "wer": 0.0,
+     "said": "On Saturday the north will get a lot of rain, and it will be about 18 degrees. By Sunday afternoon the sun should come out, and there is a wind warning for the coast."
+    }
+   ],
+   "failures": []
+  },
+  "fillers": {
+   "metrics": {
+    "by_source": {
+     "synthetic": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 26,
+      "fp": 0,
+      "fn": 0
+     },
+     "all": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 26,
+      "fp": 0,
+      "fn": 0
+     }
+    },
+    "count_mae": 0.0
+   },
+   "failures": []
+  },
+  "hedges": {
+   "metrics": {
+    "by_source": {
+     "synthetic": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 11,
+      "fp": 0,
+      "fn": 0
+     },
+     "all": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 11,
+      "fp": 0,
+      "fn": 0
+     }
+    }
+   },
+   "failures": []
+  },
+  "pauses": {
+   "metrics": {
+    "hesitation": {
+     "synthetic": {
+      "precision": 0.9,
+      "recall": 1.0,
+      "f1": 0.9473684210526316,
+      "tp": 9,
+      "fp": 1,
+      "fn": 0
+     }
+    },
+    "pause_recall": {
+     "synthetic": 1.0
+    },
+    "kind_accuracy": {
+     "synthetic": 1.0
+    },
+    "duration_error_s": 0.08599999999999994,
+    "own_count_mae": null
+   },
+   "failures": [
+    {
+     "clip": "fill-03",
+     "expected": [],
+     "found": [
+      "natural 4.67-5.51s (0.84s)",
+      "hesitation 9.44-10.31s (0.87s)"
+     ]
+    }
+   ]
+  },
+  "pace": {
+   "metrics": {
+    "wpm_error": {
+     "n": 53,
+     "mean": 0.00858507299502724,
+     "median": 0.006666666666666667,
+     "p95": 0.02189781021897807,
+     "max": 0.046909903201787125
+    },
+    "rank_correlation": 1.0
+   },
+   "rows": [
+    {
+     "clip": "pace-01",
+     "true_wpm": 107.4,
+     "measured_wpm": 106,
+     "pace_score": 8.4
+    },
+    {
+     "clip": "pace-02",
+     "true_wpm": 136.7,
+     "measured_wpm": 136,
+     "pace_score": 10.0
+    },
+    {
+     "clip": "pace-03",
+     "true_wpm": 163.5,
+     "measured_wpm": 162,
+     "pace_score": 10.0
+    },
+    {
+     "clip": "pace-04",
+     "true_wpm": 165.8,
+     "measured_wpm": 165,
+     "pace_score": 10.0
+    },
+    {
+     "clip": "pace-05",
+     "true_wpm": 236.7,
+     "measured_wpm": 234,
+     "pace_score": 0.0
+    },
+    {
+     "clip": "pace-06",
+     "true_wpm": 332.5,
+     "measured_wpm": 332,
+     "pace_score": 0.0
+    }
+   ],
+   "failures": []
+  },
+  "topic": {
+   "metrics": {
+    "accuracy": 1.0,
+    "n": 8
+   },
+   "rows": [
+    {
+     "clip": "topic-01",
+     "mode": "free",
+     "expected": true,
+     "found": true,
+     "similarity": 0.667
+    },
+    {
+     "clip": "topic-02",
+     "mode": "free",
+     "expected": false,
+     "found": false,
+     "similarity": 0.013
+    },
+    {
+     "clip": "topic-03",
+     "mode": "free",
+     "expected": true,
+     "found": true,
+     "similarity": 0.658
+    },
+    {
+     "clip": "topic-04",
+     "mode": "free",
+     "expected": false,
+     "found": false,
+     "similarity": 0.127
+    },
+    {
+     "clip": "topic-05",
+     "mode": "interview",
+     "expected": true,
+     "found": true,
+     "similarity": 0.192
+    },
+    {
+     "clip": "topic-06",
+     "mode": "interview",
+     "expected": false,
+     "found": false,
+     "similarity": 0.145
+    },
+    {
+     "clip": "topic-07",
+     "mode": "jam",
+     "expected": true,
+     "found": true,
+     "similarity": 0.637
+    },
+    {
+     "clip": "topic-08",
+     "mode": "jam",
+     "expected": false,
+     "found": false,
+     "similarity": 0.092
+    }
+   ],
+   "failures": []
+  },
+  "jam": {
+   "metrics": {
+    "deviation": {
+     "precision": 1.0,
+     "recall": 0.6666666666666666,
+     "f1": 0.8,
+     "tp": 2,
+     "fp": 0,
+     "fn": 1
+    },
+    "repetition": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "tp": 3,
+     "fp": 0,
+     "fn": 0
+    }
+   },
+   "rows": [
+    {
+     "clip": "jam-01",
+     "deviation": 0,
+     "expected_deviation": 1,
+     "repetition": 0,
+     "expected_repetition": 0,
+     "events": []
+    },
+    {
+     "clip": "jam-02",
+     "deviation": 0,
+     "expected_deviation": 0,
+     "repetition": 0,
+     "expected_repetition": 0,
+     "events": []
+    },
+    {
+     "clip": "jam-03",
+     "deviation": 2,
+     "expected_deviation": 2,
+     "repetition": 0,
+     "expected_repetition": 0,
+     "events": [
+      "deviation: \"My sister is getting married next month in...\"",
+      "deviation: \"I bought a new laptop last week and...\""
+     ]
+    },
+    {
+     "clip": "jam-04",
+     "deviation": 0,
+     "expected_deviation": 0,
+     "repetition": 3,
+     "expected_repetition": 3,
+     "events": [
+      "repetition: \"umbrella\" for the 3rd time",
+      "repetition: \"umbrella\" for the 4th time",
+      "repetition: \"umbrella\" for the 5th time"
+     ]
+    }
+   ],
+   "failures": [
+    {
+     "clip": "jam-01",
+     "deviation": 0,
+     "expected_deviation": 1,
+     "repetition": 0,
+     "expected_repetition": 0,
+     "events": []
+    }
+   ]
+  },
+  "reading": {
+   "metrics": {
+    "verdict_accuracy": 1.0,
+    "counts_exact": 1.0,
+    "missed_mae": 0.0,
+    "misread_mae": 0.0,
+    "added_mae": 0.0,
+    "section_iou": 0.9970588235294118
+   },
+   "rows": [
+    {
+     "clip": "read-01",
+     "source": "synthetic",
+     "verdict": "same",
+     "expected_verdict": "same",
+     "accuracy": 1.0,
+     "spoken_match": 1.0,
+     "missed": 0,
+     "expected_missed": 0,
+     "misread": 0,
+     "expected_misread": 0,
+     "added": 0,
+     "expected_added": 0
+    },
+    {
+     "clip": "read-02",
+     "source": "synthetic",
+     "verdict": "same",
+     "expected_verdict": "same",
+     "accuracy": 1.0,
+     "spoken_match": 1.0,
+     "missed": 0,
+     "expected_missed": 0,
+     "misread": 0,
+     "expected_misread": 0,
+     "added": 0,
+     "expected_added": 0
+    },
+    {
+     "clip": "read-03",
+     "source": "synthetic",
+     "verdict": "close",
+     "expected_verdict": "close",
+     "accuracy": 0.942,
+     "spoken_match": 1.0,
+     "missed": 3,
+     "expected_missed": 3,
+     "misread": 0,
+     "expected_misread": 0,
+     "added": 0,
+     "expected_added": 0
+    },
+    {
+     "clip": "read-04",
+     "source": "synthetic",
+     "verdict": "close",
+     "expected_verdict": "close",
+     "accuracy": 0.962,
+     "spoken_match": 0.962,
+     "missed": 0,
+     "expected_missed": 0,
+     "misread": 2,
+     "expected_misread": 2,
+     "added": 0,
+     "expected_added": 0
+    },
+    {
+     "clip": "read-05",
+     "source": "synthetic",
+     "verdict": "close",
+     "expected_verdict": "close",
+     "accuracy": 1.0,
+     "spoken_match": 0.963,
+     "missed": 0,
+     "expected_missed": 0,
+     "misread": 0,
+     "expected_misread": 0,
+     "added": 2,
+     "expected_added": 2
+    },
+    {
+     "clip": "read-06",
+     "source": "synthetic",
+     "verdict": "skipped",
+     "expected_verdict": "skipped",
+     "accuracy": 0.442,
+     "spoken_match": 1.0,
+     "missed": 29,
+     "expected_missed": 29,
+     "misread": 0,
+     "expected_misread": 0,
+     "added": 0,
+     "expected_added": 0
+    },
+    {
+     "clip": "read-07",
+     "source": "synthetic",
+     "verdict": "related",
+     "expected_verdict": "related",
+     "accuracy": 0.288,
+     "spoken_match": 0.333
+    },
+    {
+     "clip": "read-08",
+     "source": "synthetic",
+     "verdict": "different",
+     "expected_verdict": "different",
+     "accuracy": 0.135,
+     "spoken_match": 0.219
+    },
+    {
+     "clip": "doc-01",
+     "source": "synthetic",
+     "verdict": "same",
+     "expected_verdict": "same",
+     "accuracy": 1.0,
+     "spoken_match": 1.0,
+     "section_iou": 1.0
+    },
+    {
+     "clip": "doc-02",
+     "source": "synthetic",
+     "verdict": "close",
+     "expected_verdict": "close",
+     "accuracy": 0.985,
+     "spoken_match": 0.971,
+     "section_iou": 0.9852941176470589
+    },
+    {
+     "clip": "doc-03",
+     "source": "synthetic",
+     "verdict": "same",
+     "expected_verdict": "same",
+     "accuracy": 1.0,
+     "spoken_match": 1.0,
+     "section_iou": 1.0
+    },
+    {
+     "clip": "doc-04",
+     "source": "synthetic",
+     "verdict": "different",
+     "expected_verdict": "different",
+     "accuracy": 0.0,
+     "spoken_match": 0.0,
+     "section_iou": 1.0
+    },
+    {
+     "clip": "doc-05",
+     "source": "synthetic",
+     "verdict": "related",
+     "expected_verdict": "related",
+     "accuracy": 0.0,
+     "spoken_match": 0.0,
+     "section_iou": 1.0
+    }
+   ],
+   "failures": []
+  },
+  "scores": {
+   "metrics": {
+    "fluency_vs_filler_density": -0.9688396703007502
+   }
+  },
+  "latency": {
+   "metrics": {
+    "warm_up_s": 3.2354028000263497,
+    "seconds_per_clip": {
+     "n": 53,
+     "mean": 3.496027218869817,
+     "median": 3.296846600016579,
+     "p95": 4.727855299948715,
+     "max": 6.497759599937126
+    },
+    "real_time_factor": {
+     "n": 53,
+     "mean": 0.3233185922642389,
+     "median": 0.31396002953507257,
+     "p95": 0.44918846044180205,
+     "max": 0.7595315223921145
+    },
+    "stage_ms_mean": {
+     "decode_vad": 68,
+     "transcription": 2812,
+     "pitch": 22,
+     "emotion": 570
+    }
+   }
+  }
+ }
+}
