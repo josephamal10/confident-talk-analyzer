@@ -24,7 +24,7 @@ WORDS = [
 def stub_models(monkeypatch):
     words = [{"text": text, "start": start, "end": end, "probability": 0.9} for text, start, end in WORDS]
     words[5]["probability"] = 0.2  # "in" was hard to recognise
-    monkeypatch.setattr(transcription, "transcribe", lambda audio: (" ".join(w[0] for w in WORDS), [dict(w) for w in words]))
+    monkeypatch.setattr(transcription, "transcribe", lambda audio, **_options: (" ".join(w[0] for w in WORDS), [dict(w) for w in words]))
     tone_result = {"arousal": 0.5, "dominance": 0.55, "valence": 0.5, "windows": [{"arousal": 0.5, "dominance": 0.55, "valence": 0.5}]}
     monkeypatch.setattr(emotion, "predict_vocal_tone", lambda audio: tone_result)
     monkeypatch.setattr(pipeline, "detect_speech", lambda audio: [(0.5, 1.8), (2.8, 5.0)])

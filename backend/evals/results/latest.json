@@ -1,7 +1,7 @@
 {
- "generated": "2026-09-30 13:52",
+ "generated": "2026-10-01 16:24",
  "machine": "Windows AMD64, Python 3.10.10",
- "commit": "c1e0e69",
+ "commit": "fc709ed + local changes",
  "whisper": "small.en",
  "clips": {
   "synthetic": 53,
@@ -715,26 +715,26 @@
   },
   "latency": {
    "metrics": {
-    "warm_up_s": 3.2354028000263497,
+    "warm_up_s": 3.844468399998732,
     "seconds_per_clip": {
      "n": 53,
-     "mean": 3.496027218869817,
-     "median": 3.296846600016579,
-     "p95": 4.727855299948715,
-     "max": 6.497759599937126
+     "mean": 7.995320762257215,
+     "median": 7.895979199907742,
+     "p95": 14.123184399912134,
+     "max": 17.221251199953258
     },
     "real_time_factor": {
      "n": 53,
-     "mean": 0.3233185922642389,
-     "median": 0.31396002953507257,
-     "p95": 0.44918846044180205,
-     "max": 0.7595315223921145
+     "mean": 0.7720468932122982,
+     "median": 0.7590636716279854,
+     "p95": 1.6050671654746687,
+     "max": 1.7416472106099108
     },
     "stage_ms_mean": {
-     "decode_vad": 68,
-     "transcription": 2812,
-     "pitch": 22,
-     "emotion": 570
+     "decode_vad": 238,
+     "transcription": 5612,
+     "pitch": 41,
+     "emotion": 1984
     }
    }
   }

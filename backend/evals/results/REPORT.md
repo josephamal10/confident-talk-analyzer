@@ -1,31 +1,29 @@
 # Evaluation report
 
-Generated 2026-09-30 13:52 on Windows AMD64, Python 3.10.10 · commit `c1e0e69` · 53 synthetic clips, 0 own recordings · speech model faster-whisper `small.en`.
+Generated 2026-10-01 16:24 on Windows AMD64, Python 3.10.10 · commit `fc709ed + local changes` · 53 synthetic clips, 0 own recordings · speech model faster-whisper `small.en`.
 
 How the set is built and what each number means: [../README.md](../README.md).
 
 ## Summary
 
-| Part | Metric | Result | Before |
-|---|---|---|---|
-| Transcription | Word error rate, synthetic voices | 0.8% | 0.8% |
-| Transcription | Word error rate, own recordings | – | – |
-| Fillers | F1 (synthetic) | 100.0% | 100.0% |
-| Fillers | F1 (own recordings) | – | – |
-| Hedges | F1 (synthetic) | 100.0% | 100.0% |
-| Pauses | Hesitation-pause F1 | 94.7% | 33.3% |
-| Pauses | Share of scripted pauses found | 100.0% | 53.3% |
-| Pace | Mean words-per-minute error | 0.9% | 0.9% |
-| Pace | Rank correlation with true pace | 1.00 | 1.00 |
-| Topic check | On/off-topic accuracy | 100% | 100% |
-| JAM referee | Deviation F1 | 80% | 80% |
-| Read-aloud | Verdict accuracy | 100% | 85% |
-| Read-aloud | Skipped/misread/added counts exactly right | 100% | 100% |
-| Documents | Located section overlap (IoU) | 100% | 100% |
-| Scores | Fluency score vs filler density (rank corr.) | -0.97 | -0.97 |
-| Speed | Analysis time / audio length | 0.32 | not compared |
-
-*Before* is the saved run `baseline` (2026-09-30 13:39, commit `64c1580`).
+| Part | Metric | Result |
+|---|---|---|
+| Transcription | Word error rate, synthetic voices | 0.8% |
+| Transcription | Word error rate, own recordings | – |
+| Fillers | F1 (synthetic) | 100.0% |
+| Fillers | F1 (own recordings) | – |
+| Hedges | F1 (synthetic) | 100.0% |
+| Pauses | Hesitation-pause F1 | 94.7% |
+| Pauses | Share of scripted pauses found | 100.0% |
+| Pace | Mean words-per-minute error | 0.9% |
+| Pace | Rank correlation with true pace | 1.00 |
+| Topic check | On/off-topic accuracy | 100% |
+| JAM referee | Deviation F1 | 80% |
+| Read-aloud | Verdict accuracy | 100% |
+| Read-aloud | Skipped/misread/added counts exactly right | 100% |
+| Documents | Located section overlap (IoU) | 100% |
+| Scores | Fluency score vs filler density (rank corr.) | -0.97 |
+| Speed | Analysis time / audio length | 0.77 |
 
 ## Fillers and hedges
 
@@ -96,8 +94,8 @@ Expected values in brackets.
 
 ## Speed
 
-Model warm-up 3.2 s. Per clip: mean 3.5 s, 95th percentile 4.7 s; 0.32× the audio length on average.
-Mean time per stage (ms): decode_vad 68, transcription 2812, pitch 22, emotion 570.
+Model warm-up 3.8 s. Per clip: mean 8.0 s, 95th percentile 14.1 s; 0.77× the audio length on average.
+Mean time per stage (ms): decode_vad 238, transcription 5612, pitch 41, emotion 1984.
 
 ## Where it went wrong
 

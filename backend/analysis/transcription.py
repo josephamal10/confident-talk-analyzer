@@ -5,6 +5,8 @@ import threading
 
 from faster_whisper import WhisperModel
 
+from .audio import detect_speech
+
 logger = logging.getLogger(__name__)
 
 MODEL_NAME = os.getenv("WHISPER_MODEL", "small.en").strip() or "small.en"
@@ -13,6 +15,11 @@ MODEL_NAME = os.getenv("WHISPER_MODEL", "small.en").strip() or "small.en"
 FILLER_PROMPT = "Um, well, uh, I was, like, thinking about it, you know. Hmm, okay, so."
 # Whisper reports a high compression ratio when it gets stuck repeating a phrase.
 LOOP_COMPRESSION_RATIO = 2.4
+RETRY_TEMPERATURES = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+# Detected speech this long with no word in it means Whisper skipped it. Word timings are a
+# little loose, so each word is taken to cover WORD_PAD seconds either side.
+MISSED_SPEECH_SECONDS = 1.0
+WORD_PAD = 0.3
 
 _model = None
 _model_lock = threading.Lock()
@@ -27,8 +34,8 @@ def get_model():
     return _model
 
 
-def _decode(audio, **options):
-    segments, _info = get_model().transcribe(
+def _decode(audio, model=None, **options):
+    segments, _info = (model or get_model()).transcribe(
         audio,
         language="en",
         beam_size=5,
@@ -44,18 +51,8 @@ def _is_repetition_loop(segments):
     return any(segment.compression_ratio > LOOP_COMPRESSION_RATIO for segment in segments)
 
 
-def transcribe(audio):
-    """Returns (text, words); each word is {text, start, end, probability}. Both are empty if unreliable."""
-    segments = _decode(audio, initial_prompt=FILLER_PROMPT, temperature=0.0)
-    if _is_repetition_loop(segments):
-        # The filler prompt occasionally causes a loop ("Good morning. Good morning. ...");
-        # retry without it and let Whisper raise the temperature on segments that still loop.
-        logger.info("Repetition loop detected; retrying without the filler prompt.")
-        segments = _decode(audio, temperature=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
-    if _is_repetition_loop(segments):
-        return "", []
-
-    words = [
+def _words(segments):
+    return [
         {
             "text": word.word.strip(),
             "start": round(float(word.start), 2),
@@ -66,4 +63,56 @@ def transcribe(audio):
         for word in segment.words or []
         if word.word.strip()
     ]
+
+
+def missed_speech(words, speech_regions):
+    """Stretches of detected speech, at least MISSED_SPEECH_SECONDS long, that no word covers."""
+    covered = sorted((word["start"] - WORD_PAD, word["end"] + WORD_PAD) for word in words)
+    missed = []
+    for start, end in speech_regions:
+        cursor = start
+        for word_start, word_end in covered:
+            if word_end <= cursor or word_start >= end:
+                continue
+            if word_start - cursor >= MISSED_SPEECH_SECONDS:
+                missed.append((cursor, word_start))
+            cursor = max(cursor, word_end)
+        if end - cursor >= MISSED_SPEECH_SECONDS:
+            missed.append((cursor, end))
+    return missed
+
+
+def transcribe(audio, model=None, filler_prompt=True, speech_regions=None):
+    """Returns (text, words); each word is {text, start, end, probability}. Both are empty if unreliable.
+
+    `model` overrides the app's model (the evaluation compares several); `filler_prompt=False`
+    measures what the filler-keeping prompt costs in accuracy. `speech_regions` (from
+    audio.detect_speech) is detected when not given.
+    """
+    prompt = FILLER_PROMPT if filler_prompt else None
+    segments = _decode(audio, model, initial_prompt=prompt, temperature=0.0)
+    if _is_repetition_loop(segments):
+        # The filler prompt occasionally causes a loop ("Good morning. Good morning. ...");
+        # retry without it and let Whisper raise the temperature on segments that still loop.
+        logger.info("Repetition loop detected; retrying without the filler prompt.")
+        prompt = None
+        segments = _decode(audio, model, temperature=RETRY_TEMPERATURES)
+    if _is_repetition_loop(segments):
+        return "", []
+    words = _words(segments)
+
+    if prompt:
+        # The prompt can also make Whisper jump over whole sentences (seen on Indian-accented
+        # speech: the first 16 seconds of a recording dropped). Fill those stretches from a pass
+        # without it, keeping the prompted words, and their fillers, everywhere else.
+        regions = detect_speech(audio) if speech_regions is None else speech_regions
+        missed = missed_speech(words, regions)
+        if missed:
+            logger.info("Whisper skipped %.1f s of speech; filling it in without the filler prompt.",
+                        sum(end - start for start, end in missed))
+            plain = _decode(audio, model, temperature=RETRY_TEMPERATURES)
+            if not _is_repetition_loop(plain):
+                found = [word for word in _words(plain)
+                         if any(start <= (word["start"] + word["end"]) / 2 <= end for start, end in missed)]
+                words = sorted(words + found, key=lambda word: word["start"])
     return " ".join(word["text"] for word in words), words

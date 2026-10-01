@@ -60,7 +60,7 @@ def analyze_recording(path, on_stage=None):
         raise AnalysisError("No speech was detected. Check your microphone and try again.", 422)
 
     report("transcribe")
-    text, words = transcription.transcribe(audio)
+    text, words = transcription.transcribe(audio, speech_regions=speech_regions)
     lap("transcription")
     if not words:
         raise AnalysisError("Your speech could not be transcribed. Please speak clearly and try again.", 422)
