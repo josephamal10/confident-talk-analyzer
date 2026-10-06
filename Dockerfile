@@ -20,7 +20,6 @@ ENV HOME=/home/user \
     WHISPER_MODEL=${WHISPER_MODEL} \
     UPLOAD_FOLDER=/tmp/uploads \
     DATABASE_PATH=/tmp/app_data.db \
-    CROSS_SITE_COOKIES=1 \
     PORT=7860
 
 WORKDIR /home/user/app
