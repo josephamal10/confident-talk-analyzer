@@ -4,6 +4,7 @@ import { getUser, initAuth, loadUser, onAuthChange, requireLogin, sessionExpired
 import { createCoachView } from "./coach.js";
 import { initDeckUpload } from "./deck.js";
 import { initDocumentUpload } from "./document.js";
+import { initHome } from "./home.js";
 import { completeLoader, hideLoader, setStage, showLoader } from "./loader.js";
 import * as practice from "./practice.js";
 import { drawChart as drawProgressChart, showProgress } from "./progress.js";
@@ -323,6 +324,7 @@ initializeTheme($("themeToggle"), () => {
   drawProgressChart();
 });
 initAuth();
+initHome();
 
 // Old links used /?mode=jam; send them to the practice view instead.
 const legacyMode = new URLSearchParams(window.location.search).get("mode");

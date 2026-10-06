@@ -33,26 +33,117 @@
     <!-- Home: what the site is, how it works, and the practice modes -->
     <section class="view" id="view-home">
       <div class="hero">
-        <p class="kicker">Speech Intelligence Suite</p>
-        <h1>Speak with confidence,<br><span class="gradient-text">in any situation.</span></h1>
-        <p class="subtext">
-          Practise interviews, JAM rounds, presentations, news reading, pitches and debates. Speech AI measures how you
-          sound, an AI coach reviews what you say, and your progress is tracked session by session.
-        </p>
-        <div class="hero-actions">
-          <a class="btn-primary btn-inline" href="#/" data-scroll="modes">Choose a practice mode</a>
-          <button class="btn-outline btn-inline guest-only" type="button" data-guest>Try it as a guest</button>
-          <a class="btn-outline btn-inline" href="#/" data-scroll="how">How it works</a>
+        <div class="hero-copy">
+          <p class="kicker">Speech Intelligence Suite</p>
+          <h1>Speak with confidence,<br><span class="gradient-text">in any situation.</span></h1>
+          <p class="subtext">
+            Practise interviews, JAM rounds, presentations, news reading, pitches and debates out loud. Speech AI
+            measures how you sound, an AI coach reviews what you say, and you watch yourself improve session by session.
+          </p>
+          <div class="hero-actions">
+            <a class="btn-primary btn-inline" href="#/" data-scroll="modes">Start practising</a>
+            <button class="btn-outline btn-inline guest-only" type="button" data-guest>Try it as a guest</button>
+            <a class="btn-outline btn-inline" href="#/" data-scroll="how">How it works</a>
+          </div>
+          <ul class="hero-trust">
+            <li>Free to use</li>
+            <li>No sign-up needed</li>
+            <li>Runs in your browser</li>
+          </ul>
         </div>
-        <div class="hero-stats">
-          <div><b>8</b><span>practice modes</span></div>
-          <div><b>10</b><span>delivery skills measured</span></div>
-          <div><b>5</b><span>AI models working together</span></div>
+
+        <div class="demo-card" aria-hidden="true">
+          <div class="demo-head">
+            <span class="demo-dot"></span>
+            <span class="demo-mode">Interview · Tell me about yourself</span>
+            <span class="demo-time">0:42</span>
+          </div>
+          <div class="demo-wave">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <p class="demo-transcript">
+            "<mark class="hl-filler">Um,</mark> so I'm a final-year engineering student,
+            <span class="hl-pause">1.4s</span> and <mark class="hl-hedge">I think</mark> my biggest strength is
+            leading small teams under pressure..."
+          </p>
+          <div class="demo-body">
+            <div class="score-ring" style="--score: 78">
+              <b>7.8</b><span>overall</span>
+            </div>
+            <ul class="demo-metrics">
+              <li><span>Pace</span><b class="ok">142 wpm</b></li>
+              <li><span>Fillers</span><b class="warn">3</b></li>
+              <li><span>Long pauses</span><b class="warn">2</b></li>
+              <li><span>Vocal confidence</span><b class="ok">High</b></li>
+            </ul>
+          </div>
+          <div class="demo-coach">
+            <span class="demo-coach-label">AI coach</span>
+            Strong opening. Swap "I think" for a fact: say what your team actually achieved.
+          </div>
         </div>
       </div>
 
-      <div class="home-section" id="how">
-        <h2>How it works</h2>
+      <div class="model-strip reveal">
+        <p>The models behind every analysis</p>
+        <ul>
+          <li>faster-whisper<span>speech to text</span></li>
+          <li>Silero VAD<span>pauses</span></li>
+          <li>Praat<span>pitch</span></li>
+          <li>wav2vec2<span>vocal confidence</span></li>
+          <li>MiniLM<span>topic relevance</span></li>
+          <li>LLM coach<span>content review</span></li>
+        </ul>
+      </div>
+
+      <div class="stat-band reveal">
+        <div><b>8</b><span>practice modes</span></div>
+        <div><b>10</b><span>delivery skills measured</span></div>
+        <div><b>5</b><span>AI models</span></div>
+        <div><b>Free</b><span>to practise</span></div>
+      </div>
+
+      <div class="home-section reveal">
+        <p class="section-kicker">Who it's for</p>
+        <h2>Built for every kind of talking</h2>
+        <div class="audience-grid">
+          <article class="audience-card">
+            <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/></svg>
+            <h3>Job seekers</h3>
+            <p>Answer real interview questions for your role, structured with STAR, and hear how you come across.</p>
+          </article>
+          <article class="audience-card">
+            <svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/></svg>
+            <h3>Students</h3>
+            <p>Train for JAM rounds and group discussions with a referee that catches hesitation and repetition.</p>
+          </article>
+          <article class="audience-card">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8M7 12l3-3 2 2 4-4"/></svg>
+            <h3>Presenters</h3>
+            <p>Upload your slides, rehearse against the clock and find out which slides you skipped.</p>
+          </article>
+          <article class="audience-card">
+            <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+            <h3>News readers</h3>
+            <p>Read from a passage or your own document and see every word you skipped, misread or added.</p>
+          </article>
+          <article class="audience-card">
+            <svg viewBox="0 0 24 24"><path d="M12 2c3 3 4 7 3 11l-3 3-3-3c-1-4 0-8 3-11z"/><path d="M9 13l-3 1 1 4 3-2M15 13l3 1-1 4-3-2"/></svg>
+            <h3>Founders</h3>
+            <p>Tighten a 60-second pitch until the problem, solution and ask land clearly.</p>
+          </article>
+          <article class="audience-card">
+            <svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+            <h3>Everyone else</h3>
+            <p>Talk about anything in free practice and build the habit of speaking clearly and calmly.</p>
+          </article>
+        </div>
+      </div>
+
+      <div class="home-section reveal" id="how">
+        <p class="section-kicker">How it works</p>
+        <h2>From your voice to a coaching plan</h2>
         <ol class="steps">
           <li><b>Pick a situation</b><span>Interview, JAM, presentation, news reading and more: each has its own rules and timer.</span></li>
           <li><b>Record yourself</b><span>Speak into your microphone. Topics, questions or a teleprompter appear on screen.</span></li>
@@ -62,8 +153,105 @@
         </ol>
       </div>
 
-      <div class="home-section">
-        <h2>What it measures</h2>
+      <div class="feature-row reveal">
+        <div class="feature-text">
+          <p class="section-kicker">Fillers, hedges and pauses</p>
+          <h2>Hear what your listeners hear</h2>
+          <p>
+            Every "um", "uh" and "you know" is marked in your transcript, along with hedges like "I think" and
+            "maybe" that make you sound less sure. Pauses are timed from the audio itself, so you can tell a
+            confident pause from a hesitation.
+          </p>
+        </div>
+        <div class="feature-visual" aria-hidden="true">
+          <div class="mini-transcript">
+            <p><mark class="hl-filler">Uh,</mark> the project started when our college <span class="hl-pause">2.1s</span> needed a faster way to
+              <mark class="hl-hedge">kind of</mark> track attendance. <mark class="hl-filler">So,</mark> I built the backend and
+              <mark class="hl-hedge">maybe</mark> half of the app.</p>
+            <div class="legend">
+              <span><i class="sw-filler"></i>Filler</span>
+              <span><i class="sw-hedge"></i>Hedge</span>
+              <span><i class="sw-pause"></i>Hesitation pause</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="feature-row flip reveal">
+        <div class="feature-text">
+          <p class="section-kicker">Voice and delivery</p>
+          <h2>Know how you sound, not just what you said</h2>
+          <p>
+            Your pace is compared with the comfortable range for the situation, your pitch shows whether you sound
+            lively or flat, and a voice model rates how calm and confident you sound across the whole recording.
+          </p>
+        </div>
+        <div class="feature-visual" aria-hidden="true">
+          <div class="voice-panel">
+            <div class="gauge">
+              <div class="gauge-track"><span class="gauge-zone"></span><span class="gauge-needle"></span></div>
+              <div class="gauge-labels"><span>Slow</span><b>142 wpm · Just right</b><span>Fast</span></div>
+            </div>
+            <svg class="pitch-line" viewBox="0 0 300 70" preserveAspectRatio="none">
+              <path d="M0 45 C20 30 35 52 55 38 S90 20 110 34 S150 58 170 30 S210 18 230 40 S270 52 300 28"/>
+            </svg>
+            <p class="voice-caption">Pitch variation: lively</p>
+            <div class="bars">
+              <div><span>Confidence</span><i style="--w: 82%"></i></div>
+              <div><span>Calmness</span><i style="--w: 68%"></i></div>
+              <div><span>Energy</span><i style="--w: 74%"></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="feature-row reveal">
+        <div class="feature-text">
+          <p class="section-kicker">AI coach</p>
+          <h2>A coach that improves your answer, not replaces it</h2>
+          <p>
+            The coach checks your answer against the right framework (STAR for interviews, PREP for opinions,
+            problem-solution-ask for pitches), quotes what you actually said, and rewrites it using only your own
+            facts. It never invents numbers or stories for you.
+          </p>
+        </div>
+        <div class="feature-visual" aria-hidden="true">
+          <div class="coach-panel">
+            <div class="star-chips">
+              <span class="have">Situation</span><span class="have">Task</span><span class="have">Action</span><span class="miss">Result</span>
+            </div>
+            <div class="before-after">
+              <div><span class="ba-label">You said</span>"I led the team and we, um, finished the app somehow."</div>
+              <div class="after"><span class="ba-label">Stronger version</span>"I led a team of four, split the work by feature, and we shipped the app before the deadline."</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="feature-row flip reveal">
+        <div class="feature-text">
+          <p class="section-kicker">Progress</p>
+          <h2>Watch yourself get better</h2>
+          <p>
+            Every session is saved with its recording, so you can replay it later. Your progress page shows your
+            score over time, your weakest skills, and exactly what to practise next.
+          </p>
+        </div>
+        <div class="feature-visual" aria-hidden="true">
+          <div class="progress-panel">
+            <div class="progress-head"><span>Overall score</span><b>+2.6 in 8 sessions</b></div>
+            <svg class="progress-chart" viewBox="0 0 300 120" preserveAspectRatio="none">
+              <path class="area" d="M0 95 L40 88 L80 92 L120 70 L160 66 L200 52 L240 44 L300 30 L300 120 L0 120 Z"/>
+              <path class="line" d="M0 95 L40 88 L80 92 L120 70 L160 66 L200 52 L240 44 L300 30"/>
+            </svg>
+            <div class="progress-tags"><span>Weakest: fillers</span><span>Next: JAM round</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-section reveal">
+        <p class="section-kicker">What it measures</p>
+        <h2>Ten skills, one recording</h2>
         <div class="chips measure-chips">
           <span class="chip">Pace (words per minute)</span>
           <span class="chip">Filler words</span>
@@ -80,13 +268,83 @@
       </div>
 
       <div class="home-section" id="modes">
-        <h2>Practice modes</h2>
+        <p class="section-kicker">Practice modes</p>
+        <h2>Choose your situation</h2>
         <div class="mode-grid" id="modeGrid"></div>
       </div>
 
+      <div class="home-section accuracy reveal">
+        <p class="section-kicker">Measured, not guessed</p>
+        <h2>Tested like a real AI product</h2>
+        <p class="section-lead">
+          Every part of the analysis is checked against recordings with known answers: 53 labelled test clips and
+          real Indian-accented speakers from the Svarah dataset. When a test found a weakness, it was fixed and
+          measured again.
+        </p>
+        <div class="accuracy-grid">
+          <div><b>100%</b><span>of filler words found in the labelled clips</span></div>
+          <div><b>95%</b><span>F1 score on hesitation pauses</span></div>
+          <div><b>86%</b><span>of words right for real Indian-accented speakers</span></div>
+          <div><b>0</b><span>made-up numbers shown by the AI coach</span></div>
+        </div>
+      </div>
+
+      <div class="home-section privacy reveal">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        <div>
+          <h2>Your practice stays yours</h2>
+          <p>
+            Recordings are kept only so you can replay your own sessions, and they are never used to train anything.
+            Only the transcript text is sent to the AI coach. Guest sessions are deleted automatically after 7 days.
+          </p>
+        </div>
+      </div>
+
+      <div class="home-section reveal">
+        <p class="section-kicker">Questions</p>
+        <h2>Frequently asked</h2>
+        <div class="faq">
+          <details>
+            <summary>Is it really free?</summary>
+            <p>Yes. Every practice mode, the analysis and the AI coach are free to use.</p>
+          </details>
+          <details>
+            <summary>Do I need an account?</summary>
+            <p>No. Click "Try it as a guest" to start straight away. Create an account if you want to keep your progress for longer than 7 days.</p>
+          </details>
+          <details>
+            <summary>Which languages does it support?</summary>
+            <p>English, including Indian-accented English, which it is tested on. The coach and scores are written for English speaking practice.</p>
+          </details>
+          <details>
+            <summary>What do I need to use it?</summary>
+            <p>A browser and a microphone. A laptop or phone mic works fine; a quiet room gives the most accurate results.</p>
+          </details>
+          <details>
+            <summary>How long does an analysis take?</summary>
+            <p>Roughly as long as your recording. You can watch each stage, from transcription to tone, as it runs.</p>
+          </details>
+        </div>
+      </div>
+
+      <div class="cta-band reveal">
+        <h2>Your next big talk starts with one practice run.</h2>
+        <p>Pick a situation, press record, and get honest, specific feedback on how you sound and what you said.</p>
+        <div class="hero-actions">
+          <a class="btn-primary btn-inline" href="#/" data-scroll="modes">Start practising</a>
+          <button class="btn-outline btn-inline guest-only" type="button" data-guest>Try it as a guest</button>
+        </div>
+      </div>
+
       <footer class="site-footer">
-        Built with faster-whisper, Silero VAD, Praat, a wav2vec2 emotion model (audeering, CC BY-NC-SA), MiniLM
-        embeddings and an LLM coach.
+        <div class="footer-brand">
+          <b>Confident Talk <span>Analyzer</span></b>
+          <p>Speech AI and an AI coach for interviews, JAM, presentations, news reading, pitches and debates.</p>
+        </div>
+        <div class="footer-credits">
+          Built with faster-whisper, Silero VAD, Praat, a wav2vec2 emotion model (audeering, CC BY-NC-SA), MiniLM
+          embeddings and an LLM coach.
+        </div>
       </footer>
     </section>
 
