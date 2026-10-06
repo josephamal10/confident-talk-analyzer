@@ -5,3 +5,5 @@ onnx
 # The evaluation suite (evals/): FLAC clips, and the Svarah dataset's parquet files.
 soundfile
 pyarrow
+# TEST_POSTGRES=1 runs the tests against a throwaway local Postgres.
+pgserver

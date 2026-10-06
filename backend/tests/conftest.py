@@ -13,6 +13,12 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ.setdefault("EMOTION_MODEL_PATH", os.path.join(_TMP, "missing-model.onnx"))
 # Never call a real LLM from tests, even if backend/.env has an API key.
 os.environ["LLM_PROVIDER"] = "none"
+# TEST_POSTGRES=1 runs the suite against a throwaway local Postgres (pip install pgserver) instead of SQLite.
+if os.getenv("TEST_POSTGRES") == "1" and not os.getenv("DATABASE_URL"):
+    import pgserver
+
+    _postgres = pgserver.get_server(os.path.join(_TMP, "postgres"), cleanup_mode="stop")
+    os.environ["DATABASE_URL"] = _postgres.get_uri()
 
 import app as app_module  # noqa: E402
 from analysis import relevance  # noqa: E402

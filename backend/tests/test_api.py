@@ -242,3 +242,31 @@ def test_progress_endpoint(client, make_user, monkeypatch):
     jam_only = client.get("/progress?mode=jam").get_json()
     assert jam_only["sessions"] == 1 and jam_only["mode"] == "jam"
     assert client.get("/progress?mode=karaoke").get_json()["mode"] is None
+
+
+def test_guest_session_is_private_and_signed_in(client):
+    response = client.post("/guest")
+    assert response.status_code == 201
+    assert response.get_json()["user"] == {"name": "Guest", "email": "", "guest": True}
+    assert client.get("/me").get_json()["user"]["guest"] is True
+    assert client.get("/history").status_code == 200
+
+    other = app_module.app.test_client()
+    other.post("/guest")
+    with app_module.app.app_context():
+        emails = [row["email"] for row in app_module.get_db().execute(
+            "SELECT email FROM users WHERE email LIKE ?", ("%" + app_module.GUEST_DOMAIN,)).fetchall()]
+    assert len(set(emails)) == len(emails) >= 2
+
+
+def test_old_guest_accounts_are_deleted(client):
+    client.post("/guest")
+    with app_module.app.app_context():
+        db = app_module.get_db()
+        db.execute("UPDATE users SET created_at = ? WHERE email LIKE ?", ("2000-01-01T00:00:00Z", "%" + app_module.GUEST_DOMAIN))
+        db.commit()
+    app_module.app.test_client().post("/guest")
+    assert client.get("/me").status_code == 401
+    with app_module.app.app_context():
+        old = app_module.get_db().execute("SELECT COUNT(*) FROM users WHERE created_at < ?", ("2001",)).fetchone()[0]
+    assert old == 0

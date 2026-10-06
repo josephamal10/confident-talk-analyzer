@@ -10,3 +10,6 @@ jsonschema
 python-dotenv
 python-pptx
 pypdf
+# Postgres, when DATABASE_URL is set (the deployed app uses Neon)
+psycopg[binary]
+psycopg_pool

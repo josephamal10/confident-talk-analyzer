@@ -5,7 +5,6 @@ import os
 import queue
 import re
 import secrets
-import sqlite3
 import tempfile
 import threading
 from datetime import datetime, timedelta
@@ -20,13 +19,17 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 from analysis import AnalysisError, analyze_recording, coach, documents, evaluation, interview, llm, modes, relevance, slides, warm_up  # noqa: E402
 from analysis.scoring import build_feedback  # noqa: E402
+import database  # noqa: E402
 import progress  # noqa: E402
 
 UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", os.path.join(BASE_DIR, "uploads"))
-DB_FILE = os.getenv("DATABASE_PATH", os.path.join(BASE_DIR, "app_data.db"))
 SECRET_KEY_FILE = os.path.join(BASE_DIR, ".secret_key")
 FRONTEND_DIR = os.path.join(BASE_DIR, "..", "frontend")
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+# Guests get a private throwaway account on this reserved domain (.invalid can never be a real address),
+# deleted with everything in it after GUEST_DAYS.
+GUEST_DOMAIN = "@guest.invalid"
+GUEST_DAYS = 7
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -177,9 +180,7 @@ def get_client_ip():
 
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_FILE, timeout=10)
-        g.db.row_factory = sqlite3.Row
-        g.db.execute("PRAGMA foreign_keys = ON")
+        g.db = database.connect()
     return g.db
 
 
@@ -191,17 +192,7 @@ def close_db(_error):
 
 
 def init_db():
-    db = sqlite3.connect(DB_FILE)
-    try:
-        db.executescript(SCHEMA)
-        for table, columns in ADDED_COLUMNS.items():
-            existing = {row[1] for row in db.execute(f"PRAGMA table_info({table})")}
-            for column, column_type in columns.items():
-                if column not in existing:
-                    db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {column_type}")
-        db.commit()
-    finally:
-        db.close()
+    database.init(SCHEMA, ADDED_COLUMNS)
 
 
 def get_user_by_email(email):
@@ -221,7 +212,7 @@ def create_user(name, email, password_hash, ip_address, user_agent):
             (name, email, password_hash, ip_address, user_agent, current_timestamp()),
         )
         db.commit()
-    except sqlite3.IntegrityError:
+    except database.IntegrityError:
         return False
     return True
 
@@ -236,7 +227,24 @@ def record_login(user_id, ip_address, user_agent):
 
 
 def public_user(user):
-    return {"name": user["name"], "email": user["email"]}
+    guest = user["email"].endswith(GUEST_DOMAIN)
+    return {"name": user["name"], "email": "" if guest else user["email"], "guest": guest}
+
+
+def delete_old_guests():
+    cutoff = (datetime.utcnow() - timedelta(days=GUEST_DAYS)).isoformat(timespec="seconds") + "Z"
+    db = get_db()
+    old = db.execute(
+        "SELECT r.audio_filename, r.wav_filename FROM analysis_records r JOIN users u ON u.id = r.user_id "
+        "WHERE u.email LIKE ? AND u.created_at < ?",
+        ("%" + GUEST_DOMAIN, cutoff),
+    ).fetchall()
+    for row in old:
+        for filename in (row["audio_filename"], row["wav_filename"]):
+            if filename and os.path.isfile(os.path.join(UPLOAD_FOLDER, filename)):
+                os.remove(os.path.join(UPLOAD_FOLDER, filename))
+    db.execute("DELETE FROM users WHERE email LIKE ? AND created_at < ?", ("%" + GUEST_DOMAIN, cutoff))
+    db.commit()
 
 
 def login_required(view):
@@ -283,10 +291,10 @@ def save_analysis_record(user_id, record):
     placeholders = ", ".join("?" for _ in columns)
 
     db = get_db()
-    cursor = db.execute(f"INSERT INTO analysis_records ({', '.join(columns)}) VALUES ({placeholders})", values)
+    record_id = db.insert(f"INSERT INTO analysis_records ({', '.join(columns)}) VALUES ({placeholders})", values)
     db.commit()
     count = db.execute("SELECT COUNT(*) FROM analysis_records WHERE user_id = ?", (user_id,)).fetchone()[0]
-    return cursor.lastrowid, count
+    return record_id, count
 
 
 def get_user_record(user_id, record_id):
@@ -491,6 +499,21 @@ def login():
     )
 
 
+@app.route("/guest", methods=["POST"])
+def guest_login():
+    """Signs a visitor in to a private throwaway account, so the app can be tried without signing up."""
+    delete_old_guests()
+    email = f"guest-{secrets.token_hex(6)}{GUEST_DOMAIN}"
+    if not create_user("Guest", email, generate_password_hash(secrets.token_hex(16)), get_client_ip(),
+                       request.headers.get("User-Agent", "")):
+        return jsonify({"error": "Could not start a guest session. Please try again."}), 500
+    user = get_user_by_email(email)
+    session.clear()
+    session["user_id"] = user["id"]
+    session.permanent = True
+    return jsonify({"message": "Guest session started.", "user": public_user(user)}), 201
+
+
 @app.route("/logout", methods=["POST"])
 def logout():
     session.clear()
@@ -689,7 +712,8 @@ def role_prompt_set(kind):
         return jsonify({"role": role, key: fallback(role), "source": "built-in", "cached": False})
 
     db.execute(
-        f"INSERT OR REPLACE INTO {table} (role_key, role, created_at, {key}) VALUES (?, ?, ?, ?)",
+        f"INSERT INTO {table} (role_key, role, created_at, {key}) VALUES (?, ?, ?, ?) ON CONFLICT (role_key) DO UPDATE "
+        f"SET role = excluded.role, created_at = excluded.created_at, {key} = excluded.{key}",
         (role.lower(), role, current_timestamp(), json.dumps(items)),
     )
     db.commit()
@@ -795,12 +819,12 @@ def upload_document():
 
     checks = documents.check_document(document)
     db = get_db()
-    cursor = db.execute(
+    document_id = db.insert(
         "INSERT INTO documents (user_id, created_at, filename, content, checks) VALUES (?, ?, ?, ?, ?)",
         (g.user["id"], current_timestamp(), document["filename"], json.dumps(document), json.dumps(checks)),
     )
     db.commit()
-    return jsonify(document_summary(get_user_document(g.user["id"], cursor.lastrowid))), 201
+    return jsonify(document_summary(get_user_document(g.user["id"], document_id))), 201
 
 
 @app.route("/decks", methods=["POST"])
@@ -828,12 +852,12 @@ def upload_deck():
 
     checks = slides.check_deck(deck, topic, target_seconds)
     db = get_db()
-    cursor = db.execute(
+    deck_id = db.insert(
         "INSERT INTO decks (user_id, created_at, filename, topic, target_seconds, content, checks) VALUES (?, ?, ?, ?, ?, ?, ?)",
         (g.user["id"], current_timestamp(), deck["filename"], topic, target_seconds, json.dumps(deck), json.dumps(checks)),
     )
     db.commit()
-    return jsonify(deck_summary(get_user_deck(g.user["id"], cursor.lastrowid))), 201
+    return jsonify(deck_summary(get_user_deck(g.user["id"], deck_id))), 201
 
 
 @app.route("/decks/<int:deck_id>/review", methods=["POST"])

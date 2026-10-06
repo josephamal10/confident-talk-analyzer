@@ -133,6 +133,26 @@ export function initAuth() {
     }
   });
 
+  document.querySelectorAll("[data-guest]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const fromLogin = Boolean(button.closest("#view-login"));
+      button.disabled = true;
+      if (fromLogin) setAuthStatus("Starting a guest session...");
+      try {
+        const result = await postJson("/guest", {});
+        setAuthStatus("");
+        setUser(result.user);
+        if (fromLogin) navigate(nextPath);
+        else document.getElementById("modes").scrollIntoView({ behavior: "smooth" });
+      } catch (error) {
+        if (fromLogin) setAuthStatus(error.message, "error");
+        else navigate("/login");
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+
   $("logoutBtn").addEventListener("click", async () => {
     try {
       await postJson("/logout", {});

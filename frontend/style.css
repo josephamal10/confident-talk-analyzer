@@ -335,6 +335,35 @@ button:disabled {
   margin: 8px 0 0;
 }
 
+.guest-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 0;
+  color: var(--text-1);
+  font-size: 0.85rem;
+}
+
+.guest-divider::before,
+.guest-divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--line);
+}
+
+.guest-btn {
+  width: 100%;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.guest-note {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-1);
+  text-align: center;
+}
+
 .status-error {
   color: var(--status-error);
 }
