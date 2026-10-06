@@ -5,7 +5,7 @@ import threading
 
 from faster_whisper import WhisperModel
 
-from .audio import detect_speech
+from .audio import SAMPLE_RATE, detect_speech
 
 logger = logging.getLogger(__name__)
 
@@ -103,16 +103,17 @@ def transcribe(audio, model=None, filler_prompt=True, speech_regions=None):
 
     if prompt:
         # The prompt can also make Whisper jump over whole sentences (seen on Indian-accented
-        # speech: the first 16 seconds of a recording dropped). Fill those stretches from a pass
-        # without it, keeping the prompted words, and their fillers, everywhere else.
+        # speech: the first 16 seconds of a recording dropped). Transcribe just those stretches
+        # again without it, keeping the prompted words, and their fillers, everywhere else.
         regions = detect_speech(audio) if speech_regions is None else speech_regions
         missed = missed_speech(words, regions)
         if missed:
             logger.info("Whisper skipped %.1f s of speech; filling it in without the filler prompt.",
                         sum(end - start for start, end in missed))
-            plain = _decode(audio, model, temperature=RETRY_TEMPERATURES)
-            if not _is_repetition_loop(plain):
-                found = [word for word in _words(plain)
-                         if any(start <= (word["start"] + word["end"]) / 2 <= end for start, end in missed)]
-                words = sorted(words + found, key=lambda word: word["start"])
+            for start, end in missed:
+                piece = _decode(audio[int(start * SAMPLE_RATE) : int(end * SAMPLE_RATE)], model, temperature=0.0)
+                if not _is_repetition_loop(piece):
+                    words += [{**word, "start": round(word["start"] + start, 2), "end": round(word["end"] + start, 2)}
+                              for word in _words(piece)]
+            words.sort(key=lambda word: word["start"])
     return " ".join(word["text"] for word in words), words
