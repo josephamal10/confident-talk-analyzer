@@ -1,0 +1,460 @@
+{
+ "generated": "2026-10-06 11:56",
+ "setup": {
+  "minutes": 12,
+  "item_seconds": 40,
+  "own_clips": 10,
+  "threads": 12
+ },
+ "threads": 12,
+ "svarah": {
+  "recordings": 16,
+  "minutes": 13.262373958333335,
+  "item_seconds": 40,
+  "speakers_sampled": 16,
+  "info": {
+   "files": 3,
+   "columns": [
+    "audio_filepath",
+    "duration",
+    "text",
+    "gender",
+    "age-group",
+    "primary_language",
+    "native_place_state",
+    "native_place_district",
+    "highest_qualification",
+    "job_category",
+    "occupation_domain"
+   ],
+   "rows": 6656,
+   "speakers": 115
+  }
+ },
+ "own_clips": 10,
+ "sizes": {
+  "small.en": "0.5 GB",
+  "distil-large-v3.5": "1.5 GB",
+  "large-v3-turbo": "1.6 GB",
+  "medium.en": "1.5 GB",
+  "distil-small.en": "0.3 GB"
+ },
+ "models": [
+  {
+   "model": "small.en",
+   "filler_prompt": true,
+   "wer": {
+    "svarah": 0.14334705075445817,
+    "own": 0.29818181818181816
+   },
+   "words": {
+    "svarah": 1458,
+    "own": 275
+   },
+   "seconds_per_minute": 29.861787461735712,
+   "threads": 12,
+   "by_group": {
+    "Tamil": {
+     "wer": 0.13023255813953488,
+     "words": 215
+    },
+    "Bodo": {
+     "wer": 0.24305555555555555,
+     "words": 144
+    },
+    "Urdu": {
+     "wer": 0.0967741935483871,
+     "words": 124
+    },
+    "Assamese": {
+     "wer": 0.11304347826086956,
+     "words": 115
+    },
+    "Hindi": {
+     "wer": 0.14678899082568808,
+     "words": 109
+    },
+    "Gujarati": {
+     "wer": 0.2079207920792079,
+     "words": 101
+    },
+    "Konkani": {
+     "wer": 0.09375,
+     "words": 96
+    },
+    "Kannada": {
+     "wer": 0.12903225806451613,
+     "words": 93
+    },
+    "Maithili": {
+     "wer": 0.17777777777777778,
+     "words": 90
+    },
+    "Punjabi": {
+     "wer": 0.03409090909090909,
+     "words": 88
+    },
+    "Bengali": {
+     "wer": 0.2441860465116279,
+     "words": 86
+    },
+    "Odia": {
+     "wer": 0.2028985507246377,
+     "words": 69
+    },
+    "Telugu": {
+     "wer": 0.030303030303030304,
+     "words": 66
+    },
+    "Nepali": {
+     "wer": 0.11290322580645161,
+     "words": 62
+    }
+   },
+   "examples": [
+    {
+     "clip": "svarah-001",
+     "said": "It has its own set of alphabets and letters Can you tell me whether the UPI transaction to Wahida is successful? In 1923, he brought out Maharashtra Dharma, Bird Kerala with an opposition team so it helps an individual to challenge themselves to perform better in that team and also strive for excellence I have not used a ride-sharing service to book a trip in a foreign country Wow People can actually manage to play them and it's a lot of fun English language is different from regional dialects. Tree Help Andhra Pradesh the change in season. For example, it is extremely cold during the winters and is extremely hot during the summer; so this shift",
+     "heard": "It has its own set of alphabets and letters. Can you tell me whether the UPI transaction to Vahida is successful? in 1923, He brought out Maharashtrav dharma. with an opposition team. So it helps an individual to challenge themselves to perform better in that team and also strive for excellence. It has its own set of alphabets and letters. Wow! People can actually manage to play them and it's a lot of fun. English language is different, uh, from regional dialects. Three! Help! Andhra Pradesh, the change in season. For example, it is extremely cold during the winters and is extremely hot during the summer. So this shift."
+    },
+    {
+     "clip": "svarah-005",
+     "said": "How much money do I have in my Capital Small Finance Bank bank account? For registered application ID MK201839611100749221 Down Eight Rate my order of 5 packs Godrej Aer Power Pocket Bathroom Air Fragrance as 5 stars Eight Despite a defeat of Ladakh by the Mughals, who had already annexed Kashmir and Baltistan, Ladakh retained its independence. Jump and date of birth 9-2-2020 Godrej Aer Power Pocket Bathroom Right",
+     "heard": "How much money do I have in my capital small finance bank bank account? For registered application ID MK201839611100749221. Down. 8. Rate my order of 5 cash go to air powered pocket bathroom air fragrance as 5 cards. 8. Despite a defeat of Ladakh by the Mughals, who had already annexed Kashmir and Baltistan, Ladakh returned its independence. Jump. And date of birth 9 to 2020. Good is air powered pocket bathroom. Right."
+    },
+    {
+     "clip": "svarah-008",
+     "said": "Are Pooja items available? 8th of August 1992, 27th of May 1997, 9th of January 2002, 2nd of June 1987, 2nd of December 2018. start radio Four Up Time Please tell me about 3 years return of Atal Pension Yojana Savings Scheme On what temperature do you bake a potato All these falls are located in the Western Ghats. During his reign, the Marwari horse was introduced, becoming Shah Jahan's favorite, and various Mughal cannons were mass-produced in the Jaigarh Fort.",
+     "heard": "Are puja items available? 8th of August 1992. 27th of May 1997, 9th of January 2002, 2nd of June 1987, 2nd of December 2018. Start radio. Please tell me about it. Are puja items available? What temperature do you bake a potato? All these folds are located in the Western Ghats. During his reign, the Marwari horse was introduced, becoming Shah Jaha's favorite, and various Mughal cannons were mass -produced in the Jaigarh fort."
+    },
+    {
+     "clip": "svarah-009",
+     "said": "It was a capital of Raj, Dharbhanga, an estate established in the 16th century. Chandrashekhar Jha special And Bagia is dumplings of rice flour. It is of two types, Doodh Bagia and Gudh Bagia. And then there is Nalanda With all these we celebrate important life events and milestones These are made with different kind of ingredients. In North Bihar, there is a lot of flooding, And Taruah is something in which any vegetable is fried or some of the leaves like there is one leaf called known as Tilkor.",
+     "heard": "It was a capital of Rajdravanga, an estate established in the 16th century. Chandrasekhar Jha Spatial and Baguya. Baguya is, uh, you know, dumplings of rice flour. Uh, it is of two types, Dood Baguya and Good Baguya. And then there is Nalanda. With all these, we celebrate important life events and milestones. These are, uh, made with different kind of ingredients. In North Bihar, there is a lot of flooding. Uh, and Tarwa is something in which any vegetable is, uh, fried or some of the leaves. Like, there is one leaf called Nastilkur."
+    },
+    {
+     "clip": "svarah-010",
+     "said": "Major dance festivals that attract a large audience is Bihu. When will I recieve the amount back Sunitpur Dhubri English language is very receptive. Jorhat Dancers wear traditionally colorful clothes around 50 truckloads are sold in a day. mythological teachings of mythological teachings to the people in an accessible and enjoyable manner. Another is Kishan Credit Card Scheme. It was issued in 1998",
+     "heard": "Uh, major dance festivals that attract, uh, large audience is, uh, Bihoo. When will I receive that? Uh, English language is, uh, very receptive. dancers traditionally colourful clothes. around 50 truck loads are sold in a day. Mytological teachings of, um, mytological teachings to the people in an accessible and, uh, enjoyable manner. Uh, another, uh, creation credit card scheme, uh, it was, uh, issued in 1998."
+    },
+    {
+     "clip": "svarah-011",
+     "said": "because the Crops have not have not been good and then the farmers will have to suffer include 4 to 5 themes please add event in calendar Why vegetables and fruits are getting delivered next day when the estimated delivery is today? Three what is the going rate for wells fargo stock set up to look into the corruptions by bureaucrats On Any discount on Flasks ? this incident was the third major attack this week. Yes and the social is like disconnect between upper class and lower class Yes, I have watched quite a few TV shows on the Prime videos.",
+     "heard": "Because the crops have not been good and then the farmers will have to suffer. uh... include four to five Please add event in calendar. Why vegetables and fruits are getting delivered next day when the estimated delivery is today? What is the going rate for Wells Fargo stock? set up to Corruptions by below credit. Any discount on flash. This incident was the third Yes, and the social is like disconnect between I have watched quite a few, uh, TV shows on the, uh, one prime videos."
+    }
+   ]
+  },
+  {
+   "model": "distil-large-v3.5",
+   "filler_prompt": true,
+   "wer": {
+    "svarah": 0.09259259259259259,
+    "own": 0.23272727272727273
+   },
+   "words": {
+    "svarah": 1458,
+    "own": 275
+   },
+   "seconds_per_minute": 58.24195862607125,
+   "threads": 12,
+   "by_group": {
+    "Tamil": {
+     "wer": 0.06046511627906977,
+     "words": 215
+    },
+    "Bodo": {
+     "wer": 0.06944444444444445,
+     "words": 144
+    },
+    "Urdu": {
+     "wer": 0.12096774193548387,
+     "words": 124
+    },
+    "Assamese": {
+     "wer": 0.0782608695652174,
+     "words": 115
+    },
+    "Hindi": {
+     "wer": 0.12844036697247707,
+     "words": 109
+    },
+    "Gujarati": {
+     "wer": 0.04950495049504951,
+     "words": 101
+    },
+    "Konkani": {
+     "wer": 0.09375,
+     "words": 96
+    },
+    "Kannada": {
+     "wer": 0.0967741935483871,
+     "words": 93
+    },
+    "Maithili": {
+     "wer": 0.15555555555555556,
+     "words": 90
+    },
+    "Punjabi": {
+     "wer": 0.056818181818181816,
+     "words": 88
+    },
+    "Bengali": {
+     "wer": 0.1511627906976744,
+     "words": 86
+    },
+    "Odia": {
+     "wer": 0.14492753623188406,
+     "words": 69
+    },
+    "Telugu": {
+     "wer": 0.045454545454545456,
+     "words": 66
+    },
+    "Nepali": {
+     "wer": 0.0967741935483871,
+     "words": 62
+    }
+   },
+   "examples": [
+    {
+     "clip": "svarah-009",
+     "said": "It was a capital of Raj, Dharbhanga, an estate established in the 16th century. Chandrashekhar Jha special And Bagia is dumplings of rice flour. It is of two types, Doodh Bagia and Gudh Bagia. And then there is Nalanda With all these we celebrate important life events and milestones These are made with different kind of ingredients. In North Bihar, there is a lot of flooding, And Taruah is something in which any vegetable is fried or some of the leaves like there is one leaf called known as Tilkor.",
+     "heard": "It was a capital of Raja, Durbhanga, an estate established in the 16th century. Chandrasekharja. Special and Bhagya. Bhagya is, you know, dumplings of rice flour. It is of two types, dood Bhagya and good Bhagya. And then there is Nalanda. With all these we celebrate important life events and milestones. These are made with different kind of ingredients in North Bihar there is a lot of flooding and Tarua is something in which any vegetable is fried or some of the leaves like there is one leaf called known as Thilkur"
+    },
+    {
+     "clip": "svarah-015",
+     "said": "The fee will vary depending on your country and state. And yes, if I'm asked for any specific goals or themes, And that was my inspiration. My inspiration for my photography was the, While there are many handiworks or craft works, handmade craft works that are available at lower Right He, at one point of time in his life, is my very always go-to, might be called a remedial Four So that was my inspiration. Puja and Kali Puja, he used to take such amazing snaps.",
+     "heard": "the fee will vary depending on your country and state and yes if you if i'm asked for any specific goals or themes and that was my inspiration my inspiration for my photography was the there are while there are many uh handi works or craft works handmade craft words that are available at lower right um he at one point of time in his life is my very always a go -to might be called a remedial uh for so that was my inspiration at allah puja and kali puja he used to take such amazing snaps"
+    },
+    {
+     "clip": "own-01",
+     "said": "So, um the reason I chose this field is, uh mostly curiosity. I was, like, always taking things apart as a child. Hmm, my parents were not always happy about that.",
+     "heard": "So, the reason I choose this to be curious, mostly curiosity. I was like always taking things about as a child. My parents were always not very good."
+    },
+    {
+     "clip": "own-02",
+     "said": "Um I think the uh biggest challenge was um time. We had, you know, three deadlines in one week, and uh I had to um plan everything carefully.",
+     "heard": "I think the figures are also timing. We had, you know, three headlines in one week and I had to plan everything channel."
+    },
+    {
+     "clip": "own-03",
+     "said": "It was, like, the best trip ever. I like mountains more than beaches. You know the feeling when the air is cold and clean? It was, you know, perfect.",
+     "heard": "I was like the best trip ever. I like momentains more than reaching. You know the feeling when the ads are like green. It was, you know, perfect."
+    },
+    {
+     "clip": "own-05",
+     "said": "I believe the most important thing is to stay consistent. Small steps every day add up over a whole year.",
+     "heard": "I believe the most important thing is to stay consistently. This is small steps every day add up over a year."
+    }
+   ]
+  },
+  {
+   "model": "large-v3-turbo",
+   "filler_prompt": true,
+   "wer": {
+    "svarah": 0.07887517146776406,
+    "own": 0.19272727272727272
+   },
+   "words": {
+    "svarah": 1458,
+    "own": 275
+   },
+   "seconds_per_minute": 51.47458377044499,
+   "threads": 12,
+   "by_group": {
+    "Tamil": {
+     "wer": 0.05581395348837209,
+     "words": 215
+    },
+    "Bodo": {
+     "wer": 0.0763888888888889,
+     "words": 144
+    },
+    "Urdu": {
+     "wer": 0.10483870967741936,
+     "words": 124
+    },
+    "Assamese": {
+     "wer": 0.008695652173913044,
+     "words": 115
+    },
+    "Hindi": {
+     "wer": 0.2018348623853211,
+     "words": 109
+    },
+    "Gujarati": {
+     "wer": 0.019801980198019802,
+     "words": 101
+    },
+    "Konkani": {
+     "wer": 0.07291666666666667,
+     "words": 96
+    },
+    "Kannada": {
+     "wer": 0.053763440860215055,
+     "words": 93
+    },
+    "Maithili": {
+     "wer": 0.12222222222222222,
+     "words": 90
+    },
+    "Punjabi": {
+     "wer": 0.022727272727272728,
+     "words": 88
+    },
+    "Bengali": {
+     "wer": 0.1511627906976744,
+     "words": 86
+    },
+    "Odia": {
+     "wer": 0.14492753623188406,
+     "words": 69
+    },
+    "Telugu": {
+     "wer": 0.015151515151515152,
+     "words": 66
+    },
+    "Nepali": {
+     "wer": 0.08064516129032258,
+     "words": 62
+    }
+   },
+   "examples": [
+    {
+     "clip": "svarah-006",
+     "said": "I mean, you know Ganesh Utsav, which is the Ganpati festival, Five named A Woman of No Importance by Oscar Wilde. And the quote is that every saint has a past and every sinner has a future to keep them alive, and yeah, it is working because we do have language-specific channels the disparities between communities. What are the items with offer from Pooja items ? and autopay a fourth of it every month for the whole year. Transfer Rs. 10000 amount to Zooni to the number of districts that make up a state, And the quote is that every saint has a past and every sinner has a future.",
+     "heard": "I mean, um, you know, Ganesh Utsaf, which is the Ganpati festival. Five, named A Woman of No Importance by Oscar Wilde. And the quote is that every saint has a past and every sinner has a few to keep them alive. And, yeah, it is working because we do have language -specific channels, the disparities between communities. So, what are the items with offer from Pooja items? And auto -pay a fourth of it every month for the whole year. Transfer rupees 10 ,000 amount to Zuni to the number of districts that make up a state. And the quote is that every saint has a past and every sinner has a future. This is the number of districts that make up a state."
+    },
+    {
+     "clip": "svarah-015",
+     "said": "The fee will vary depending on your country and state. And yes, if I'm asked for any specific goals or themes, And that was my inspiration. My inspiration for my photography was the, While there are many handiworks or craft works, handmade craft works that are available at lower Right He, at one point of time in his life, is my very always go-to, might be called a remedial Four So that was my inspiration. Puja and Kali Puja, he used to take such amazing snaps.",
+     "heard": "The fee will vary depending on your country and state. And yes, if, uh, you, if I'm asked for any specific goals or themes. And, uh, that was my inspiration. My, uh, inspiration for my photography was the, there are, while there are many, uh, handiworks or craftworks, handmade craftworks that are available at lower. Right! Um, he, at one point of time in his life, um, is my very, uh, always, uh, go -to, uh, might be called a remedial, uh, for. So, that was my inspiration. I am Puja and Kali Puja. He used to take such amazing snaps."
+    },
+    {
+     "clip": "own-01",
+     "said": "So, um the reason I chose this field is, uh mostly curiosity. I was, like, always taking things apart as a child. Hmm, my parents were not always happy about that.",
+     "heard": "So, um, the reason I chose these three videos is, uh, mostly curiosity. I was, like, always thinking things about as a child. Um, my parents were always not happy about it."
+    },
+    {
+     "clip": "own-02",
+     "said": "Um I think the uh biggest challenge was um time. We had, you know, three deadlines in one week, and uh I had to um plan everything carefully.",
+     "heard": "Um, I think the biggest element also in time, we had, you know, three headlines in one week, and, uh, I had to plan everything I can."
+    },
+    {
+     "clip": "own-07",
+     "said": "My favourite subject was history, because the teacher told great stories. I still remember most of them.",
+     "heard": "My favorite subject was history, because the teacher told it to please, I still remember most of them."
+    },
+    {
+     "clip": "own-09",
+     "said": "The city library will open a new reading room next month. The room will have quiet desks, fast internet and a small cafe. Students can book a desk online for up to four hours a day. The library hopes the space will help people who have nowhere quiet to study at home.",
+     "heard": "The city library will open a new reading room. The room will have quiet desks, fast internet, and a small table. Students can move up the desk on the farm to four tasks and in. The library hopes the space will tell people to have more advice to study at home."
+    }
+   ]
+  },
+  {
+   "model": "small.en",
+   "filler_prompt": false,
+   "wer": {
+    "svarah": 0.10493827160493827,
+    "own": 0.28363636363636363
+   },
+   "words": {
+    "svarah": 1458,
+    "own": 275
+   },
+   "seconds_per_minute": 12.025048962075402,
+   "threads": 12,
+   "by_group": {
+    "Tamil": {
+     "wer": 0.07906976744186046,
+     "words": 215
+    },
+    "Bodo": {
+     "wer": 0.1527777777777778,
+     "words": 144
+    },
+    "Urdu": {
+     "wer": 0.08064516129032258,
+     "words": 124
+    },
+    "Assamese": {
+     "wer": 0.043478260869565216,
+     "words": 115
+    },
+    "Hindi": {
+     "wer": 0.13761467889908258,
+     "words": 109
+    },
+    "Gujarati": {
+     "wer": 0.07920792079207921,
+     "words": 101
+    },
+    "Konkani": {
+     "wer": 0.09375,
+     "words": 96
+    },
+    "Kannada": {
+     "wer": 0.06451612903225806,
+     "words": 93
+    },
+    "Maithili": {
+     "wer": 0.18888888888888888,
+     "words": 90
+    },
+    "Punjabi": {
+     "wer": 0.03409090909090909,
+     "words": 88
+    },
+    "Bengali": {
+     "wer": 0.20930232558139536,
+     "words": 86
+    },
+    "Odia": {
+     "wer": 0.2028985507246377,
+     "words": 69
+    },
+    "Telugu": {
+     "wer": 0.030303030303030304,
+     "words": 66
+    },
+    "Nepali": {
+     "wer": 0.11290322580645161,
+     "words": 62
+    }
+   },
+   "examples": [
+    {
+     "clip": "svarah-005",
+     "said": "How much money do I have in my Capital Small Finance Bank bank account? For registered application ID MK201839611100749221 Down Eight Rate my order of 5 packs Godrej Aer Power Pocket Bathroom Air Fragrance as 5 stars Eight Despite a defeat of Ladakh by the Mughals, who had already annexed Kashmir and Baltistan, Ladakh retained its independence. Jump and date of birth 9-2-2020 Godrej Aer Power Pocket Bathroom Right",
+     "heard": "How much money do I have in my capital small finance bank bank account? For registered application ID MK201839611100749221 down. Rate my order of 5 cash go to air powered pocket bathroom air fragrance as 5 cards. 8. Despite a defeat of Ladakh by the Mughals who had already annexed Kashmir and Baltistan. Ladakh retained its independence. Jump! And date of birth 9 to 2020. Good is air powered pocket bathroom. Right."
+    },
+    {
+     "clip": "svarah-008",
+     "said": "Are Pooja items available? 8th of August 1992, 27th of May 1997, 9th of January 2002, 2nd of June 1987, 2nd of December 2018. start radio Four Up Time Please tell me about 3 years return of Atal Pension Yojana Savings Scheme On what temperature do you bake a potato All these falls are located in the Western Ghats. During his reign, the Marwari horse was introduced, becoming Shah Jahan's favorite, and various Mughal cannons were mass-produced in the Jaigarh Fort.",
+     "heard": "Are Puja items available? 8th August 1992, 27th May 1997, 9th January 2002, 2nd June 1987, 2nd December 2018 Starred Radio 4 Up Time Please tell me about 3 years return of Atal Pension Yojna saving scheme. On What temperature do you bake a potato? All these falls are located in the Western Ghats. During his reign, the Marwari horse was introduced, becoming Shah Jaha's favourite, and various Mughal cannons were mass produced in the Jaigarh fort."
+    },
+    {
+     "clip": "svarah-009",
+     "said": "It was a capital of Raj, Dharbhanga, an estate established in the 16th century. Chandrashekhar Jha special And Bagia is dumplings of rice flour. It is of two types, Doodh Bagia and Gudh Bagia. And then there is Nalanda With all these we celebrate important life events and milestones These are made with different kind of ingredients. In North Bihar, there is a lot of flooding, And Taruah is something in which any vegetable is fried or some of the leaves like there is one leaf called known as Tilkor.",
+     "heard": "It was a capital of Rajdrabhanga, a state established in the 16th century. Spatial and Baguya is dumplings of rice flour. It is of two types, Dood Baguya and Good Baguya. And then there is Nalanda. With all these, we celebrate important life events and milestones. These are made with different kind of ingredients. In North Bihar, there is a lot of flooding. And Tarva is something in which any vegetable is fried or some of the leaves. There is one leaf called Nastilkur."
+    },
+    {
+     "clip": "svarah-015",
+     "said": "The fee will vary depending on your country and state. And yes, if I'm asked for any specific goals or themes, And that was my inspiration. My inspiration for my photography was the, While there are many handiworks or craft works, handmade craft works that are available at lower Right He, at one point of time in his life, is my very always go-to, might be called a remedial Four So that was my inspiration. Puja and Kali Puja, he used to take such amazing snaps.",
+     "heard": "the fee will vary depending on your country and state and yes if you if I am asked for any specific goals of him and that was my inspiration my inspiration for my photography was the there are while there are many uh handiworks or craftworks handmade craftworks that are available at lower right uh he at one point of time in his life is my very always a go -to might be called a remedial uh four that was my inspiration and kali fuja he used to take such amazing snaps"
+    },
+    {
+     "clip": "own-01",
+     "said": "So, um the reason I chose this field is, uh mostly curiosity. I was, like, always taking things apart as a child. Hmm, my parents were not always happy about that.",
+     "heard": "So, the reason I chose this thing because of the curiosity, I was always taking things about as a child, and the parents were always not here today."
+    },
+    {
+     "clip": "own-02",
+     "said": "Um I think the uh biggest challenge was um time. We had, you know, three deadlines in one week, and uh I had to um plan everything carefully.",
+     "heard": "I think the biggest challenge we had, you know, three headlines in one week and we had to plan everything carefully."
+    }
+   ]
+  }
+ ]
+}

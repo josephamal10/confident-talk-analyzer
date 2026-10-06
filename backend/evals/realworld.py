@@ -175,8 +175,8 @@ def write_report(results):
         "Word error rate counts words only; hesitation sounds (*um, uh*) are left out because dataset transcripts "
         "don't write them. *Time per minute* is how long speech-to-text took for one minute of speech on this "
         f"laptop's {results['threads']} CPU threads, averaged over the whole run; *vs small.en* is how many times "
-        "longer than the app's current model that is. Free hosting has 2 cores, so expect several times slower "
-        "there. Both cover transcription only, not the rest of the analysis.",
+        "longer than the app's current model that is. Both cover transcription only, not the rest of the analysis, "
+        "and are rough: the laptop has mixed fast and slow cores and was not otherwise idle during the run.",
         "",
         "| Model | Svarah WER | Own recordings WER | Time per minute | vs small.en | Download |",
         "|---|---|---|---|---|---|",
