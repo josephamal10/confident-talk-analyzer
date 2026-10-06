@@ -7,6 +7,7 @@ import re
 import secrets
 import tempfile
 import threading
+import time
 from datetime import datetime, timedelta
 from functools import wraps
 from uuid import uuid4
@@ -632,26 +633,30 @@ def run_analysis(user_id, form, audio_path, audio_filename, report=lambda _stage
     return {**session_payload(get_user_record(user_id, record_id)), "history_count": history_count}
 
 
-def stream_analysis(user_id, form, audio_path, audio_filename):
-    """Streams newline-delimited JSON: {"stage": ...} as each analysis stage starts, then a final
-    {"result": ...} or {"error": ..., "status": ...}. The analysis runs in a worker thread so progress
-    can be sent while it works."""
-    events = queue.Queue()
+def start_analysis(user_id, form, audio_path, audio_filename, emit):
+    """Runs the analysis in a worker thread, calling emit() with {"stage": ...} as each stage starts,
+    then a final {"result": ...} or {"error": ..., "status": ...}, then None."""
 
     def work():
         with app.app_context():
             try:
-                result = run_analysis(user_id, form, audio_path, audio_filename, lambda stage: events.put({"stage": stage}))
-                events.put({"result": result})
+                result = run_analysis(user_id, form, audio_path, audio_filename, lambda stage: emit({"stage": stage}))
+                emit({"result": result})
             except AnalysisError as error:
-                events.put({"error": error.message, "status": error.status_code})
+                emit({"error": error.message, "status": error.status_code})
             except Exception:
                 app.logger.exception("Analysis failed.")
-                events.put({"error": "Something went wrong while analyzing. Please try again.", "status": 500})
+                emit({"error": "Something went wrong while analyzing. Please try again.", "status": 500})
             finally:
-                events.put(None)
+                emit(None)
 
     threading.Thread(target=work, name="analysis", daemon=True).start()
+
+
+def stream_analysis(user_id, form, audio_path, audio_filename):
+    """Streams the analysis events as newline-delimited JSON."""
+    events = queue.Queue()
+    start_analysis(user_id, form, audio_path, audio_filename, events.put)
 
     def generate():
         while (event := events.get()) is not None:
@@ -677,12 +682,71 @@ def analyze():
     file.save(audio_path)
     form = request.form.to_dict()
 
+    if request.args.get("job") == "1":
+        return jsonify({"job": analysis_jobs.start(g.user["id"], form, audio_path, audio_filename)}), 202
     if request.args.get("stream") == "1":
         return stream_analysis(g.user["id"], form, audio_path, audio_filename)
     try:
         return jsonify(run_analysis(g.user["id"], form, audio_path, audio_filename))
     except AnalysisError as error:
         return jsonify({"error": error.message}), error.status_code
+
+
+class AnalysisJobs:
+    """Analyses the browser polls for, so no single request has to last the whole analysis (hosting
+    like Modal ends any request after 150 seconds). Kept in memory: the app runs one worker process."""
+
+    KEEP_SECONDS = 1800
+    WAIT_SECONDS = 20
+
+    def __init__(self):
+        self._jobs = {}
+        self._changed = threading.Condition()
+
+    def start(self, user_id, form, audio_path, audio_filename):
+        job_id = secrets.token_urlsafe(12)
+        with self._changed:
+            now = time.time()
+            for old in [key for key, job in self._jobs.items() if now - job["created"] > self.KEEP_SECONDS]:
+                del self._jobs[old]
+            self._jobs[job_id] = {"user_id": user_id, "events": [], "done": False, "created": now}
+
+        def emit(event):
+            with self._changed:
+                job = self._jobs.get(job_id)
+                if job is not None:
+                    if event is None:
+                        job["done"] = True
+                    else:
+                        job["events"].append(event)
+                self._changed.notify_all()
+
+        start_analysis(user_id, form, audio_path, audio_filename, emit)
+        return job_id
+
+    def poll(self, job_id, user_id, after):
+        """Events after the first `after`, waiting up to WAIT_SECONDS for new ones; None if unknown."""
+        deadline = time.time() + self.WAIT_SECONDS
+        with self._changed:
+            while True:
+                job = self._jobs.get(job_id)
+                if job is None or job["user_id"] != user_id:
+                    return None
+                if len(job["events"]) > after or job["done"] or time.time() >= deadline:
+                    return {"events": job["events"][after:], "next": len(job["events"]), "done": job["done"]}
+                self._changed.wait(max(0.0, deadline - time.time()))
+
+
+analysis_jobs = AnalysisJobs()
+
+
+@app.route("/analyze/jobs/<job_id>", methods=["GET"])
+@login_required
+def analysis_job(job_id):
+    update = analysis_jobs.poll(job_id, g.user["id"], parse_int(request.args.get("after")) or 0)
+    if update is None:
+        return jsonify({"error": "This analysis is no longer available. Please record again."}), 404
+    return jsonify(update)
 
 
 # Per-role prompt sets: (table, JSON column and response key, generator and fallback in analysis.interview).

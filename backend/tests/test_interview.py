@@ -157,6 +157,50 @@ def test_streamed_analysis_reports_errors(client, make_user, monkeypatch):
     assert events == [{"stage": "decode"}, {"error": "No speech was detected.", "status": 422}]
 
 
+def poll_job(client, job_id):
+    events, after = [], 0
+    for _ in range(50):
+        update = client.get(f"/analyze/jobs/{job_id}?after={after}").get_json()
+        events += update["events"]
+        after = update["next"]
+        if update["done"]:
+            return events
+    raise AssertionError("the job never finished")
+
+
+def test_analysis_job_is_polled_for_stages_then_the_result(client, make_user, monkeypatch):
+    make_user()
+
+    def staged(path, report=None):
+        for stage in ("decode", "transcribe", "prosody", "tone"):
+            report(stage)
+        return FAKE_BASE
+
+    monkeypatch.setattr(app_module, "analyze_recording", staged)
+    response = client.post("/analyze?job=1", data=upload(mode="free"))
+    assert response.status_code == 202
+    events = poll_job(client, response.get_json()["job"])
+    assert [e["stage"] for e in events if "stage" in e] == ["decode", "transcribe", "prosody", "tone", "score"]
+    assert events[-1]["result"]["mode"] == "free" and events[-1]["result"]["id"] > 0
+
+
+def test_analysis_job_reports_errors_and_is_private(client, make_user, monkeypatch):
+    make_user()
+
+    def silent(path, report=None):
+        report("decode")
+        raise app_module.AnalysisError("No speech was detected.", 422)
+
+    monkeypatch.setattr(app_module, "analyze_recording", silent)
+    job_id = client.post("/analyze?job=1", data=upload()).get_json()["job"]
+    assert poll_job(client, job_id) == [{"stage": "decode"}, {"error": "No speech was detected.", "status": 422}]
+
+    other = app_module.app.test_client()
+    make_user(other)
+    assert other.get(f"/analyze/jobs/{job_id}").status_code == 404
+    assert client.get("/analyze/jobs/not-a-job").status_code == 404
+
+
 # ---------- Interview JAM rounds ----------
 
 

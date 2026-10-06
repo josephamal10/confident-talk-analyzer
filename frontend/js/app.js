@@ -253,32 +253,40 @@ async function startPractice() {
   }
 }
 
-// Reads the newline-delimited JSON progress stream from /analyze?stream=1.
-async function streamAnalysis(formData) {
-  const response = await fetch("/analyze?stream=1", { method: "POST", body: formData });
-  if (!response.ok) {
-    let message = "Analysis failed. Please try again.";
-    try {
-      message = (await response.json()).error || message;
-    } catch {
-      // Not JSON (e.g. a proxy error page).
-    }
-    const error = new Error(message);
-    error.status = response.status;
-    throw error;
+async function failure(response) {
+  let message = "Analysis failed. Please try again.";
+  try {
+    message = (await response.json()).error || message;
+  } catch {
+    // Not JSON (e.g. a proxy error page).
   }
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
+  const error = new Error(message);
+  error.status = response.status;
+  return error;
+}
+
+// Starts the analysis as a job, then asks for its progress events until the result arrives. Each
+// request is short, so hosting that limits request length can't cut a long analysis off.
+async function streamAnalysis(formData) {
+  const started = await fetch("/analyze?job=1", { method: "POST", body: formData });
+  if (!started.ok) throw await failure(started);
+  const { job } = await started.json();
+  let after = 0;
+  let networkErrors = 0;
   for (;;) {
-    const { value, done } = await reader.read();
-    if (value) buffer += decoder.decode(value, { stream: true });
-    let newline;
-    while ((newline = buffer.indexOf("\n")) >= 0) {
-      const line = buffer.slice(0, newline).trim();
-      buffer = buffer.slice(newline + 1);
-      if (!line) continue;
-      const event = JSON.parse(line);
+    let response;
+    try {
+      response = await fetch(`/analyze/jobs/${encodeURIComponent(job)}?after=${after}`);
+    } catch (error) {
+      if (++networkErrors > 5) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      continue;
+    }
+    networkErrors = 0;
+    if (!response.ok) throw await failure(response);
+    const update = await response.json();
+    after = update.next;
+    for (const event of update.events) {
       if (event.stage) setStage(event.stage);
       if (event.result) return event.result;
       if (event.error) {
@@ -287,7 +295,7 @@ async function streamAnalysis(formData) {
         throw error;
       }
     }
-    if (done) throw new Error("The analysis ended unexpectedly. Please try again.");
+    if (update.done) throw new Error("The analysis ended unexpectedly. Please try again.");
   }
 }
 
