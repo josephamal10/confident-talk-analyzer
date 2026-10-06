@@ -162,6 +162,10 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(days=7),
     MAX_CONTENT_LENGTH=25 * 1024 * 1024,
 )
+if os.getenv("CROSS_SITE_COOKIES") == "1":
+    # Hugging Face shows a Space inside an iframe on huggingface.co, where a Lax cookie is never sent,
+    # so the login cookie is marked for cross-site use (HTTPS only, partitioned to that embedding).
+    app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True, SESSION_COOKIE_PARTITIONED=True)
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)

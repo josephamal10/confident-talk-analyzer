@@ -1,0 +1,14 @@
+.git
+.freebuff
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+backend/venv
+backend/.venv
+backend/.env
+backend/.secret_key
+backend/app_data.db*
+backend/uploads
+backend/models
+backend/tests
+backend/evals
