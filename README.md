@@ -8,6 +8,14 @@ reviews *what* you said, and your progress is tracked session by session.
 
 **Live demo:** https://josephamal10--confident-talk-analyzer-web.modal.run (click **Try it as a guest**; no sign-up. It sleeps when idle, so the first visit takes about 30 seconds to wake up.)
 
+![Home page](docs/screenshots/home.jpg)
+
+| Practice | Results |
+|---|---|
+| ![Interview practice screen](docs/screenshots/practice.jpg) | ![Delivery results with the transcript, fillers marked](docs/screenshots/results.jpg) |
+| **AI coach** | **Practice modes** |
+| ![AI coach feedback against the STAR framework](docs/screenshots/coach.jpg) | ![The eight practice modes](docs/screenshots/modes.jpg) |
+
 ## What it does
 
 - **8 practice modes**, each with its own rules, timer and coaching: Free practice, Interview (role-based
