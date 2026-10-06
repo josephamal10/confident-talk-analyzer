@@ -1,10 +1,12 @@
 # Confident Talk Analyzer
 
+[![tests](https://github.com/josephamal10/confident-talk-analyzer/actions/workflows/tests.yml/badge.svg)](https://github.com/josephamal10/confident-talk-analyzer/actions/workflows/tests.yml)
+
 Practise speaking out loud and get told, specifically, how to get better. Record an interview answer, a
 JAM round, a presentation, a news reading or a pitch: speech models measure *how* you sound, an LLM coach
 reviews *what* you said, and your progress is tracked session by session.
 
-**Live demo:** link coming soon (click **Try it as a guest**; no sign-up)
+**Live demo:** https://josephamal10--confident-talk-analyzer-web.modal.run (click **Try it as a guest**; no sign-up. It sleeps when idle, so the first visit takes about 30 seconds to wake up.)
 
 ## What it does
 
