@@ -6,8 +6,11 @@ GROQ_API_KEY. Recordings are kept on a Modal volume so sessions can be replayed 
 """
 import modal
 
-WHISPER_MODEL = "large-v3-turbo"
-CPU_CORES = 4  # physical cores; the models use 2 threads per core
+# Sized for Modal's free $1/month (no payment method): small.en is about 5x faster than large-v3-turbo,
+# which is more accurate on accented speech (see backend/evals/results/REALWORLD.md) but too slow on
+# 2 cores. With more credit, set WHISPER_MODEL = "large-v3-turbo" and CPU_CORES = 4.
+WHISPER_MODEL = "small.en"
+CPU_CORES = 2  # physical cores; the models use 2 threads per core
 MINILM = "sentence-transformers/all-MiniLM-L6-v2"
 
 image = (
@@ -48,12 +51,12 @@ recordings = modal.Volume.from_name("confident-talk-analyzer-recordings", create
 
 @app.function(
     cpu=CPU_CORES,
-    memory=4096,
+    memory=3072,
     secrets=[modal.Secret.from_name("confident-talk-analyzer")],
     volumes={"/data": recordings},
     # One container: analysis jobs are polled from memory, so every request must reach the same one.
     max_containers=1,
-    scaledown_window=300,  # sleep after 5 idle minutes; the next visit wakes it (about 30 s)
+    scaledown_window=120,  # sleep after 2 idle minutes, to save credit; the next visit wakes it
     timeout=900,
 )
 @modal.concurrent(max_inputs=12)

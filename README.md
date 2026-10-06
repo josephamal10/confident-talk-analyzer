@@ -22,7 +22,7 @@ reviews *what* you said, and your progress is tracked session by session.
 ```mermaid
 flowchart LR
     A[Browser recording] --> B[Decode + Silero VAD]
-    B --> C[faster-whisper large-v3-turbo<br/>word timestamps]
+    B --> C[faster-whisper<br/>word timestamps]
     C --> D[Fillers, hedges,<br/>pauses, pace]
     B --> E[Praat pitch]
     B --> F[wav2vec2 emotion<br/>int8 ONNX]
@@ -35,7 +35,7 @@ flowchart LR
 | Stage | Model / method | Why |
 |---|---|---|
 | Speech detection | Silero VAD | Real pause lengths, independent of the transcript |
-| Transcription | faster-whisper `large-v3-turbo`, int8 on CPU | Chosen by evaluation (below); word timestamps; a prompt keeps *um/uh* that Whisper normally deletes |
+| Transcription | faster-whisper `small.en` live (`large-v3-turbo` with more compute), int8 on CPU | Word timestamps; a prompt keeps *um/uh* that Whisper normally deletes |
 | Pitch | Praat (parselmouth) | Monotone vs. varied delivery, uptalk |
 | Vocal confidence | audeering wav2vec2 (arousal, dominance, valence), quantized to int8 ONNX | 3x smaller, about 2x faster on CPU |
 | Topic relevance | all-MiniLM-L6-v2 ONNX embeddings | On/off-topic checks and document matching |
@@ -68,12 +68,14 @@ English from 117 speakers), three speech models were compared
 
 | Model | Word error rate, Indian-accented speakers | Own recordings |
 |---|---|---|
-| small.en (first version) | 14.3% | 29.8% |
+| small.en (live demo, fastest) | 14.3% | 29.8% |
 | distil-large-v3.5 | 9.3% | 23.3% |
-| **large-v3-turbo (deployed)** | **7.9%** | **19.3%** |
+| **large-v3-turbo (most accurate)** | **7.9%** | **19.3%** |
 
 The same eval found that Whisper's filler prompt can make it skip whole sentences (12–19 s in 3 of 4
-recordings); the app now detects speech with no words and re-transcribes just those stretches.
+recordings); the app now detects speech with no words and re-transcribes just those stretches. The live demo
+runs small.en because it is about 5x faster on the free 2-core hosting; `WHISPER_MODEL=large-v3-turbo`
+switches to the most accurate model.
 
 **AI coach**: 14 transcripts ([report](backend/evals/results/COACH.md)): 100% valid structured answers
 on the first try, 100% agreement with human on/off-topic labels, invented numbers in tips cut from 50%
