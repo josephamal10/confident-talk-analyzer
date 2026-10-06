@@ -53,20 +53,65 @@ function showView(name) {
   window.scrollTo({ top: 0 });
 }
 
+// Home page card look per mode: an icon (SVG path data, 24x24) and a hue for its colour.
+const MODE_LOOK = {
+  free: { hue: 199, icon: "M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3" },
+  interview: { hue: 221, icon: "M3 9h18v11H3zM8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3M3 14h18" },
+  jam: { hue: 262, icon: "M12 8v5l3 2M9 2h6M12 4a9 9 0 1 1 0 18 9 9 0 0 1 0-18z" },
+  snap: { hue: 38, icon: "M13 2 4 14h7l-1 8 9-12h-7z" },
+  read: { hue: 160, icon: "M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3zM8 9h6M8 13h6" },
+  presentation: { hue: 187, icon: "M3 4h18v12H3zM12 16v4M8 20h8M7 12l3-3 2 2 4-4" },
+  pitch: { hue: 330, icon: "M12 2c3 3 4 7 3 11l-3 3-3-3c-1-4 0-8 3-11zM9 13l-3 1 1 4 3-2M15 13l3 1-1 4-3-2" },
+  debate: { hue: 12, icon: "M4 5h10v7H8l-4 3zM10 15v2h6l4 3V10h-4" },
+};
+
+function minutesLabel(seconds) {
+  return seconds % 60 === 0 ? `${seconds / 60} min` : `${seconds} s`;
+}
+
+function timeBadge(timer = {}) {
+  if (timer.user_duration) return "Any length";
+  if (timer.target_choices) return `${minutesLabel(timer.target_choices[0])} – ${minutesLabel(timer.target_choices.at(-1))}`;
+  if (timer.prep_seconds) return `${timer.prep_seconds} s prep · ${minutesLabel(timer.target_seconds)}`;
+  if (timer.target_seconds) return minutesLabel(timer.target_seconds);
+  return timer.limit_seconds ? `Up to ${minutesLabel(timer.limit_seconds)}` : "";
+}
+
+function modeIcon(path) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  const shape = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  shape.setAttribute("d", path);
+  svg.appendChild(shape);
+  return svg;
+}
+
 function renderModeLinks() {
   const grid = $("modeGrid");
   const switcher = $("modeSwitcher");
   grid.textContent = "";
   switcher.textContent = "";
   catalog.modes.forEach((mode, index) => {
+    const look = MODE_LOOK[mode.id] || MODE_LOOK.free;
     const card = el("a", "mode-card");
     card.href = `#/practice/${mode.id}`;
     card.style.setProperty("--i", index);
-    card.append(
-      el("span", "mode-card-title", mode.label),
-      el("span", "mode-card-tagline", mode.tagline),
-      el("span", "mode-card-skills", mode.skills.slice(0, 3).map((skill) => SKILL_LABELS[skill]).join(" · "))
-    );
+    card.style.setProperty("--hue", look.hue);
+
+    const top = el("span", "mode-card-top");
+    const icon = el("span", "mode-card-icon");
+    icon.appendChild(modeIcon(look.icon));
+    top.append(icon, el("span", "mode-card-time", timeBadge(mode.timer)));
+
+    const skills = el("span", "mode-card-skills");
+    mode.skills.slice(0, 3).forEach((skill) => skills.appendChild(el("span", "", SKILL_LABELS[skill])));
+
+    const footer = el("span", "mode-card-go");
+    footer.append(el("span", "", "Start practice"), el("span", "mode-card-arrow", "→"));
+    if (mode.coached) footer.prepend(el("span", "mode-card-coach", "AI coach"));
+
+    card.append(top, el("span", "mode-card-title", mode.label), el("span", "mode-card-tagline", mode.tagline), skills, footer);
     grid.appendChild(card);
 
     const pill = el("a", "mode-pill", mode.label);
