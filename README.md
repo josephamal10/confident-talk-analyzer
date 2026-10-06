@@ -1,21 +1,10 @@
----
-title: Confident Talk Analyzer
-emoji: 🎙️
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
-short_description: Speech AI + LLM coach for interviews, JAM, presentations
----
-
 # Confident Talk Analyzer
 
 Practise speaking out loud and get told, specifically, how to get better. Record an interview answer, a
 JAM round, a presentation, a news reading or a pitch: speech models measure *how* you sound, an LLM coach
 reviews *what* you said, and your progress is tracked session by session.
 
-**Live demo:** https://amal211005-confident-talk-analyzer.hf.space (click **Try it as a guest**; no sign-up)
+**Live demo:** link coming soon (click **Try it as a guest**; no sign-up)
 
 ## What it does
 
@@ -33,7 +22,7 @@ reviews *what* you said, and your progress is tracked session by session.
 ```mermaid
 flowchart LR
     A[Browser recording] --> B[Decode + Silero VAD]
-    B --> C[faster-whisper small.en<br/>word timestamps]
+    B --> C[faster-whisper large-v3-turbo<br/>word timestamps]
     C --> D[Fillers, hedges,<br/>pauses, pace]
     B --> E[Praat pitch]
     B --> F[wav2vec2 emotion<br/>int8 ONNX]
@@ -46,7 +35,7 @@ flowchart LR
 | Stage | Model / method | Why |
 |---|---|---|
 | Speech detection | Silero VAD | Real pause lengths, independent of the transcript |
-| Transcription | faster-whisper `small.en`, int8 on CPU | Word timestamps; a prompt keeps *um/uh* that Whisper normally deletes |
+| Transcription | faster-whisper `large-v3-turbo`, int8 on CPU | Chosen by evaluation (below); word timestamps; a prompt keeps *um/uh* that Whisper normally deletes |
 | Pitch | Praat (parselmouth) | Monotone vs. varied delivery, uptalk |
 | Vocal confidence | audeering wav2vec2 (arousal, dominance, valence), quantized to int8 ONNX | 3x smaller, about 2x faster on CPU |
 | Topic relevance | all-MiniLM-L6-v2 ONNX embeddings | On/off-topic checks and document matching |
@@ -74,10 +63,17 @@ Every component is measured, not just eyeballed ([backend/evals](backend/evals))
 | Documents | Located section overlap (IoU) | 100% |
 
 **Real-world accents**: on [Svarah](https://huggingface.co/datasets/ai4bharat/Svarah) (Indian-accented
-English from 117 speakers), the app's speech model has a **14.3%** word error rate. This eval found that
-Whisper's filler prompt can make it skip whole sentences (12–19 s in 3 of 4 recordings); the app now
-detects speech with no words and re-transcribes just those stretches
-([report](backend/evals/results/REALWORLD.md)).
+English from 117 speakers), three speech models were compared
+([report](backend/evals/results/REALWORLD.md)):
+
+| Model | Word error rate, Indian-accented speakers | Own recordings |
+|---|---|---|
+| small.en (first version) | 14.3% | 29.8% |
+| distil-large-v3.5 | 9.3% | 23.3% |
+| **large-v3-turbo (deployed)** | **7.9%** | **19.3%** |
+
+The same eval found that Whisper's filler prompt can make it skip whole sentences (12–19 s in 3 of 4
+recordings); the app now detects speech with no words and re-transcribes just those stretches.
 
 **AI coach**: 14 transcripts ([report](backend/evals/results/COACH.md)): 100% valid structured answers
 on the first try, 100% agreement with human on/off-topic labels, invented numbers in tips cut from 50%
@@ -100,14 +96,18 @@ python app.py                    # http://localhost:5000
 Optional settings go in `backend/.env`: `GROQ_API_KEY` for the AI coach (free key from Groq),
 `DATABASE_URL` for Postgres instead of the local SQLite file, `WHISPER_MODEL` to change the speech model.
 
-Tests: `python -m pytest` (263 tests), or `TEST_POSTGRES=1 python -m pytest` to run them against a
+Tests: `python -m pytest` (265 tests), or `TEST_POSTGRES=1 python -m pytest` to run them against a
 throwaway local Postgres. CI runs both on every push.
 
 ## Deploy
 
-The [Dockerfile](Dockerfile) builds one image with the models baked in (port 7860), made for a free
-Hugging Face Docker Space. Set these as Space secrets: `SECRET_KEY` (any long random string),
-`DATABASE_URL` (a free [Neon](https://neon.tech) Postgres), and `GROQ_API_KEY`.
+The live app runs on [Modal](https://modal.com) ([modal_app.py](modal_app.py)): one container with every
+model baked into the image, sleeping when idle, and a free [Neon](https://neon.tech) Postgres. Create a
+Modal secret named `confident-talk-analyzer` with `SECRET_KEY` (any long random string), `DATABASE_URL`
+and `GROQ_API_KEY`, then run `modal deploy modal_app.py`. Long analyses are started as jobs the page
+polls, because Modal ends any single web request after 150 seconds.
+
+The [Dockerfile](Dockerfile) builds the same app as a standard container (port 7860) for any other host.
 
 ## Credits and licences
 

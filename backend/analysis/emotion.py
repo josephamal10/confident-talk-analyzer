@@ -12,6 +12,7 @@ import threading
 import numpy as np
 
 from .audio import SAMPLE_RATE
+from .runtime import onnx_session
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def get_session():
             import onnxruntime
 
             logger.info("Loading emotion model %s", MODEL_PATH)
-            _session = onnxruntime.InferenceSession(MODEL_PATH, providers=["CPUExecutionProvider"])
+            _session = onnx_session(onnxruntime, MODEL_PATH)
     return _session
 
 

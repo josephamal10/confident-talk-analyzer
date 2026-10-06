@@ -11,6 +11,7 @@ import threading
 
 import numpy as np
 
+from .runtime import onnx_session
 from .topic import is_topic_related
 
 logger = logging.getLogger(__name__)
@@ -40,9 +41,7 @@ def _load_model():
                 tokenizer = Tokenizer.from_file(hf_hub_download(MODEL_REPO, "tokenizer.json"))
                 tokenizer.enable_truncation(MAX_TOKENS)
                 tokenizer.enable_padding()
-                session = onnxruntime.InferenceSession(
-                    hf_hub_download(MODEL_REPO, "onnx/model.onnx"), providers=["CPUExecutionProvider"]
-                )
+                session = onnx_session(onnxruntime, hf_hub_download(MODEL_REPO, "onnx/model.onnx"))
                 _model = (tokenizer, session)
             except Exception:
                 logger.exception("Could not load the embedding model; using keyword topic matching instead.")

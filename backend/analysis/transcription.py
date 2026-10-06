@@ -6,6 +6,7 @@ import threading
 from faster_whisper import WhisperModel
 
 from .audio import SAMPLE_RATE, detect_speech
+from .runtime import cpu_threads
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ def get_model():
     with _model_lock:
         if _model is None:
             logger.info("Loading faster-whisper model %s", MODEL_NAME)
-            _model = WhisperModel(MODEL_NAME, device="cpu", compute_type="int8")
+            _model = WhisperModel(MODEL_NAME, device="cpu", compute_type="int8", cpu_threads=cpu_threads())
     return _model
 
 

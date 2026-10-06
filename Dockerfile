@@ -1,5 +1,5 @@
 # Confident Talk Analyzer: one container serving the Flask API and the frontend.
-# Built for Hugging Face Spaces (port 7860, runs as uid 1000); works anywhere Docker does.
+# Port 7860, runs as uid 1000. For Hugging Face Spaces add CROSS_SITE_COOKIES=1 (the app is shown in an iframe).
 
 # Stage 1: download audeering's speech-emotion model (CC BY-NC-SA 4.0) and quantize it to int8.
 FROM python:3.10-slim AS emotion-model
@@ -13,7 +13,7 @@ FROM python:3.10-slim
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
 RUN useradd -m -u 1000 user
 
-ARG WHISPER_MODEL=small.en
+ARG WHISPER_MODEL=large-v3-turbo
 ENV HOME=/home/user \
     PYTHONUNBUFFERED=1 \
     HF_HOME=/home/user/.cache/huggingface \
